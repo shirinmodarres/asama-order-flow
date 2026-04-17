@@ -12,8 +12,18 @@ import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { OrderTimeline } from "@/components/shared/order-timeline";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { getOrderEditBlockReason, orderStatusLabel, warehouseStatusLabel } from "@/lib/expert/mock-data";
-import { formatDate, formatNumber, getOrderItemCount, getOrderTotalQuantity, isOrderEditable } from "@/lib/expert/utils";
+import {
+  getOrderEditBlockReason,
+  orderStatusLabel,
+  warehouseStatusLabel,
+} from "@/lib/expert/mock-data";
+import {
+  formatDate,
+  formatNumber,
+  getOrderItemCount,
+  getOrderTotalQuantity,
+  isOrderEditable,
+} from "@/lib/expert/utils";
 
 interface OrderDetailRow {
   id: string;
@@ -30,7 +40,10 @@ export default function ExpertOrderDetailsPage() {
   if (!order) {
     return (
       <DashboardLayout role="expert" title="جزئیات سفارش">
-        <EmptyState title="سفارش یافت نشد" description="شناسه سفارش نامعتبر است یا این سفارش در داده های نمونه وجود ندارد." />
+        <EmptyState
+          title="سفارش یافت نشد"
+          description="شناسه سفارش نامعتبر است یا این سفارش در داده های نمونه وجود ندارد."
+        />
       </DashboardLayout>
     );
   }
@@ -49,9 +62,19 @@ export default function ExpertOrderDetailsPage() {
   const blockReason = getOrderEditBlockReason(order.status);
 
   const columns: DataTableColumn<OrderDetailRow>[] = [
-    { key: "name", header: "نام کالا", render: (row) => <span className="font-medium text-[#1F3A5F]">{row.name}</span> },
+    {
+      key: "name",
+      header: "نام کالا",
+      render: (row) => (
+        <span className="font-medium text-[#1F3A5F]">{row.name}</span>
+      ),
+    },
     { key: "brand", header: "برند", render: (row) => row.brand },
-    { key: "quantity", header: "تعداد", render: (row) => formatNumber(row.quantity) },
+    {
+      key: "quantity",
+      header: "تعداد",
+      render: (row) => formatNumber(row.quantity),
+    },
   ];
 
   return (
@@ -63,7 +86,7 @@ export default function ExpertOrderDetailsPage() {
           editable ? (
             <Link
               href={`/expert/orders/${order.id}/edit`}
-              className="btn-primary rounded-[12px] px-4 py-2 text-sm font-medium text-white visited:text-white hover:text-white focus:text-white"
+              className="btn-primary rounded-xl px-4 py-2 text-sm font-medium text-white visited:text-white hover:text-white focus:text-white"
             >
               ویرایش سفارش
             </Link>
@@ -71,7 +94,7 @@ export default function ExpertOrderDetailsPage() {
             <button
               type="button"
               disabled
-              className="cursor-not-allowed rounded-[12px] border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-2 text-sm text-[#94A3B8]"
+              className="cursor-not-allowed rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-2 text-sm text-[#94A3B8]"
               title={blockReason}
             >
               غیرقابل ویرایش
@@ -82,18 +105,35 @@ export default function ExpertOrderDetailsPage() {
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          <div className="rounded-[12px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
-            <h3 className="text-base font-semibold text-[#1F3A5F]">اطلاعات سفارش</h3>
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            <h3 className="text-base font-semibold text-[#1F3A5F]">
+              اطلاعات سفارش
+            </h3>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <InfoItem label="کد سفارش" value={order.code} />
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
-              <InfoItem label="وضعیت سفارش" value={<StatusBadge type="order" status={order.status} />} />
-              <InfoItem label="وضعیت انبار" value={<StatusBadge type="warehouse" status={order.warehouseStatus} />} />
+              <InfoItem
+                label="وضعیت سفارش"
+                value={<StatusBadge type="order" status={order.status} />}
+              />
+              <InfoItem
+                label="وضعیت انبار"
+                value={
+                  <StatusBadge
+                    type="warehouse"
+                    status={order.warehouseStatus}
+                  />
+                }
+              />
             </dl>
           </div>
 
           <div>
-            <DataTable columns={columns} rows={detailRows} rowKey={(row) => row.id} />
+            <DataTable
+              columns={columns}
+              rows={detailRows}
+              rowKey={(row) => row.id}
+            />
           </div>
 
           <OrderTimeline status={order.status} />
@@ -108,13 +148,19 @@ export default function ExpertOrderDetailsPage() {
           />
 
           {!editable ? (
-            <div className="rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#991B1B]">{blockReason}</div>
+            <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#991B1B]">
+              {blockReason}
+            </div>
           ) : null}
 
-          <div className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 text-sm text-[#475569] shadow-sm">
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-4 text-sm text-[#475569] shadow-sm">
             <p className="font-semibold text-[#1F3A5F]">وضعیت های جاری</p>
-            <p className="mt-2">وضعیت سفارش: {orderStatusLabel[order.status]}</p>
-            <p className="mt-1">وضعیت انبار: {warehouseStatusLabel[order.warehouseStatus]}</p>
+            <p className="mt-2">
+              وضعیت سفارش: {orderStatusLabel[order.status]}
+            </p>
+            <p className="mt-1">
+              وضعیت انبار: {warehouseStatusLabel[order.warehouseStatus]}
+            </p>
           </div>
         </div>
       </section>
@@ -124,7 +170,7 @@ export default function ExpertOrderDetailsPage() {
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-[12px] border border-[#E5E7EB] bg-[#FBFCFD] p-3">
+    <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] p-3">
       <dt className="text-xs text-[#6B7280]">{label}</dt>
       <dd className="mt-1 text-sm font-medium text-[#1F3A5F]">{value}</dd>
     </div>

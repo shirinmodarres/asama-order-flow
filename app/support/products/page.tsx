@@ -69,7 +69,7 @@ export default function SupportProductsPage() {
       render: (row) => (
         <Link
           href={`/support/products/${row.id}/edit`}
-          className="rounded-[12px] border border-[#E5E7EB] px-3 py-1.5 text-xs text-[#334155]"
+          className="rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-xs text-[#334155]"
         >
           ویرایش
         </Link>
@@ -85,25 +85,25 @@ export default function SupportProductsPage() {
         actions={
           <Link
             href="/support/products/new"
-            className="rounded-[12px] border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm !text-white"
+            className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm !text-white"
           >
             تعریف کالای جدید
           </Link>
         }
       />
 
-      <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="جستجو بر اساس نام کالا"
-            className="w-full rounded-[12px] border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           />
           <select
             value={brandFilter}
             onChange={(event) => setBrandFilter(event.target.value)}
-            className="w-full rounded-[12px] border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           >
             <option value="all">همه برندها</option>
             {brands.map((brand) => (

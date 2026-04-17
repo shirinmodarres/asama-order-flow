@@ -76,7 +76,7 @@ export default function ManagerPendingOrdersPage() {
       render: (row) => (
         <Link
           href={`/manager/orders/${row.id}`}
-          className="rounded-[12px] border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs !text-white"
+          className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs !text-white"
         >
           بررسی سفارش
         </Link>
@@ -91,13 +91,13 @@ export default function ManagerPendingOrdersPage() {
         description="نمایش سفارش هایی که نیاز به تصمیم نهایی مدیر فروش دارند"
       />
 
-      <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="جستجو بر اساس کد سفارش یا نام ثبت کننده"
-            className="w-full rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           />
           <select
             value={statusFilter}
@@ -106,7 +106,7 @@ export default function ManagerPendingOrdersPage() {
                 event.target.value as "pending" | "all" | OrderStatus,
               )
             }
-            className="w-full rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           >
             <option value="pending">در انتظار تایید</option>
             <option value="all">همه وضعیت ها</option>

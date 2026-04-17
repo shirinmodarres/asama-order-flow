@@ -18,7 +18,13 @@ import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { getOrderLastStageLabel } from "@/lib/expert/mock-data";
-import { formatDate, formatNumber, getAvailableStock, getOrderItemCount, getOrderTotalQuantity } from "@/lib/expert/utils";
+import {
+  formatDate,
+  formatNumber,
+  getAvailableStock,
+  getOrderItemCount,
+  getOrderTotalQuantity,
+} from "@/lib/expert/utils";
 
 type DecisionType = "approve" | "cancel" | null;
 
@@ -35,7 +41,8 @@ interface InventoryRow {
 export default function ManagerOrderReviewPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { getOrderById, getProductById, approveOrder, cancelOrder } = useExpertStore();
+  const { getOrderById, getProductById, approveOrder, cancelOrder } =
+    useExpertStore();
   const order = getOrderById(params.id);
 
   const [decision, setDecision] = useState<DecisionType>(null);
@@ -61,27 +68,55 @@ export default function ManagerOrderReviewPage() {
   if (!order) {
     return (
       <DashboardLayout role="manager" title="بررسی سفارش">
-        <EmptyState title="سفارش یافت نشد" description="شناسه سفارش معتبر نیست یا در داده های نمونه وجود ندارد." />
+        <EmptyState
+          title="سفارش یافت نشد"
+          description="شناسه سفارش معتبر نیست یا در داده های نمونه وجود ندارد."
+        />
       </DashboardLayout>
     );
   }
 
   const isPending = order.status === "pending";
-  const disableReason = isPending ? "" : "این سفارش قبلا تعیین تکلیف شده و دیگر قابل تصمیم گیری نیست.";
+  const disableReason = isPending
+    ? ""
+    : "این سفارش قبلا تعیین تکلیف شده و دیگر قابل تصمیم گیری نیست.";
 
   const columns: DataTableColumn<InventoryRow>[] = [
-    { key: "name", header: "نام کالا", render: (row) => <span className="font-medium text-[#1F3A5F]">{row.name}</span> },
+    {
+      key: "name",
+      header: "نام کالا",
+      render: (row) => (
+        <span className="font-medium text-[#1F3A5F]">{row.name}</span>
+      ),
+    },
     { key: "brand", header: "برند", render: (row) => row.brand },
-    { key: "requested", header: "تعداد درخواست", render: (row) => formatNumber(row.requested) },
-    { key: "total", header: "موجودی کل", render: (row) => formatNumber(row.total) },
-    { key: "reserved", header: "موجودی رزروشده", render: (row) => formatNumber(row.reserved) },
-    { key: "available", header: "موجودی قابل استفاده", render: (row) => formatNumber(row.available) },
+    {
+      key: "requested",
+      header: "تعداد درخواست",
+      render: (row) => formatNumber(row.requested),
+    },
+    {
+      key: "total",
+      header: "موجودی کل",
+      render: (row) => formatNumber(row.total),
+    },
+    {
+      key: "reserved",
+      header: "موجودی رزروشده",
+      render: (row) => formatNumber(row.reserved),
+    },
+    {
+      key: "available",
+      header: "موجودی قابل استفاده",
+      render: (row) => formatNumber(row.available),
+    },
   ];
 
   const confirmDecision = () => {
     if (!decision) return;
 
-    const result = decision === "approve" ? approveOrder(order.id) : cancelOrder(order.id);
+    const result =
+      decision === "approve" ? approveOrder(order.id) : cancelOrder(order.id);
 
     if (!result.ok) {
       setMessage(result.error ?? "انجام عملیات ممکن نبود.");
@@ -105,33 +140,57 @@ export default function ManagerOrderReviewPage() {
         actions={
           <Link
             href="/manager/pending-orders"
-            className="rounded-[12px] border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
+            className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
           >
             بازگشت به لیست
           </Link>
         }
       />
 
-      {message ? <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">{message}</div> : null}
+      {message ? (
+        <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">
+          {message}
+        </div>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          <div className="rounded-[12px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
-            <h3 className="text-base font-semibold text-[#1F3A5F]">مشخصات سفارش</h3>
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            <h3 className="text-base font-semibold text-[#1F3A5F]">
+              مشخصات سفارش
+            </h3>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <InfoItem label="کد سفارش" value={order.code} />
               <InfoItem label="ثبت کننده" value={order.createdBy} />
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
-              <InfoItem label="وضعیت سفارش" value={<StatusBadge type="order" status={order.status} />} />
-              <InfoItem label="وضعیت انبار" value={<StatusBadge type="warehouse" status={order.warehouseStatus} />} />
-              <InfoItem label="آخرین تغییر" value={formatDate(order.updatedAt)} />
+              <InfoItem
+                label="وضعیت سفارش"
+                value={<StatusBadge type="order" status={order.status} />}
+              />
+              <InfoItem
+                label="وضعیت انبار"
+                value={
+                  <StatusBadge
+                    type="warehouse"
+                    status={order.warehouseStatus}
+                  />
+                }
+              />
+              <InfoItem
+                label="آخرین تغییر"
+                value={formatDate(order.updatedAt)}
+              />
             </dl>
           </div>
 
           <ReserveInventoryNote />
 
           <div>
-            <DataTable columns={columns} rows={inventoryRows} rowKey={(row) => row.id} />
+            <DataTable
+              columns={columns}
+              rows={inventoryRows}
+              rowKey={(row) => row.id}
+            />
           </div>
 
           <ProgressTimeline order={order} />
@@ -145,7 +204,10 @@ export default function ManagerOrderReviewPage() {
             warehouseStatus={order.warehouseStatus}
           />
 
-          <ProcessStatusCard currentStage={getOrderLastStageLabel(order)} lastUpdated={formatDate(order.updatedAt)} />
+          <ProcessStatusCard
+            currentStage={getOrderLastStageLabel(order)}
+            lastUpdated={formatDate(order.updatedAt)}
+          />
 
           <ApprovalActionsCard
             disabled={!isPending}
@@ -175,7 +237,7 @@ export default function ManagerOrderReviewPage() {
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-[12px] border border-[#E5E7EB] bg-[#FBFCFD] p-3">
+    <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] p-3">
       <dt className="text-xs text-[#6B7280]">{label}</dt>
       <dd className="mt-1 text-sm font-medium text-[#1F3A5F]">{value}</dd>
     </div>

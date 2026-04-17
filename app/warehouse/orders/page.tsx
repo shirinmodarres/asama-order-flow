@@ -94,13 +94,13 @@ export default function WarehouseOrdersPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/warehouse/orders/${row.id}/exit-slip`}
-            className="rounded-[12px] border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs !text-white"
+            className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs !text-white"
           >
             ثبت حواله خروج
           </Link>
           <Link
             href={`/warehouse/orders/${row.id}`}
-            className="rounded-[12px] border border-[#E5E7EB] px-3 py-1.5 text-xs text-[#334155]"
+            className="rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-xs text-[#334155]"
           >
             مشاهده جزئیات
           </Link>
@@ -116,18 +116,18 @@ export default function WarehouseOrdersPage() {
         description="فقط سفارش های تاییدشده مدیر فروش در این لیست نمایش داده می شوند."
       />
 
-      <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="جستجو بر اساس کد سفارش یا ثبت کننده"
-            className="w-full rounded-[12px] border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           />
           <select
             value={brandFilter}
             onChange={(event) => setBrandFilter(event.target.value)}
-            className="w-full rounded-[12px] border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           >
             <option value="all">همه برندها</option>
             {allBrands.map((brand) => (

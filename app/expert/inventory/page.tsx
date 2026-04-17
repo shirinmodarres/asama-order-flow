@@ -19,11 +19,16 @@ export default function ExpertInventoryPage() {
   const [search, setSearch] = useState("");
   const [brand, setBrand] = useState("all");
 
-  const brands = useMemo(() => Array.from(new Set(products.map((product) => product.brand))), [products]);
+  const brands = useMemo(
+    () => Array.from(new Set(products.map((product) => product.brand))),
+    [products],
+  );
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = product.name
+        .toLowerCase()
+        .includes(search.toLowerCase());
       const matchesBrand = brand === "all" || product.brand === brand;
       return matchesSearch && matchesBrand;
     });
@@ -42,40 +47,75 @@ export default function ExpertInventoryPage() {
   }, [products]);
 
   const columns: DataTableColumn<Product>[] = [
-    { key: "name", header: "نام کالا", render: (row) => <span className="font-medium text-[#1F3A5F]">{row.name}</span> },
+    {
+      key: "name",
+      header: "نام کالا",
+      render: (row) => (
+        <span className="font-medium text-[#1F3A5F]">{row.name}</span>
+      ),
+    },
     { key: "brand", header: "برند", render: (row) => row.brand },
-    { key: "total", header: "موجودی کل", render: (row) => formatNumber(row.totalStock) },
-    { key: "reserved", header: "موجودی رزروشده", render: (row) => formatNumber(row.reservedStock) },
-    { key: "available", header: "موجودی قابل استفاده", render: (row) => formatNumber(getAvailableStock(row)) },
+    {
+      key: "total",
+      header: "موجودی کل",
+      render: (row) => formatNumber(row.totalStock),
+    },
+    {
+      key: "reserved",
+      header: "موجودی رزروشده",
+      render: (row) => formatNumber(row.reservedStock),
+    },
+    {
+      key: "available",
+      header: "موجودی قابل استفاده",
+      render: (row) => formatNumber(getAvailableStock(row)),
+    },
     {
       key: "status",
       header: "وضعیت",
-      render: (row) => <StatusBadge type="inventory" status={getInventoryStatus(row)} />,
+      render: (row) => (
+        <StatusBadge type="inventory" status={getInventoryStatus(row)} />
+      ),
     },
   ];
 
   return (
     <DashboardLayout role="expert" title="موجودی کالاها">
-      <SectionHeader title="فهرست موجودی" description="نمایش موجودی کل، رزرو شده و قابل استفاده برای ثبت سفارش" />
+      <SectionHeader
+        title="فهرست موجودی"
+        description="نمایش موجودی کل، رزرو شده و قابل استفاده برای ثبت سفارش"
+      />
 
       <section className="grid gap-4 md:grid-cols-3">
-        <InventorySummaryCard title="موجودی کل" value={summary.total} hint="مجموع تمام اقلام انبار" />
-        <InventorySummaryCard title="موجودی رزروشده" value={summary.reserved} hint="اختصاص یافته به سفارش های در انتظار تایید" />
-        <InventorySummaryCard title="موجودی قابل استفاده" value={summary.available} hint="قابل انتخاب برای سفارش جدید" />
+        <InventorySummaryCard
+          title="موجودی کل"
+          value={summary.total}
+          hint="مجموع تمام اقلام انبار"
+        />
+        <InventorySummaryCard
+          title="موجودی رزروشده"
+          value={summary.reserved}
+          hint="اختصاص یافته به سفارش های در انتظار تایید"
+        />
+        <InventorySummaryCard
+          title="موجودی قابل استفاده"
+          value={summary.available}
+          hint="قابل انتخاب برای سفارش جدید"
+        />
       </section>
 
-      <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="جستجو بر اساس نام کالا"
-            className="w-full rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           />
           <select
             value={brand}
             onChange={(event) => setBrand(event.target.value)}
-            className="w-full rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           >
             <option value="all">همه برندها</option>
             {brands.map((item) => (
@@ -88,9 +128,16 @@ export default function ExpertInventoryPage() {
       </section>
 
       {filteredProducts.length > 0 ? (
-        <DataTable columns={columns} rows={filteredProducts} rowKey={(row) => row.id} />
+        <DataTable
+          columns={columns}
+          rows={filteredProducts}
+          rowKey={(row) => row.id}
+        />
       ) : (
-        <EmptyState title="کالایی یافت نشد" description="فیلترها را تغییر دهید یا عبارت جستجو را اصلاح کنید." />
+        <EmptyState
+          title="کالایی یافت نشد"
+          description="فیلترها را تغییر دهید یا عبارت جستجو را اصلاح کنید."
+        />
       )}
     </DashboardLayout>
   );

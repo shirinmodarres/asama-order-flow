@@ -29,9 +29,20 @@ export default function SupportCreateProductPage() {
 
   return (
     <DashboardLayout role="support" title="تعریف کالای جدید">
-      <SectionHeader title="ثبت کالای جدید" description="اطلاعات پایه کالا و موجودی اولیه را ثبت کنید." />
-      {message ? <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">{message}</div> : null}
-      <ProductForm mode="create" onSubmit={onSubmit} onCancel={() => router.push("/support/products")} />
+      <SectionHeader
+        title="ثبت کالای جدید"
+        description="اطلاعات پایه کالا و موجودی اولیه را ثبت کنید."
+      />
+      {message ? (
+        <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">
+          {message}
+        </div>
+      ) : null}
+      <ProductForm
+        mode="create"
+        onSubmit={onSubmit}
+        onCancel={() => router.push("/support/products")}
+      />
     </DashboardLayout>
   );
 }

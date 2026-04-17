@@ -26,7 +26,10 @@ export default function FinanceReadyPage() {
 
   const rows = useMemo<ReadyOrderRow[]>(() => {
     return orders
-      .filter((order) => order.status === "approved" && order.warehouseStatus === "delivered")
+      .filter(
+        (order) =>
+          order.status === "approved" && order.warehouseStatus === "delivered",
+      )
       .map((order) => {
         const slip = exitSlips.find((entry) => entry.orderId === order.id);
         return {
@@ -36,7 +39,10 @@ export default function FinanceReadyPage() {
           deliveredAt: slip?.deliveredAt ?? order.updatedAt,
         };
       })
-      .sort((a, b) => Number(new Date(b.deliveredAt)) - Number(new Date(a.deliveredAt)))
+      .sort(
+        (a, b) =>
+          Number(new Date(b.deliveredAt)) - Number(new Date(a.deliveredAt)),
+      )
       .filter((row) => {
         const query = search.toLowerCase().trim();
         const matchesSearch =
@@ -45,19 +51,51 @@ export default function FinanceReadyPage() {
           row.order.createdBy.toLowerCase().includes(query) ||
           row.slipNumber.toLowerCase().includes(query);
 
-        const deliveredDate = row.deliveredAt ? new Date(row.deliveredAt).toISOString().slice(0, 10) : "";
-        const matchesDate = deliveredDateFilter ? deliveredDate === deliveredDateFilter : true;
+        const deliveredDate = row.deliveredAt
+          ? new Date(row.deliveredAt).toISOString().slice(0, 10)
+          : "";
+        const matchesDate = deliveredDateFilter
+          ? deliveredDate === deliveredDateFilter
+          : true;
         return matchesSearch && matchesDate;
       });
   }, [orders, exitSlips, search, deliveredDateFilter]);
 
   const columns: DataTableColumn<ReadyOrderRow>[] = [
-    { key: "code", header: "کد سفارش", render: (row) => <span className="font-semibold text-[#1F3A5F]">{row.order.code}</span> },
-    { key: "slip", header: "شماره حواله خروج", render: (row) => row.slipNumber },
-    { key: "createdBy", header: "ثبت کننده", render: (row) => row.order.createdBy },
-    { key: "deliveryDate", header: "تاریخ تحویل", render: (row) => formatDateTime(row.deliveredAt) },
-    { key: "orderStatus", header: "وضعیت سفارش", render: (row) => <StatusBadge type="order" status={row.order.status} /> },
-    { key: "warehouseStatus", header: "وضعیت انبار", render: (row) => <StatusBadge type="warehouse" status={row.order.warehouseStatus} /> },
+    {
+      key: "code",
+      header: "کد سفارش",
+      render: (row) => (
+        <span className="font-semibold text-[#1F3A5F]">{row.order.code}</span>
+      ),
+    },
+    {
+      key: "slip",
+      header: "شماره حواله خروج",
+      render: (row) => row.slipNumber,
+    },
+    {
+      key: "createdBy",
+      header: "ثبت کننده",
+      render: (row) => row.order.createdBy,
+    },
+    {
+      key: "deliveryDate",
+      header: "تاریخ تحویل",
+      render: (row) => formatDateTime(row.deliveredAt),
+    },
+    {
+      key: "orderStatus",
+      header: "وضعیت سفارش",
+      render: (row) => <StatusBadge type="order" status={row.order.status} />,
+    },
+    {
+      key: "warehouseStatus",
+      header: "وضعیت انبار",
+      render: (row) => (
+        <StatusBadge type="warehouse" status={row.order.warehouseStatus} />
+      ),
+    },
     {
       key: "actions",
       header: "عملیات",
@@ -65,13 +103,13 @@ export default function FinanceReadyPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={`/finance/orders/${row.order.id}/reconcile`}
-            className="btn-primary rounded-[12px] px-3 py-1.5 text-xs font-medium text-white visited:text-white hover:text-white focus:text-white"
+            className="btn-primary rounded-xl px-3 py-1.5 text-xs font-medium text-white visited:text-white hover:text-white focus:text-white"
           >
             بررسی و تطبیق
           </Link>
           <Link
             href={`/finance/orders/${row.order.id}/reconcile`}
-            className="rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs text-[#334155] hover:border-[#CBD5E1]"
+            className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs text-[#334155] hover:border-[#CBD5E1]"
           >
             مشاهده جزئیات
           </Link>
@@ -82,35 +120,43 @@ export default function FinanceReadyPage() {
 
   return (
     <DashboardLayout role="finance" title="آماده فاکتور">
-      <SectionHeader title="سفارش های آماده صدور فاکتور" description="فقط سفارش های تاییدشده با تحویل تاییدشده نمایش داده می شوند." />
+      <SectionHeader
+        title="سفارش های آماده صدور فاکتور"
+        description="فقط سفارش های تاییدشده با تحویل تاییدشده نمایش داده می شوند."
+      />
 
-      <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="جستجو بر اساس کد سفارش، ثبت کننده یا شماره حواله"
-            className="w-full rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           />
 
           <input
             type="date"
             value={deliveredDateFilter}
             onChange={(event) => setDeliveredDateFilter(event.target.value)}
-            className="w-full rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
           />
         </div>
       </section>
 
-      <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 text-sm text-[#6B7280] shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 text-sm text-[#6B7280] shadow-sm">
         <p>{`تعداد سفارش آماده فاکتور: ${formatNumber(rows.length)}`}</p>
-        <p className="mt-1 text-xs">مرحله مالی پس از تطبیق سفارش و حواله انجام می شود.</p>
+        <p className="mt-1 text-xs">
+          مرحله مالی پس از تطبیق سفارش و حواله انجام می شود.
+        </p>
       </section>
 
       {rows.length > 0 ? (
         <InvoiceTable columns={columns} rows={rows} rowKey={(row) => row.id} />
       ) : (
-        <EmptyState title="سفارشی برای صدور فاکتور یافت نشد" description="فیلترها را تغییر دهید یا منتظر تایید تحویل سفارش های جدید بمانید." />
+        <EmptyState
+          title="سفارشی برای صدور فاکتور یافت نشد"
+          description="فیلترها را تغییر دهید یا منتظر تایید تحویل سفارش های جدید بمانید."
+        />
       )}
     </DashboardLayout>
   );

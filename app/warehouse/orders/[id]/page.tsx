@@ -12,7 +12,12 @@ import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { SectionHeader } from "@/components/shared/section-header";
 import { WarehouseActionPanel } from "@/components/warehouse/warehouse-action-panel";
 import { WarehouseStatusBadge } from "@/components/warehouse/warehouse-status-badge";
-import { formatDate, formatNumber, getOrderItemCount, getOrderTotalQuantity } from "@/lib/expert/utils";
+import {
+  formatDate,
+  formatNumber,
+  getOrderItemCount,
+  getOrderTotalQuantity,
+} from "@/lib/expert/utils";
 
 interface ItemRow {
   id: string;
@@ -23,13 +28,17 @@ interface ItemRow {
 
 export default function WarehouseOrderDetailsPage() {
   const params = useParams<{ id: string }>();
-  const { getOrderById, getProductById, getExitSlipByOrderId } = useExpertStore();
+  const { getOrderById, getProductById, getExitSlipByOrderId } =
+    useExpertStore();
   const order = getOrderById(params.id);
 
   if (!order) {
     return (
       <DashboardLayout role="warehouse" title="جزئیات سفارش">
-        <EmptyState title="سفارش یافت نشد" description="شناسه سفارش معتبر نیست یا در داده های نمونه وجود ندارد." />
+        <EmptyState
+          title="سفارش یافت نشد"
+          description="شناسه سفارش معتبر نیست یا در داده های نمونه وجود ندارد."
+        />
       </DashboardLayout>
     );
   }
@@ -46,9 +55,19 @@ export default function WarehouseOrderDetailsPage() {
   });
 
   const columns: DataTableColumn<ItemRow>[] = [
-    { key: "name", header: "نام کالا", render: (row) => <span className="font-medium text-[#1F3A5F]">{row.name}</span> },
+    {
+      key: "name",
+      header: "نام کالا",
+      render: (row) => (
+        <span className="font-medium text-[#1F3A5F]">{row.name}</span>
+      ),
+    },
     { key: "brand", header: "برند", render: (row) => row.brand },
-    { key: "quantity", header: "تعداد تاییدشده", render: (row) => formatNumber(row.quantity) },
+    {
+      key: "quantity",
+      header: "تعداد تاییدشده",
+      render: (row) => formatNumber(row.quantity),
+    },
   ];
 
   return (
@@ -59,7 +78,7 @@ export default function WarehouseOrderDetailsPage() {
         actions={
           <Link
             href="/warehouse/orders"
-            className="rounded-[12px] border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
+            className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
           >
             بازگشت به لیست
           </Link>
@@ -68,11 +87,17 @@ export default function WarehouseOrderDetailsPage() {
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          <div className="rounded-[12px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
             <dl className="grid gap-3 sm:grid-cols-2">
               <InfoItem label="ثبت کننده" value={order.createdBy} />
-              <InfoItem label="تاریخ تایید" value={formatDate(order.updatedAt)} />
-              <InfoItem label="وضعیت انبار" value={<WarehouseStatusBadge status={order.warehouseStatus} />} />
+              <InfoItem
+                label="تاریخ تایید"
+                value={formatDate(order.updatedAt)}
+              />
+              <InfoItem
+                label="وضعیت انبار"
+                value={<WarehouseStatusBadge status={order.warehouseStatus} />}
+              />
             </dl>
           </div>
 
@@ -87,7 +112,10 @@ export default function WarehouseOrderDetailsPage() {
             warehouseStatus={order.warehouseStatus}
           />
 
-          <WarehouseActionPanel orderId={order.id} showIssueSlip={!hasSlip && order.warehouseStatus === "reviewing"} />
+          <WarehouseActionPanel
+            orderId={order.id}
+            showIssueSlip={!hasSlip && order.warehouseStatus === "reviewing"}
+          />
         </div>
       </section>
     </DashboardLayout>
@@ -96,7 +124,7 @@ export default function WarehouseOrderDetailsPage() {
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-[12px] border border-[#E5E7EB] bg-[#FBFCFD] p-3">
+    <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] p-3">
       <dt className="text-xs text-[#6B7280]">{label}</dt>
       <dd className="mt-1 text-sm font-medium text-[#1F3A5F]">{value}</dd>
     </div>

@@ -24,7 +24,12 @@ interface SlipItemRow {
 
 export default function ExitSlipDetailsPage() {
   const params = useParams<{ id: string }>();
-  const { getExitSlipById, getOrderById, getProductById, confirmExitSlipDelivery } = useExpertStore();
+  const {
+    getExitSlipById,
+    getOrderById,
+    getProductById,
+    confirmExitSlipDelivery,
+  } = useExpertStore();
   const slip = getExitSlipById(params.id);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -33,7 +38,10 @@ export default function ExitSlipDetailsPage() {
   if (!slip) {
     return (
       <DashboardLayout role="warehouse" title="جزئیات حواله">
-        <EmptyState title="حواله خروج یافت نشد" description="شناسه حواله معتبر نیست یا وجود ندارد." />
+        <EmptyState
+          title="حواله خروج یافت نشد"
+          description="شناسه حواله معتبر نیست یا وجود ندارد."
+        />
       </DashboardLayout>
     );
   }
@@ -42,7 +50,10 @@ export default function ExitSlipDetailsPage() {
   if (!order) {
     return (
       <DashboardLayout role="warehouse" title="جزئیات حواله">
-        <EmptyState title="سفارش مرتبط یافت نشد" description="اطلاعات سفارش مرتبط با این حواله در دسترس نیست." />
+        <EmptyState
+          title="سفارش مرتبط یافت نشد"
+          description="اطلاعات سفارش مرتبط با این حواله در دسترس نیست."
+        />
       </DashboardLayout>
     );
   }
@@ -60,9 +71,19 @@ export default function ExitSlipDetailsPage() {
   const canConfirm = order.warehouseStatus === "dispatchIssued";
 
   const columns: DataTableColumn<SlipItemRow>[] = [
-    { key: "name", header: "قلم کالا", render: (row) => <span className="font-medium text-[#1F3A5F]">{row.name}</span> },
+    {
+      key: "name",
+      header: "قلم کالا",
+      render: (row) => (
+        <span className="font-medium text-[#1F3A5F]">{row.name}</span>
+      ),
+    },
     { key: "brand", header: "برند", render: (row) => row.brand },
-    { key: "qty", header: "تعداد", render: (row) => formatNumber(row.quantity) },
+    {
+      key: "qty",
+      header: "تعداد",
+      render: (row) => formatNumber(row.quantity),
+    },
   ];
 
   const onConfirmDelivery = () => {
@@ -86,14 +107,18 @@ export default function ExitSlipDetailsPage() {
         actions={
           <Link
             href="/warehouse/exit-slips"
-            className="rounded-[12px] border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
+            className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
           >
             بازگشت به لیست
           </Link>
         }
       />
 
-      {message ? <div className="rounded-[12px] border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm text-[#4D7D54]">{message}</div> : null}
+      {message ? (
+        <div className="rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm text-[#4D7D54]">
+          {message}
+        </div>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
@@ -111,14 +136,19 @@ export default function ExitSlipDetailsPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-[12px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
-            <h3 className="text-base font-semibold text-[#1F3A5F]">وضعیت فعلی سفارش</h3>
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            <h3 className="text-base font-semibold text-[#1F3A5F]">
+              وضعیت فعلی سفارش
+            </h3>
             <div className="mt-4">
               <WarehouseStatusBadge status={order.warehouseStatus} />
             </div>
           </div>
 
-          <DeliveryConfirmationCard disabled={!canConfirm} onConfirm={() => setConfirmOpen(true)} />
+          <DeliveryConfirmationCard
+            disabled={!canConfirm}
+            onConfirm={() => setConfirmOpen(true)}
+          />
         </div>
       </section>
 

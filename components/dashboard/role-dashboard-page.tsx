@@ -34,7 +34,7 @@ export function RoleDashboardPage({ role }: RoleDashboardPageProps) {
           {activities.map((activity) => (
             <li
               key={activity.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#E5E7EB] bg-[#FBFCFD] p-4"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] p-4"
             >
               <p className="text-sm text-[#374151]">{activity.text}</p>
               <span className="text-xs text-[#6B7280]">{activity.time}</span>

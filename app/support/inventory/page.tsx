@@ -9,13 +9,15 @@ import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { SectionHeader } from "@/components/shared/section-header";
 import type { Product, UpdateInventoryInput } from "@/lib/expert/types";
-import { formatNumber, getAvailableStock } from "@/lib/expert/utils";
+import { compareText, formatNumber, getAvailableStock } from "@/lib/expert/utils";
 
 export default function SupportInventoryPage() {
   const { products, updateInventory } = useExpertStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [modalChangeType, setModalChangeType] = useState<"increase" | "decrease">("increase");
+  const [modalChangeType, setModalChangeType] = useState<
+    "increase" | "decrease"
+  >("increase");
   const [message, setMessage] = useState("");
 
   const openModal = (product: Product, changeType: "increase" | "decrease") => {
@@ -24,14 +26,33 @@ export default function SupportInventoryPage() {
     setModalOpen(true);
   };
 
-  const rows = useMemo(() => [...products].sort((a, b) => a.name.localeCompare(b.name, "fa")), [products]);
+  const rows = useMemo(
+    () => [...products].sort((a, b) => compareText(a.name, b.name)),
+    [products],
+  );
 
   const columns: DataTableColumn<Product>[] = [
     { key: "name", header: "کالا", render: (row) => row.name },
-    { key: "total", header: "موجودی کل", render: (row) => formatNumber(row.totalStock) },
-    { key: "reserved", header: "موجودی رزروشده", render: (row) => formatNumber(row.reservedStock) },
-    { key: "available", header: "موجودی قابل استفاده", render: (row) => formatNumber(getAvailableStock(row)) },
-    { key: "status", header: "وضعیت", render: (row) => <ProductStatusBadge status={row.status} /> },
+    {
+      key: "total",
+      header: "موجودی کل",
+      render: (row) => formatNumber(row.totalStock),
+    },
+    {
+      key: "reserved",
+      header: "موجودی رزروشده",
+      render: (row) => formatNumber(row.reservedStock),
+    },
+    {
+      key: "available",
+      header: "موجودی قابل استفاده",
+      render: (row) => formatNumber(getAvailableStock(row)),
+    },
+    {
+      key: "status",
+      header: "وضعیت",
+      render: (row) => <ProductStatusBadge status={row.status} />,
+    },
     {
       key: "actions",
       header: "عملیات",
@@ -40,14 +61,14 @@ export default function SupportInventoryPage() {
           <button
             type="button"
             onClick={() => openModal(row, "increase")}
-            className="rounded-[12px] border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs text-white"
+            className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs text-white"
           >
             افزایش موجودی
           </button>
           <button
             type="button"
             onClick={() => openModal(row, "decrease")}
-            className="rounded-[12px] border border-[#B91C1C] bg-[#B91C1C] px-3 py-1.5 text-xs text-white"
+            className="rounded-xl border border-[#B91C1C] bg-[#B91C1C] px-3 py-1.5 text-xs text-white"
           >
             کاهش موجودی
           </button>
@@ -70,8 +91,15 @@ export default function SupportInventoryPage() {
 
   return (
     <DashboardLayout role="support" title="به روزرسانی موجودی">
-      <SectionHeader title="کنترل موجودی" description="افزایش یا کاهش کنترل شده موجودی کالاها" />
-      {message ? <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">{message}</div> : null}
+      <SectionHeader
+        title="کنترل موجودی"
+        description="افزایش یا کاهش کنترل شده موجودی کالاها"
+      />
+      {message ? (
+        <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">
+          {message}
+        </div>
+      ) : null}
       <DataTable columns={columns} rows={rows} rowKey={(row) => row.id} />
 
       <InventoryUpdateModal

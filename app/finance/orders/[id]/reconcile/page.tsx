@@ -11,12 +11,22 @@ import { ConfirmationModal } from "@/components/manager/confirmation-modal";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeader } from "@/components/shared/section-header";
-import { formatNumber, getOrderItemCount, getOrderTotalQuantity } from "@/lib/expert/utils";
+import {
+  formatNumber,
+  getOrderItemCount,
+  getOrderTotalQuantity,
+} from "@/lib/expert/utils";
 
 export default function FinanceReconciliationPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { getOrderById, getExitSlipByOrderId, getInvoiceByOrderId, getProductById, createInvoice } = useExpertStore();
+  const {
+    getOrderById,
+    getExitSlipByOrderId,
+    getInvoiceByOrderId,
+    getProductById,
+    createInvoice,
+  } = useExpertStore();
 
   const [message, setMessage] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -28,7 +38,9 @@ export default function FinanceReconciliationPage() {
   const productsById = useMemo(() => {
     if (!order) return {};
 
-    return order.items.reduce<Record<string, ReturnType<typeof getProductById>>>((accumulator, item) => {
+    return order.items.reduce<
+      Record<string, ReturnType<typeof getProductById>>
+    >((accumulator, item) => {
       accumulator[item.productId] = getProductById(item.productId);
       return accumulator;
     }, {});
@@ -37,7 +49,10 @@ export default function FinanceReconciliationPage() {
   if (!order) {
     return (
       <DashboardLayout role="finance" title="تطبیق سفارش و حواله">
-        <EmptyState title="سفارش یافت نشد" description="شناسه سفارش معتبر نیست یا در داده های نمونه وجود ندارد." />
+        <EmptyState
+          title="سفارش یافت نشد"
+          description="شناسه سفارش معتبر نیست یا در داده های نمونه وجود ندارد."
+        />
       </DashboardLayout>
     );
   }
@@ -45,18 +60,27 @@ export default function FinanceReconciliationPage() {
   if (!slip) {
     return (
       <DashboardLayout role="finance" title="تطبیق سفارش و حواله">
-        <EmptyState title="حواله خروج یافت نشد" description="بدون حواله خروج امکان تطبیق مالی و صدور فاکتور وجود ندارد." />
+        <EmptyState
+          title="حواله خروج یافت نشد"
+          description="بدون حواله خروج امکان تطبیق مالی و صدور فاکتور وجود ندارد."
+        />
       </DashboardLayout>
     );
   }
 
-  const canIssueInvoice = order.status === "approved" && order.warehouseStatus === "delivered" && !existingInvoice;
+  const canIssueInvoice =
+    order.status === "approved" &&
+    order.warehouseStatus === "delivered" &&
+    !existingInvoice;
   const disabledReason = existingInvoice
     ? "برای این سفارش فاکتور صادر شده است."
     : "صدور فاکتور فقط برای سفارش تاییدشده با تحویل تاییدشده ممکن است.";
 
   const handleIssueInvoice = () => {
-    const result = createInvoice({ orderId: order.id, createdBy: "مریم نادری" });
+    const result = createInvoice({
+      orderId: order.id,
+      createdBy: "مریم نادری",
+    });
 
     if (!result.ok || !result.invoice) {
       setMessage(result.error ?? "صدور فاکتور انجام نشد.");
@@ -75,34 +99,61 @@ export default function FinanceReconciliationPage() {
         title={`تطبیق مالی ${order.code}`}
         description="مقایسه اطلاعات سفارش و حواله خروج پیش از نهایی سازی مالی"
         actions={
-          <Link href="/finance/ready" className="rounded-[12px] border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]">
+          <Link
+            href="/finance/ready"
+            className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
+          >
             بازگشت به لیست
           </Link>
         }
       />
 
-      {message ? <div className="rounded-[12px] border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm text-[#4D7D54]">{message}</div> : null}
+      {message ? (
+        <div className="rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm text-[#4D7D54]">
+          {message}
+        </div>
+      ) : null}
 
-      <section className="rounded-[12px] border border-[#D6E4D8] bg-[#F7FBF8] p-4 text-sm text-[#35593B]">
-        این مرحله تایید می کند اقلام تحویل شده در فرآیند انبار، برای نهایی سازی مالی آماده هستند و با صدور فاکتور وضعیت سفارش به فاکتور شده تغییر می کند.
+      <section className="rounded-xl border border-[#D6E4D8] bg-[#F7FBF8] p-4 text-sm text-[#35593B]">
+        این مرحله تایید می کند اقلام تحویل شده در فرآیند انبار، برای نهایی سازی
+        مالی آماده هستند و با صدور فاکتور وضعیت سفارش به فاکتور شده تغییر می
+        کند.
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          <OrderVsSlipComparison order={order} slip={slip} productsById={productsById} />
+          <OrderVsSlipComparison
+            order={order}
+            slip={slip}
+            productsById={productsById}
+          />
 
-          <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
-            <h3 className="text-base font-semibold text-[#1F3A5F]">خلاصه تطبیق</h3>
+          <section className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            <h3 className="text-base font-semibold text-[#1F3A5F]">
+              خلاصه تطبیق
+            </h3>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <SummaryItem label="تعداد اقلام" value={formatNumber(getOrderItemCount(order.items))} />
-              <SummaryItem label="جمع تعداد" value={formatNumber(getOrderTotalQuantity(order.items))} />
-              <SummaryItem label="وضعیت فعلی سفارش" value={order.status === "approved" ? "تایید شده" : "فاکتور شده"} />
+              <SummaryItem
+                label="تعداد اقلام"
+                value={formatNumber(getOrderItemCount(order.items))}
+              />
+              <SummaryItem
+                label="جمع تعداد"
+                value={formatNumber(getOrderTotalQuantity(order.items))}
+              />
+              <SummaryItem
+                label="وضعیت فعلی سفارش"
+                value={order.status === "approved" ? "تایید شده" : "فاکتور شده"}
+              />
             </div>
           </section>
         </div>
 
         <div className="space-y-4">
-          <InvoiceSummaryCard invoice={existingInvoice} warehouseStatus={order.warehouseStatus} />
+          <InvoiceSummaryCard
+            invoice={existingInvoice}
+            warehouseStatus={order.warehouseStatus}
+          />
           <FinanceActionPanel
             disabled={!canIssueInvoice}
             disabledReason={disabledReason}
@@ -126,7 +177,7 @@ export default function FinanceReconciliationPage() {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] border border-[#E5E7EB] bg-[#FBFCFD] px-3 py-2">
+    <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-3 py-2">
       <p className="text-xs text-[#6B7280]">{label}</p>
       <p className="mt-1 text-sm font-semibold text-[#1F3A5F]">{value}</p>
     </div>

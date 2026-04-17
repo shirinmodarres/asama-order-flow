@@ -20,7 +20,10 @@ export default function SupportEditProductPage() {
   if (!product) {
     return (
       <DashboardLayout role="support" title="ویرایش کالا">
-        <EmptyState title="کالا یافت نشد" description="شناسه کالا معتبر نیست یا در لیست موجود نیست." />
+        <EmptyState
+          title="کالا یافت نشد"
+          description="شناسه کالا معتبر نیست یا در لیست موجود نیست."
+        />
       </DashboardLayout>
     );
   }
@@ -41,8 +44,15 @@ export default function SupportEditProductPage() {
 
   return (
     <DashboardLayout role="support" title="ویرایش کالا">
-      <SectionHeader title={`ویرایش ${product.name}`} description="اطلاعات پایه و وضعیت کالا را به روز کنید." />
-      {message ? <div className="rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">{message}</div> : null}
+      <SectionHeader
+        title={`ویرایش ${product.name}`}
+        description="اطلاعات پایه و وضعیت کالا را به روز کنید."
+      />
+      {message ? (
+        <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">
+          {message}
+        </div>
+      ) : null}
       <ProductForm
         mode="edit"
         initialValues={{

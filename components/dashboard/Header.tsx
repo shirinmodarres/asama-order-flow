@@ -14,7 +14,7 @@ export function Header({ title, role }: HeaderProps) {
   const router = useRouter();
 
   return (
-    <header className="h-16 rounded-[12px] border border-[#E5E7EB] border-b-[#E5E7EB] bg-white px-4 md:px-6">
+    <header className="h-16 rounded-xl border border-[#E5E7EB] border-b-[#E5E7EB] bg-white px-4 md:px-6">
       <div className="flex h-full items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="inline-flex h-9 w-[108px] items-center justify-center  bg-white px-2">
@@ -34,7 +34,7 @@ export function Header({ title, role }: HeaderProps) {
         </h1>
 
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="flex items-center gap-2 rounded-[12px] border border-[#E5E7EB] bg-white px-2.5 py-1.5 transition-colors hover:border-[#CAD2DC]">
+          <div className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-2.5 py-1.5 transition-colors hover:border-[#CAD2DC]">
             <select
               aria-label="انتخاب نقش"
               value={role}
@@ -57,7 +57,7 @@ export function Header({ title, role }: HeaderProps) {
           <button
             type="button"
             aria-label="اعلان ها"
-            className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-[12px] border border-[#E5E7EB] bg-white text-[#1F3A5F] transition-colors hover:border-[#CAD2DC] hover:bg-[#F8FAFC]"
+            className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#1F3A5F] transition-colors hover:border-[#CAD2DC] hover:bg-[#F8FAFC]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -77,7 +77,7 @@ export function Header({ title, role }: HeaderProps) {
 
           <button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-2 rounded-[12px] border border-[#E5E7EB] bg-white px-2.5 py-1.5 text-right transition-colors hover:border-[#CAD2DC]"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-2.5 py-1.5 text-right transition-colors hover:border-[#CAD2DC]"
           >
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#1F3A5F] text-[11px] font-semibold text-white">
               ع

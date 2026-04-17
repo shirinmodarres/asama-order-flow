@@ -25,7 +25,9 @@ export default function FinanceInvoicesPage() {
 
   const rows = useMemo<InvoiceRow[]>(() => {
     return [...invoices]
-      .sort((a, b) => Number(new Date(b.issuedAt)) - Number(new Date(a.issuedAt)))
+      .sort(
+        (a, b) => Number(new Date(b.issuedAt)) - Number(new Date(a.issuedAt)),
+      )
       .map((invoice) => {
         const order = getOrderById(invoice.orderId);
         return {
@@ -47,16 +49,35 @@ export default function FinanceInvoicesPage() {
   }, [invoices, getOrderById, search]);
 
   const columns: DataTableColumn<InvoiceRow>[] = [
-    { key: "invoiceNumber", header: "شماره فاکتور", render: (row) => <span className="font-semibold text-[#1F3A5F]">{row.invoice.invoiceNumber}</span> },
+    {
+      key: "invoiceNumber",
+      header: "شماره فاکتور",
+      render: (row) => (
+        <span className="font-semibold text-[#1F3A5F]">
+          {row.invoice.invoiceNumber}
+        </span>
+      ),
+    },
     { key: "orderCode", header: "کد سفارش", render: (row) => row.orderCode },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
-    { key: "issuedAt", header: "تاریخ صدور", render: (row) => formatDateTime(row.invoice.issuedAt) },
-    { key: "status", header: "وضعیت", render: (row) => <InvoiceStatusBadge status={row.invoice.status} /> },
+    {
+      key: "issuedAt",
+      header: "تاریخ صدور",
+      render: (row) => formatDateTime(row.invoice.issuedAt),
+    },
+    {
+      key: "status",
+      header: "وضعیت",
+      render: (row) => <InvoiceStatusBadge status={row.invoice.status} />,
+    },
     {
       key: "actions",
       header: "عملیات",
       render: (row) => (
-        <Link href={`/finance/invoices/${row.invoice.id}`} className="btn-primary rounded-[12px] px-3 py-1.5 text-xs font-medium text-white visited:text-white hover:text-white focus:text-white">
+        <Link
+          href={`/finance/invoices/${row.invoice.id}`}
+          className="btn-primary rounded-xl px-3 py-1.5 text-xs font-medium text-white visited:text-white hover:text-white focus:text-white"
+        >
           مشاهده فاکتور
         </Link>
       ),
@@ -65,21 +86,27 @@ export default function FinanceInvoicesPage() {
 
   return (
     <DashboardLayout role="finance" title="فاکتورها">
-      <SectionHeader title="فاکتورهای صادرشده" description="لیست فاکتورهای داخلی صادرشده برای سفارش های تکمیل شده" />
+      <SectionHeader
+        title="فاکتورهای صادرشده"
+        description="لیست فاکتورهای داخلی صادرشده برای سفارش های تکمیل شده"
+      />
 
-      <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="جستجو بر اساس شماره فاکتور، کد سفارش یا ثبت کننده"
-          className="w-full rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+          className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
         />
       </section>
 
       {rows.length > 0 ? (
         <InvoiceTable columns={columns} rows={rows} rowKey={(row) => row.id} />
       ) : (
-        <EmptyState title="فاکتوری یافت نشد" description="هنوز فاکتوری صادر نشده یا عبارت جستجو نتیجه ای ندارد." />
+        <EmptyState
+          title="فاکتوری یافت نشد"
+          description="هنوز فاکتوری صادر نشده یا عبارت جستجو نتیجه ای ندارد."
+        />
       )}
     </DashboardLayout>
   );

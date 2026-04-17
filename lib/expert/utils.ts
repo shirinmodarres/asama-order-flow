@@ -1,5 +1,17 @@
 import type { ExpertOrder, OrderItem, Product } from "@/lib/expert/types";
 
+const textCollator = (() => {
+  try {
+    return new Intl.Collator("fa", { sensitivity: "base", numeric: true });
+  } catch {
+    try {
+      return new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+    } catch {
+      return null;
+    }
+  }
+})();
+
 export function formatNumber(value: number): string {
   return value.toLocaleString("fa-IR");
 }
@@ -42,4 +54,15 @@ export function mergeOrderItems(items: OrderItem[]): OrderItem[] {
   }
 
   return Array.from(map.entries()).map(([productId, quantity]) => ({ productId, quantity }));
+}
+
+export function compareText(a: string, b: string): number {
+  if (textCollator) return textCollator.compare(a, b);
+
+  try {
+    return a.localeCompare(b);
+  } catch {
+    if (a === b) return 0;
+    return a > b ? 1 : -1;
+  }
 }

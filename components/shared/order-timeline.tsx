@@ -10,19 +10,26 @@ export function OrderTimeline({ status }: OrderTimelineProps) {
     { key: "pending", label: "در انتظار تایید", done: true },
     {
       key: "approved",
-      label: status === "cancelled" ? "لغو شده" : status === "invoiced" ? "فاکتور شده" : "تایید نهایی",
+      label:
+        status === "cancelled"
+          ? "لغو شده"
+          : status === "invoiced"
+            ? "فاکتور شده"
+            : "تایید نهایی",
       done: status !== "pending",
     },
   ];
 
   return (
-    <div className="rounded-[12px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
-      <h3 className="text-base font-semibold text-[#1F3A5F]">روند وضعیت سفارش</h3>
+    <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+      <h3 className="text-base font-semibold text-[#1F3A5F]">
+        روند وضعیت سفارش
+      </h3>
       <div className="mt-5 flex flex-wrap items-center gap-3">
         {steps.map((step, index) => (
           <div key={step.key} className="flex items-center gap-3">
             <div
-              className={`rounded-[12px] border px-3 py-2 text-xs font-medium ${
+              className={`rounded-xl border px-3 py-2 text-xs font-medium ${
                 step.done
                   ? "border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]"
                   : "border-[#E5E7EB] bg-white text-[#6B7280]"
@@ -30,7 +37,9 @@ export function OrderTimeline({ status }: OrderTimelineProps) {
             >
               {step.label}
             </div>
-            {index < steps.length - 1 ? <span className="text-[#CBD5E1]">/</span> : null}
+            {index < steps.length - 1 ? (
+              <span className="text-[#CBD5E1]">/</span>
+            ) : null}
           </div>
         ))}
       </div>

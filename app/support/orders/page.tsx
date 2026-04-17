@@ -17,22 +17,44 @@ export default function SupportOrdersPage() {
 
   const filteredOrders = useMemo(() => {
     return [...orders]
-      .sort((a, b) => Number(new Date(b.updatedAt)) - Number(new Date(a.updatedAt)))
-      .filter((order) => order.code.toLowerCase().includes(search.toLowerCase()) || order.createdBy.toLowerCase().includes(search.toLowerCase()));
+      .sort(
+        (a, b) => Number(new Date(b.updatedAt)) - Number(new Date(a.updatedAt)),
+      )
+      .filter(
+        (order) =>
+          order.code.toLowerCase().includes(search.toLowerCase()) ||
+          order.createdBy.toLowerCase().includes(search.toLowerCase()),
+      );
   }, [orders, search]);
 
   const columns: DataTableColumn<ExpertOrder>[] = [
-    { key: "code", header: "کد سفارش", render: (row) => <span className="font-semibold text-[#1F3A5F]">{row.code}</span> },
+    {
+      key: "code",
+      header: "کد سفارش",
+      render: (row) => (
+        <span className="font-semibold text-[#1F3A5F]">{row.code}</span>
+      ),
+    },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
-    { key: "status", header: "وضعیت سفارش", render: (row) => <StatusBadge type="order" status={row.status} /> },
-    { key: "warehouse", header: "وضعیت انبار", render: (row) => <StatusBadge type="warehouse" status={row.warehouseStatus} /> },
+    {
+      key: "status",
+      header: "وضعیت سفارش",
+      render: (row) => <StatusBadge type="order" status={row.status} />,
+    },
+    {
+      key: "warehouse",
+      header: "وضعیت انبار",
+      render: (row) => (
+        <StatusBadge type="warehouse" status={row.warehouseStatus} />
+      ),
+    },
     {
       key: "actions",
       header: "عملیات",
       render: (row) => (
         <Link
           href={`/support/orders/${row.id}/edit`}
-          className="rounded-[12px] border border-[#F59E0B] bg-[#FFFBEB] px-3 py-1.5 text-xs text-[#92400E]"
+          className="rounded-xl border border-[#F59E0B] bg-[#FFFBEB] px-3 py-1.5 text-xs text-[#92400E]"
         >
           ویرایش ویژه
         </Link>
@@ -42,21 +64,31 @@ export default function SupportOrdersPage() {
 
   return (
     <DashboardLayout role="support" title="ویرایش سفارش">
-      <SectionHeader title="ویرایش ویژه سفارش ها" description="ابزار اضطراری پشتیبانی برای اصلاح سفارش خارج از مسیر معمول" />
+      <SectionHeader
+        title="ویرایش ویژه سفارش ها"
+        description="ابزار اضطراری پشتیبانی برای اصلاح سفارش خارج از مسیر معمول"
+      />
 
-      <section className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="جستجو بر اساس کد سفارش یا ثبت کننده"
-          className="w-full rounded-[12px] border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
+          className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
         />
       </section>
 
       {filteredOrders.length > 0 ? (
-        <DataTable columns={columns} rows={filteredOrders} rowKey={(row) => row.id} />
+        <DataTable
+          columns={columns}
+          rows={filteredOrders}
+          rowKey={(row) => row.id}
+        />
       ) : (
-        <EmptyState title="سفارشی یافت نشد" description="عبارت جستجو را تغییر دهید." />
+        <EmptyState
+          title="سفارشی یافت نشد"
+          description="عبارت جستجو را تغییر دهید."
+        />
       )}
     </DashboardLayout>
   );

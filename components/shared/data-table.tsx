@@ -15,13 +15,16 @@ interface DataTableProps<T> {
 
 export function DataTable<T>({ columns, rows, rowKey }: DataTableProps<T>) {
   return (
-    <div className="overflow-hidden rounded-[12px] border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+    <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
       <div className="overflow-x-auto">
         <table className="min-w-full text-right">
           <thead className="bg-[#F8FAFC]">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} className={`px-5 py-3 text-xs font-semibold text-[#475569] ${column.className ?? ""}`}>
+                <th
+                  key={column.key}
+                  className={`px-5 py-3 text-xs font-semibold text-[#475569] ${column.className ?? ""}`}
+                >
                   {column.header}
                 </th>
               ))}
@@ -29,9 +32,15 @@ export function DataTable<T>({ columns, rows, rowKey }: DataTableProps<T>) {
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={rowKey(row)} className={`border-t border-[#E5E7EB] transition-colors hover:bg-[#F8FAFC] ${index % 2 === 1 ? "bg-[#FCFDFE]" : ""}`}>
+              <tr
+                key={rowKey(row)}
+                className={`border-t border-[#E5E7EB] transition-colors hover:bg-[#F8FAFC] ${index % 2 === 1 ? "bg-[#FCFDFE]" : ""}`}
+              >
                 {columns.map((column) => (
-                  <td key={column.key} className={`px-5 py-4 align-middle text-sm text-[#334155] ${column.className ?? ""}`}>
+                  <td
+                    key={column.key}
+                    className={`px-5 py-4 align-middle text-sm text-[#334155] ${column.className ?? ""}`}
+                  >
                     {column.render(row)}
                   </td>
                 ))}
