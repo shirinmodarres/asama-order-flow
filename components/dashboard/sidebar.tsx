@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { SidebarItem } from "@/lib/types";
 
 interface SidebarProps {
@@ -11,10 +11,7 @@ interface SidebarProps {
 
 export function Sidebar({ roleTitle, items }: SidebarProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const query = searchParams.toString();
-  const currentPath = query ? `${pathname}?${query}` : pathname;
-  const activeHref = getActiveItemHref(items, pathname, currentPath);
+  const activeHref = getActiveItemHref(items, pathname);
 
   return (
     <aside className="h-full w-full max-w-[292px] border-l border-[#E5E7EB] bg-[#F8FAFC] p-5">
@@ -59,22 +56,16 @@ export function Sidebar({ roleTitle, items }: SidebarProps) {
 function isSidebarItemActive(
   itemHref: string,
   pathname: string,
-  currentPath: string,
 ): boolean {
-  if (itemHref.includes("?")) {
-    return itemHref === currentPath;
-  }
-
   return pathname === itemHref || pathname.startsWith(`${itemHref}/`);
 }
 
 function getActiveItemHref(
   items: SidebarItem[],
   pathname: string,
-  currentPath: string,
 ): string | null {
   const matches = items.filter((item) =>
-    isSidebarItemActive(item.href, pathname, currentPath),
+    isSidebarItemActive(item.href, pathname),
   );
 
   if (matches.length === 0) {
