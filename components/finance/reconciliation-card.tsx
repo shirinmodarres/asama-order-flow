@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Card } from "@/components/ui/card";
 
 interface ReconciliationCardProps {
   title: string;
@@ -12,12 +13,12 @@ export function ReconciliationCard({
   children,
 }: ReconciliationCardProps) {
   return (
-    <section className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
-      <h3 className="text-base font-semibold text-[#1F3A5F]">{title}</h3>
+    <Card className="p-5">
+      <h3 className="text-base font-semibold text-[#102034]">{title}</h3>
       {subtitle ? (
-        <p className="mt-1 text-sm text-[#6B7280]">{subtitle}</p>
+        <p className="mt-1 text-sm leading-7 text-[#6B7280]">{subtitle}</p>
       ) : null}
       <div className="mt-4">{children}</div>
-    </section>
+    </Card>
   );
 }

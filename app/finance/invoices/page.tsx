@@ -1,22 +1,24 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { InvoiceStatusBadge } from "@/components/finance/invoice-status-badge";
 import { InvoiceTable } from "@/components/finance/invoice-table";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
+import { Input } from "@/components/ui/input";
 import type { Invoice } from "@/lib/expert/types";
 import { formatDateTime } from "@/lib/expert/utils";
+import { Search } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 interface InvoiceRow {
   id: string;
   invoice: Invoice;
   orderCode: string;
   createdBy: string;
+  customerName: string;
 }
 
 export default function FinanceInvoicesPage() {
@@ -35,6 +37,7 @@ export default function FinanceInvoicesPage() {
           invoice,
           orderCode: order?.code ?? "-",
           createdBy: order?.createdBy ?? "-",
+          customerName: order?.customerName ?? "-",
         };
       })
       .filter((row) => {
@@ -43,7 +46,8 @@ export default function FinanceInvoicesPage() {
         return (
           row.invoice.invoiceNumber.toLowerCase().includes(query) ||
           row.orderCode.toLowerCase().includes(query) ||
-          row.createdBy.toLowerCase().includes(query)
+          row.createdBy.toLowerCase().includes(query) ||
+          row.customerName.toLowerCase().includes(query)
         );
       });
   }, [invoices, getOrderById, search]);
@@ -60,6 +64,7 @@ export default function FinanceInvoicesPage() {
     },
     { key: "orderCode", header: "کد سفارش", render: (row) => row.orderCode },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
+    { key: "customer", header: "مشتری", render: (row) => row.customerName },
     {
       key: "issuedAt",
       header: "تاریخ صدور",
@@ -86,18 +91,16 @@ export default function FinanceInvoicesPage() {
 
   return (
     <DashboardLayout role="finance" title="فاکتورها">
-      <SectionHeader
-        title="فاکتورهای صادرشده"
-        description="لیست فاکتورهای داخلی صادرشده برای سفارش های تکمیل شده"
-      />
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="جستجو بر اساس شماره فاکتور، کد سفارش یا ثبت کننده"
-          className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-        />
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="جستجو بر اساس شماره فاکتور، کد سفارش، مشتری یا ثبت کننده"
+            className="pr-10"
+          />
+        </div>
       </section>
 
       {rows.length > 0 ? (

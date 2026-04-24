@@ -1,5 +1,6 @@
 "use client";
 
+import { CalendarDays, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
@@ -9,6 +10,7 @@ import type { DataTableColumn } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Input } from "@/components/ui/input";
 import type { ExpertOrder } from "@/lib/expert/types";
 import { formatDateTime, formatNumber } from "@/lib/expert/utils";
 
@@ -49,6 +51,7 @@ export default function FinanceReadyPage() {
           query.length === 0 ||
           row.order.code.toLowerCase().includes(query) ||
           row.order.createdBy.toLowerCase().includes(query) ||
+          row.order.customerName.toLowerCase().includes(query) ||
           row.slipNumber.toLowerCase().includes(query);
 
         const deliveredDate = row.deliveredAt
@@ -78,6 +81,11 @@ export default function FinanceReadyPage() {
       key: "createdBy",
       header: "ثبت کننده",
       render: (row) => row.order.createdBy,
+    },
+    {
+      key: "customer",
+      header: "مشتری",
+      render: (row) => row.order.customerName,
     },
     {
       key: "deliveryDate",
@@ -120,34 +128,28 @@ export default function FinanceReadyPage() {
 
   return (
     <DashboardLayout role="finance" title="آماده فاکتور">
-      <SectionHeader
-        title="سفارش های آماده صدور فاکتور"
-        description="فقط سفارش های تاییدشده با تحویل تاییدشده نمایش داده می شوند."
-      />
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو بر اساس کد سفارش، ثبت کننده یا شماره حواله"
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          />
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="جستجو بر اساس کد سفارش، مشتری، ثبت کننده یا شماره حواله"
+              className="pr-10"
+            />
+          </div>
 
-          <input
-            type="date"
-            value={deliveredDateFilter}
-            onChange={(event) => setDeliveredDateFilter(event.target.value)}
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          />
+          <div className="relative">
+            <CalendarDays className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <Input
+              type="date"
+              value={deliveredDateFilter}
+              onChange={(event) => setDeliveredDateFilter(event.target.value)}
+              className="pr-10"
+            />
+          </div>
         </div>
-      </section>
-
-      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 text-sm text-[#6B7280] shadow-sm">
-        <p>{`تعداد سفارش آماده فاکتور: ${formatNumber(rows.length)}`}</p>
-        <p className="mt-1 text-xs">
-          مرحله مالی پس از تطبیق سفارش و حواله انجام می شود.
-        </p>
       </section>
 
       {rows.length > 0 ? (

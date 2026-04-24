@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import { ReceiptText } from "lucide-react";
 import { InvoiceStatusBadge } from "@/components/finance/invoice-status-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Card } from "@/components/ui/card";
 import type { Invoice, WarehouseStatus } from "@/lib/expert/types";
 import {
   formatDateTime,
@@ -19,11 +21,21 @@ export function InvoiceSummaryCard({
   warehouseStatus,
 }: InvoiceSummaryCardProps) {
   return (
-    <section className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
-      <h3 className="text-base font-semibold text-[#1F3A5F]">خلاصه مالی</h3>
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-base font-semibold text-[#102034]">خلاصه مالی</h3>
+          <p className="mt-1 text-sm text-[#6B7280]">
+            نمای سریع از وضعیت مالی این سفارش
+          </p>
+        </div>
+        <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DDE7F0] bg-[#F5F8FB] text-[#1F3A5F]">
+          <ReceiptText className="size-5" />
+        </span>
+      </div>
 
       {invoice ? (
-        <div className="mt-4 space-y-3 text-sm">
+        <div className="mt-5 space-y-3 text-sm">
           <Row label="شماره فاکتور" value={invoice.invoiceNumber} />
           <Row label="تاریخ صدور" value={formatDateTime(invoice.issuedAt)} />
           <Row
@@ -44,19 +56,19 @@ export function InvoiceSummaryCard({
           />
         </div>
       ) : (
-        <p className="mt-3 text-sm text-[#6B7280]">
+        <p className="mt-4 rounded-[16px] border border-[#E7EDF3] bg-[#FBFCFD] px-4 py-3 text-sm leading-7 text-[#6B7280]">
           فاکتور برای این سفارش هنوز صادر نشده است.
         </p>
       )}
-    </section>
+    </Card>
   );
 }
 
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-[16px] border border-[#E8EEF4] bg-[#FBFCFD] px-3.5 py-3">
       <span className="text-[#6B7280]">{label}</span>
-      <span className="font-medium text-[#1F3A5F]">{value}</span>
+      <span className="font-medium text-[#102034]">{value}</span>
     </div>
   );
 }

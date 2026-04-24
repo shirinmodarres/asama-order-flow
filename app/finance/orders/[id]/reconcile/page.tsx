@@ -12,8 +12,10 @@ import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeader } from "@/components/shared/section-header";
 import {
+  formatCurrency,
   formatNumber,
   getOrderItemCount,
+  getOrderTotalAmount,
   getOrderTotalQuantity,
 } from "@/lib/expert/utils";
 
@@ -45,6 +47,9 @@ export default function FinanceReconciliationPage() {
       return accumulator;
     }, {});
   }, [order, getProductById]);
+  const totalAmount = order
+    ? getOrderTotalAmount(order.items, productsById)
+    : 0;
 
   if (!order) {
     return (
@@ -140,6 +145,10 @@ export default function FinanceReconciliationPage() {
               <SummaryItem
                 label="جمع تعداد"
                 value={formatNumber(getOrderTotalQuantity(order.items))}
+              />
+              <SummaryItem
+                label="جمع مبلغ"
+                value={formatCurrency(totalAmount)}
               />
               <SummaryItem
                 label="وضعیت فعلی سفارش"

@@ -3,9 +3,11 @@ import { ReconciliationCard } from "@/components/finance/reconciliation-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import type { ExitSlip, ExpertOrder, Product } from "@/lib/expert/types";
 import {
+  formatCurrency,
   formatDate,
   formatDateTime,
   formatNumber,
+  getOrderLineTotal,
   getOrderItemCount,
   getOrderTotalQuantity,
 } from "@/lib/expert/utils";
@@ -29,6 +31,7 @@ export function OrderVsSlipComparison({
       >
         <dl className="grid gap-3 sm:grid-cols-2">
           <InfoItem label="کد سفارش" value={order.code} />
+          <InfoItem label="مشتری" value={order.customerName} />
           <InfoItem label="ثبت کننده" value={order.createdBy} />
           <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
           <InfoItem
@@ -56,10 +59,16 @@ export function OrderVsSlipComparison({
               className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-3 py-2 text-sm"
             >
               <span className="text-[#334155]">
-                {productsById[item.productId]?.name ?? "کالای نامشخص"}
+                {(productsById[item.productId]?.name ?? "کالای نامشخص") +
+                  ` • ${productsById[item.productId]?.unit ?? "-"}`}
               </span>
-              <span className="font-medium text-[#1F3A5F]">
-                {formatNumber(item.quantity)}
+              <span className="text-left font-medium text-[#1F3A5F]">
+                {`${formatNumber(item.quantity)} | ${formatCurrency(
+                  getOrderLineTotal(
+                    item.quantity,
+                    productsById[item.productId]?.unitPrice ?? 0,
+                  ),
+                )}`}
               </span>
             </li>
           ))}

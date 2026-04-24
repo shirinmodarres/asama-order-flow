@@ -12,12 +12,20 @@ import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { formatDate, formatDateTime, formatNumber } from "@/lib/expert/utils";
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  getOrderLineTotal,
+} from "@/lib/expert/utils";
 
 interface InvoiceItemRow {
   id: string;
   name: string;
   brand: string;
+  unit: string;
+  unitPrice: number;
   quantity: number;
 }
 
@@ -58,6 +66,8 @@ export default function FinanceInvoiceDetailsPage() {
       id: item.productId,
       name: product?.name ?? "کالای نامشخص",
       brand: product?.brand ?? "-",
+      unit: product?.unit ?? "-",
+      unitPrice: product?.unitPrice ?? 0,
       quantity: item.quantity,
     };
   });
@@ -71,10 +81,21 @@ export default function FinanceInvoiceDetailsPage() {
       ),
     },
     { key: "brand", header: "برند", render: (row) => row.brand },
+    { key: "unit", header: "واحد", render: (row) => row.unit },
+    {
+      key: "unitPrice",
+      header: "قیمت واحد",
+      render: (row) => formatCurrency(row.unitPrice),
+    },
     {
       key: "quantity",
       header: "تعداد",
       render: (row) => formatNumber(row.quantity),
+    },
+    {
+      key: "lineTotal",
+      header: "مبلغ",
+      render: (row) => formatCurrency(getOrderLineTotal(row.quantity, row.unitPrice)),
     },
   ];
 
@@ -108,6 +129,7 @@ export default function FinanceInvoiceDetailsPage() {
 
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <InfoItem label="کد سفارش مرتبط" value={order.code} />
+              <InfoItem label="مشتری" value={order.customerName} />
               <InfoItem label="شماره حواله خروج" value={slip.slipNumber} />
               <InfoItem label="ثبت کننده سفارش" value={order.createdBy} />
               <InfoItem label="مسئول صدور فاکتور" value={invoice.createdBy} />

@@ -1,6 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import type {
   CreateProductInput,
   UpdateProductInput,
@@ -22,6 +33,8 @@ interface EditModeProps extends BaseProps {
     name: string;
     brand: string;
     category: string;
+    unit: string;
+    unitPrice: number;
     description?: string;
     status: "active" | "inactive";
   };
@@ -43,6 +56,12 @@ export function ProductForm(props: ProductFormProps) {
   const [description, setDescription] = useState(
     props.mode === "edit" ? (props.initialValues.description ?? "") : "",
   );
+  const [unit, setUnit] = useState(
+    props.mode === "edit" ? props.initialValues.unit : "دستگاه",
+  );
+  const [unitPrice, setUnitPrice] = useState(
+    props.mode === "edit" ? props.initialValues.unitPrice : 0,
+  );
   const [initialStock, setInitialStock] = useState(0);
   const [status, setStatus] = useState<"active" | "inactive">(
     props.mode === "edit" ? props.initialValues.status : "active",
@@ -54,7 +73,15 @@ export function ProductForm(props: ProductFormProps) {
         event.preventDefault();
 
         if (props.mode === "create") {
-          props.onSubmit({ name, brand, category, initialStock, description });
+          props.onSubmit({
+            name,
+            brand,
+            category,
+            unit,
+            unitPrice,
+            initialStock,
+            description,
+          });
           return;
         }
 
@@ -63,75 +90,86 @@ export function ProductForm(props: ProductFormProps) {
           name,
           brand,
           category,
+          unit,
+          unitPrice,
           description,
           status,
         });
       }}
-      className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm"
+      className="contents"
     >
-      <div className="grid gap-3 md:grid-cols-2">
-        <Input label="نام کالا" value={name} onChange={setName} />
-        <Input label="برند" value={brand} onChange={setBrand} />
-        <Input label="دسته بندی" value={category} onChange={setCategory} />
-
-        {props.mode === "create" ? (
-          <label className="grid gap-1 text-sm text-[#334155]">
-            <span>موجودی اولیه</span>
-            <input
+      <Card className="p-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          <InputField label="نام کالا" value={name} onChange={setName} />
+          <InputField label="برند" value={brand} onChange={setBrand} />
+          <InputField label="دسته بندی" value={category} onChange={setCategory} />
+          <InputField label="واحد فروش" value={unit} onChange={setUnit} />
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>قیمت واحد</span>
+            <Input
               type="number"
               min={0}
-              value={initialStock}
-              onChange={(event) => setInitialStock(Number(event.target.value))}
-              className="rounded-xl border border-[#E5E7EB] px-3 py-2 outline-none focus:border-[#1F3A5F]"
+              value={unitPrice}
+              onChange={(event) => setUnitPrice(Number(event.target.value))}
               required
             />
           </label>
-        ) : (
-          <label className="grid gap-1 text-sm text-[#334155]">
-            <span>وضعیت</span>
-            <select
-              value={status}
-              onChange={(event) =>
-                setStatus(event.target.value as "active" | "inactive")
-              }
-              className="rounded-xl border border-[#E5E7EB] px-3 py-2 outline-none focus:border-[#1F3A5F]"
-            >
-              <option value="active">فعال</option>
-              <option value="inactive">غیرفعال</option>
-            </select>
-          </label>
-        )}
-      </div>
 
-      <label className="mt-3 grid gap-1 text-sm text-[#334155]">
-        <span>توضیحات کوتاه</span>
-        <textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          className="min-h-24 rounded-xl border border-[#E5E7EB] px-3 py-2 outline-none focus:border-[#1F3A5F]"
-        />
-      </label>
+          {props.mode === "create" ? (
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>موجودی اولیه</span>
+              <Input
+                type="number"
+                min={0}
+                value={initialStock}
+                onChange={(event) => setInitialStock(Number(event.target.value))}
+                required
+              />
+            </label>
+          ) : (
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>وضعیت</span>
+              <Select
+                value={status}
+                onValueChange={(value) =>
+                  setStatus(value as "active" | "inactive")
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="وضعیت کالا" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">فعال</SelectItem>
+                  <SelectItem value="inactive">غیرفعال</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+          )}
+        </div>
 
-      <div className="mt-4 flex gap-2">
-        <button
-          type="submit"
-          className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm text-white"
-        >
-          {props.mode === "create" ? "ثبت کالا" : "ذخیره تغییرات"}
-        </button>
-        <button
-          type="button"
-          onClick={props.onCancel}
-          className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155]"
-        >
-          انصراف
-        </button>
-      </div>
+        <label className="mt-4 grid gap-2 text-sm font-medium text-[#334155]">
+          <span>توضیحات کوتاه</span>
+          <Textarea
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            className="min-h-28"
+          />
+        </label>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Button type="submit">
+            {props.mode === "create" ? "ثبت کالا" : "ذخیره تغییرات"}
+          </Button>
+          <Button type="button" variant="outline" onClick={props.onCancel}>
+            انصراف
+          </Button>
+        </div>
+      </Card>
     </form>
   );
 }
 
-function Input({
+function InputField({
   label,
   value,
   onChange,
@@ -141,13 +179,12 @@ function Input({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-1 text-sm text-[#334155]">
+    <label className="grid gap-2 text-sm font-medium text-[#334155]">
       <span>{label}</span>
-      <input
+      <Input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required
-        className="rounded-xl border border-[#E5E7EB] px-3 py-2 outline-none focus:border-[#1F3A5F]"
       />
     </label>
   );

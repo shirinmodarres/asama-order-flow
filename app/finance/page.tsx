@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
-import { SectionHeader } from "@/components/shared/section-header";
+import { ActionLinkCard } from "@/components/shared/action-link-card";
 
 export default function FinancePage() {
   const { orders, invoices, exitSlips } = useExpertStore();
@@ -27,11 +26,6 @@ export default function FinancePage() {
 
   return (
     <DashboardLayout role="finance" title="داشبورد حسابداری">
-      <SectionHeader
-        title="نمای مالی و صدور فاکتور"
-        description="پایش سفارش های آماده فاکتور و نهایی سازی مالی بر اساس تحویل تاییدشده"
-      />
-
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <ManagerSummaryCard
           title="سفارش های آماده فاکتور"
@@ -51,39 +45,24 @@ export default function FinancePage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Link
+        <ActionLinkCard
           href="/finance/ready"
-          className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:border-[#CBD5E1]"
-        >
-          <h3 className="text-base font-semibold text-[#1F3A5F]">
-            مشاهده سفارش های آماده فاکتور
-          </h3>
-          <p className="mt-2 text-sm text-[#6B7280]">
-            صف سفارش هایی که آماده بررسی و صدور فاکتور هستند
-          </p>
-        </Link>
-
-        <Link
+          icon="layers"
+          title="مشاهده سفارش های آماده فاکتور"
+          description="صف سفارش هایی که آماده بررسی و صدور فاکتور اند"
+        />
+        <ActionLinkCard
           href="/finance/ready"
-          className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:border-[#CBD5E1]"
-        >
-          <h3 className="text-base font-semibold text-[#1F3A5F]">
-            بررسی تطبیق سفارش و حواله
-          </h3>
-          <p className="mt-2 text-sm text-[#6B7280]">{`تعداد ${reconciliableCount.toLocaleString("fa-IR")} سفارش قابل تطبیق`}</p>
-        </Link>
-
-        <Link
+          icon="file-check"
+          title="بررسی تطبیق سفارش و حواله"
+          description={`تعداد ${reconciliableCount.toLocaleString("fa-IR")} سفارش قابل تطبیق`}
+        />
+        <ActionLinkCard
           href="/finance/invoices"
-          className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:border-[#CBD5E1]"
-        >
-          <h3 className="text-base font-semibold text-[#1F3A5F]">
-            مشاهده فاکتورها
-          </h3>
-          <p className="mt-2 text-sm text-[#6B7280]">
-            دسترسی به لیست و جزئیات فاکتورهای صادرشده
-          </p>
-        </Link>
+          icon="file-text"
+          title="مشاهده فاکتورها"
+          description="دسترسی به لیست و جزئیات فاکتورهای صادرشده"
+        />
       </section>
     </DashboardLayout>
   );
