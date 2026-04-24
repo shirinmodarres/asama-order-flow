@@ -1,17 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { WarehouseStatusBadge } from "@/components/warehouse/warehouse-status-badge";
 import type { ExpertOrder } from "@/lib/expert/types";
 import { formatDate } from "@/lib/expert/utils";
+import Link from "next/link";
+import { useMemo } from "react";
 
 interface DeliveredRow {
   order: ExpertOrder;
@@ -91,11 +90,6 @@ export default function WarehouseDeliveredPage() {
 
   return (
     <DashboardLayout role="warehouse" title="سفارش های تحویل شده">
-      <SectionHeader
-        title="تحویل های نهایی شده"
-        description="سفارش هایی که تحویل به مشتری برای آن ها تایید شده است"
-      />
-
       {rows.length > 0 ? (
         <DataTable
           columns={columns}

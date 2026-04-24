@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { WarehouseStatusBadge } from "@/components/warehouse/warehouse-status-badge";
 import type { ExpertOrder } from "@/lib/expert/types";
 import {
@@ -16,6 +15,9 @@ import {
   formatNumber,
   getOrderItemCount,
 } from "@/lib/expert/utils";
+import { Search, Tags } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 export default function WarehouseOrdersPage() {
   const { orders, getProductById } = useExpertStore();
@@ -44,7 +46,8 @@ export default function WarehouseOrdersPage() {
       .filter((order) => {
         const matchesSearch =
           order.code.toLowerCase().includes(search.toLowerCase()) ||
-          order.createdBy.toLowerCase().includes(search.toLowerCase());
+          order.createdBy.toLowerCase().includes(search.toLowerCase()) ||
+          order.customerName.toLowerCase().includes(search.toLowerCase());
 
         if (!matchesSearch) return false;
         if (brandFilter === "all") return true;
@@ -67,6 +70,7 @@ export default function WarehouseOrdersPage() {
       ),
     },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
+    { key: "customer", header: "مشتری", render: (row) => row.customerName },
     {
       key: "date",
       header: "تاریخ تایید",
@@ -111,31 +115,32 @@ export default function WarehouseOrdersPage() {
 
   return (
     <DashboardLayout role="warehouse" title="سفارش های تاییدشده">
-      <SectionHeader
-        title="صف بررسی انبار"
-        description="فقط سفارش های تاییدشده مدیر فروش در این لیست نمایش داده می شوند."
-      />
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو بر اساس کد سفارش یا ثبت کننده"
-            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          />
-          <select
-            value={brandFilter}
-            onChange={(event) => setBrandFilter(event.target.value)}
-            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          >
-            <option value="all">همه برندها</option>
-            {allBrands.map((brand) => (
-              <option key={brand} value={brand}>
-                {brand}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="جستجو بر اساس کد سفارش، مشتری یا ثبت کننده"
+              className="pr-10"
+            />
+          </div>
+          <div className="relative">
+            <Tags className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <SearchableSelect
+              value={brandFilter}
+              onValueChange={setBrandFilter}
+              options={[
+                { value: "all", label: "همه برندها" },
+                ...allBrands.map((brand) => ({ value: brand, label: brand })),
+              ]}
+              placeholder="فیلتر برند"
+              searchPlaceholder="جستجو در برندها"
+              emptyMessage="برندی پیدا نشد"
+              triggerClassName="pr-10"
+            />
+          </div>
         </div>
       </section>
 

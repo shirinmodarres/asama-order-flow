@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { ClipboardPenLine } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { CreateExitSlipInput } from "@/lib/expert/types";
 
 interface ExitSlipFormProps {
@@ -29,53 +34,59 @@ export function ExitSlipForm({
         event.preventDefault();
         onSubmit({ orderId, slipNumber, exitDate, createdBy, notes });
       }}
-      className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm"
+      className="contents"
     >
-      <h3 className="text-base font-semibold text-[#1F3A5F]">
-        فرم صدور حواله خروج
-      </h3>
-      <p className="mt-2 text-sm text-[#6B7280]">
-        این عملیات به معنی خروج فیزیکی کالا از انبار است.
-      </p>
+      <Card className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-[#102034]">
+              فرم صدور حواله خروج
+            </h3>
+            <p className="mt-2 text-sm leading-7 text-[#6B7280]">
+              این عملیات به معنی خروج فیزیکی کالا از انبار است.
+            </p>
+          </div>
+          <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DDE7F0] bg-[#F5F8FB] text-[#1F3A5F]">
+            <ClipboardPenLine className="size-5" />
+          </span>
+        </div>
 
-      <div className="mt-4 grid gap-3">
-        <Input
-          label="شماره حواله خروج"
-          value={slipNumber}
-          onChange={setSlipNumber}
-        />
-        <Input
-          label="تاریخ خروج"
-          value={exitDate}
-          onChange={setExitDate}
-          type="date"
-        />
-        <Input
-          label="نام تحویل دهنده / مسئول انبار"
-          value={createdBy}
-          onChange={setCreatedBy}
-        />
-        <label className="grid gap-1 text-sm text-[#334155]">
-          <span>توضیحات</span>
-          <textarea
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            className="min-h-24 rounded-xl border border-[#E5E7EB] px-3 py-2 outline-none focus:border-[#1F3A5F]"
+        <div className="mt-5 grid gap-4">
+          <InputField
+            label="شماره حواله خروج"
+            value={slipNumber}
+            onChange={setSlipNumber}
           />
-        </label>
-      </div>
+          <InputField
+            label="تاریخ خروج"
+            value={exitDate}
+            onChange={setExitDate}
+            type="date"
+          />
+          <InputField
+            label="نام تحویل دهنده / مسئول انبار"
+            value={createdBy}
+            onChange={setCreatedBy}
+          />
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>توضیحات</span>
+            <Textarea
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              className="min-h-28"
+            />
+          </label>
+        </div>
 
-      <button
-        type="submit"
-        className="mt-4 rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm text-white"
-      >
-        {submitLabel}
-      </button>
+        <Button type="submit" className="mt-5">
+          {submitLabel}
+        </Button>
+      </Card>
     </form>
   );
 }
 
-function Input({
+function InputField({
   label,
   value,
   onChange,
@@ -87,14 +98,13 @@ function Input({
   type?: "text" | "date";
 }) {
   return (
-    <label className="grid gap-1 text-sm text-[#334155]">
+    <label className="grid gap-2 text-sm font-medium text-[#334155]">
       <span>{label}</span>
-      <input
+      <Input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         type={type}
         required
-        className="rounded-xl border border-[#E5E7EB] px-3 py-2 outline-none focus:border-[#1F3A5F]"
       />
     </label>
   );

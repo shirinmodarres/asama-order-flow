@@ -1,16 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
+import { Input } from "@/components/ui/input";
 import { WarehouseStatusBadge } from "@/components/warehouse/warehouse-status-badge";
 import type { ExitSlip } from "@/lib/expert/types";
 import { formatDate, formatDateTime } from "@/lib/expert/utils";
+import { Search } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 interface ExitSlipRow {
   slip: ExitSlip;
@@ -96,18 +97,16 @@ export default function WarehouseExitSlipsPage() {
 
   return (
     <DashboardLayout role="warehouse" title="حواله های خروج">
-      <SectionHeader
-        title="لیست حواله های خروج"
-        description="پیگیری حواله های صادرشده و وضعیت تحویل سفارش"
-      />
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="جستجو بر اساس شماره حواله یا کد سفارش"
-          className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-        />
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="جستجو بر اساس شماره حواله یا کد سفارش"
+            className="pr-10"
+          />
+        </div>
       </section>
 
       {rows.length > 0 ? (

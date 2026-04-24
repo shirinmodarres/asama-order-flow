@@ -16,9 +16,11 @@ import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { SectionHeader } from "@/components/shared/section-header";
 import type { CreateExitSlipInput } from "@/lib/expert/types";
 import {
+  formatCurrency,
   formatDate,
   formatNumber,
   getOrderItemCount,
+  getOrderLineTotal,
   getOrderTotalQuantity,
 } from "@/lib/expert/utils";
 
@@ -26,6 +28,8 @@ interface ItemRow {
   id: string;
   name: string;
   brand: string;
+  unit: string;
+  unitPrice: number;
   quantity: number;
 }
 
@@ -55,9 +59,15 @@ export default function ExitSlipCreatePage() {
       id: item.productId,
       name: product?.name ?? "کالای نامشخص",
       brand: product?.brand ?? "-",
+      unit: product?.unit ?? "-",
+      unitPrice: product?.unitPrice ?? 0,
       quantity: item.quantity,
     };
   });
+  const totalAmount = rows.reduce(
+    (sum, row) => sum + getOrderLineTotal(row.quantity, row.unitPrice),
+    0,
+  );
 
   const columns: DataTableColumn<ItemRow>[] = [
     {
@@ -68,6 +78,12 @@ export default function ExitSlipCreatePage() {
       ),
     },
     { key: "brand", header: "برند", render: (row) => row.brand },
+    { key: "unit", header: "واحد", render: (row) => row.unit },
+    {
+      key: "unitPrice",
+      header: "قیمت واحد",
+      render: (row) => formatCurrency(row.unitPrice),
+    },
     {
       key: "quantity",
       header: "تعداد تاییدشده",
@@ -125,6 +141,7 @@ export default function ExitSlipCreatePage() {
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
             <dl className="grid gap-3 sm:grid-cols-2">
               <InfoItem label="کد سفارش" value={order.code} />
+              <InfoItem label="مشتری" value={order.customerName} />
               <InfoItem label="ثبت کننده" value={order.createdBy} />
               <InfoItem
                 label="تاریخ تایید"
@@ -146,8 +163,10 @@ export default function ExitSlipCreatePage() {
 
         <div className="space-y-4">
           <OrderSummaryCard
+            customerName={order.customerName}
             itemCount={getOrderItemCount(order.items)}
             totalQuantity={getOrderTotalQuantity(order.items)}
+            totalAmount={totalAmount}
             status={order.status}
             warehouseStatus={order.warehouseStatus}
           />

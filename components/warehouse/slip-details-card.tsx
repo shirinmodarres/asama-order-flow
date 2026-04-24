@@ -1,3 +1,5 @@
+import { Truck } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { formatDate, formatDateTime } from "@/lib/expert/utils";
 
 interface SlipDetailsCardProps {
@@ -20,9 +22,19 @@ export function SlipDetailsCard({
   notes,
 }: SlipDetailsCardProps) {
   return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
-      <h3 className="text-base font-semibold text-[#1F3A5F]">اطلاعات حواله</h3>
-      <dl className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-base font-semibold text-[#102034]">اطلاعات حواله</h3>
+          <p className="mt-1 text-sm text-[#6B7280]">
+            جزئیات عملیات خروج و تحویل
+          </p>
+        </div>
+        <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DDE7F0] bg-[#F5F8FB] text-[#1F3A5F]">
+          <Truck className="size-5" />
+        </span>
+      </div>
+      <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
         <Item label="شماره حواله" value={slipNumber} />
         <Item label="سفارش مرتبط" value={orderCode} />
         <Item label="تاریخ خروج" value={formatDate(exitDate)} />
@@ -33,18 +45,18 @@ export function SlipDetailsCard({
           value={deliveredAt ? formatDateTime(deliveredAt) : "-"}
         />
       </dl>
-      <div className="mt-4 rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] p-3 text-sm text-[#475569]">
+      <div className="mt-4 rounded-[16px] border border-[#E8EEF4] bg-[#FBFCFD] p-4 text-sm leading-7 text-[#475569]">
         {notes || "توضیحی ثبت نشده است."}
       </div>
-    </div>
+    </Card>
   );
 }
 
 function Item({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] p-3">
+    <div className="rounded-[16px] border border-[#E8EEF4] bg-[#FBFCFD] p-3.5">
       <dt className="text-xs text-[#6B7280]">{label}</dt>
-      <dd className="mt-1 font-medium text-[#1F3A5F]">{value}</dd>
+      <dd className="mt-1 font-medium text-[#102034]">{value}</dd>
     </div>
   );
 }

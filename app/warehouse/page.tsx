@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { SectionHeader } from "@/components/shared/section-header";
-import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
+import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
+import { ActionLinkCard } from "@/components/shared/action-link-card";
 
 export default function WarehousePage() {
   const { orders } = useExpertStore();
@@ -22,11 +21,6 @@ export default function WarehousePage() {
 
   return (
     <DashboardLayout role="warehouse" title="داشبورد انبار">
-      <SectionHeader
-        title="نمای عملیاتی انبار"
-        description="پایش سفارش های تاییدشده، حواله ها و تحویل نهایی"
-      />
-
       <section className="grid gap-4 md:grid-cols-3">
         <ManagerSummaryCard
           title="سفارش های در بررسی انبار"
@@ -46,41 +40,24 @@ export default function WarehousePage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Link
+        <ActionLinkCard
           href="/warehouse/orders"
-          className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:border-[#CBD5E1]"
-        >
-          <h3 className="text-base font-semibold text-[#1F3A5F]">
-            مشاهده سفارش های تاییدشده
-          </h3>
-          <p className="mt-2 text-sm text-[#6B7280]">
-            ورود به صف بررسی انبار و آماده سازی خروج
-          </p>
-        </Link>
-
-        <Link
+          icon="package"
+          title="مشاهده سفارش های تاییدشده"
+          description="ورود به صف بررسی انبار و آماده سازی خروج"
+        />
+        <ActionLinkCard
           href="/warehouse/exit-slips"
-          className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:border-[#CBD5E1]"
-        >
-          <h3 className="text-base font-semibold text-[#1F3A5F]">
-            ثبت حواله خروج
-          </h3>
-          <p className="mt-2 text-sm text-[#6B7280]">
-            پیگیری حواله های صادرشده و ثبت جزئیات خروج
-          </p>
-        </Link>
-
-        <Link
+          icon="truck"
+          title="ثبت حواله خروج"
+          description="پیگیری حواله های صادرشده و ثبت جزئیات خروج"
+        />
+        <ActionLinkCard
           href="/warehouse/delivered"
-          className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:border-[#CBD5E1]"
-        >
-          <h3 className="text-base font-semibold text-[#1F3A5F]">
-            تایید تحویل
-          </h3>
-          <p className="mt-2 text-sm text-[#6B7280]">
-            ثبت نهایی دریافت کالا توسط مشتری
-          </p>
-        </Link>
+          icon="file-check"
+          title="تایید تحویل"
+          description="ثبت نهایی دریافت کالا توسط مشتری"
+        />
       </section>
     </DashboardLayout>
   );
