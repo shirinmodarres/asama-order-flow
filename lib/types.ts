@@ -1,16 +1,44 @@
 export type RoleKey = "expert" | "manager" | "warehouse" | "finance" | "support";
 
+export type RoleIconName =
+  | "briefcase"
+  | "shield-check"
+  | "warehouse"
+  | "receipt"
+  | "headset";
+
+export type SidebarIconName =
+  | "dashboard"
+  | "boxes"
+  | "shopping-cart"
+  | "plus-circle"
+  | "clipboard-check"
+  | "activity"
+  | "truck"
+  | "package"
+  | "file-check"
+  | "file-text"
+  | "layers"
+  | "history"
+  | "pencil";
+
 export interface Role {
   key: RoleKey;
   title: string;
   description: string;
   path: `/${RoleKey}`;
-  badge: string;
+  userName: string;
+  team: string;
+  icon: RoleIconName;
+  entrySummary: string;
+  accent: "brand" | "success" | "neutral";
 }
 
 export interface SidebarItem {
   label: string;
   href: string;
+  icon: SidebarIconName;
+  description?: string;
 }
 
 export interface DashboardStat {

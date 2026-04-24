@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export interface DataTableColumn<T> {
   key: string;
@@ -15,31 +17,40 @@ interface DataTableProps<T> {
 
 export function DataTable<T>({ columns, rows, rowKey }: DataTableProps<T>) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+    <Card className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full text-right">
-          <thead className="bg-[#F8FAFC]">
+          <thead className="border-b border-[#E9EEF3] bg-[#F8FBFD]">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-5 py-3 text-xs font-semibold text-[#475569] ${column.className ?? ""}`}
+                  className={cn(
+                    "px-5 py-4 text-xs font-semibold tracking-wide text-[#5B6B7F]",
+                    column.className,
+                  )}
                 >
                   {column.header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[#EEF2F6]">
             {rows.map((row, index) => (
               <tr
                 key={rowKey(row)}
-                className={`border-t border-[#E5E7EB] transition-colors hover:bg-[#F8FAFC] ${index % 2 === 1 ? "bg-[#FCFDFE]" : ""}`}
+                className={cn(
+                  "transition-colors hover:bg-[#F8FBFD]",
+                  index % 2 === 1 && "bg-[#FCFDFE]",
+                )}
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`px-5 py-4 align-middle text-sm text-[#334155] ${column.className ?? ""}`}
+                    className={cn(
+                      "px-5 py-4 align-middle text-sm text-[#334155]",
+                      column.className,
+                    )}
                   >
                     {column.render(row)}
                   </td>
@@ -49,6 +60,6 @@ export function DataTable<T>({ columns, rows, rowKey }: DataTableProps<T>) {
           </tbody>
         </table>
       </div>
-    </div>
+    </Card>
   );
 }
