@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
-import { Vazirmatn } from "next/font/google";
 import { ExpertStoreProvider } from "@/components/expert/expert-store-provider";
 import "./globals.css";
 
-const vazirmatn = Vazirmatn({
-  variable: "--font-vazirmatn",
-  subsets: ["arabic", "latin"],
-});
-
 export const metadata: Metadata = {
-  title: "پروتوتایپ داشبورد داخلی",
-  description: "پروتوتایپ پنل داخلی سفارش، انبار و فاکتور",
+  title: "آساما | سامانه داخلی عملیات",
+  description: "پروتوتایپ پنل داخلی سفارش، انبار، پشتیبانی و فاکتور برای برند آساما",
 };
 
 export default function RootLayout({
@@ -19,8 +13,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fa" dir="rtl" className={`${vazirmatn.variable} h-full antialiased`}>
-      <body className="min-h-full bg-[#F3F5F8] text-[#111827]">
+    <html
+      lang="fa"
+      dir="rtl"
+      className="h-full scroll-smooth antialiased"
+    >
+      <body className="min-h-full bg-[var(--color-page)] text-[var(--color-foreground)]">
         <ExpertStoreProvider>{children}</ExpertStoreProvider>
       </body>
     </html>

@@ -1,49 +1,60 @@
+import { PackageCheck } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { orderStatusLabel, warehouseStatusLabel } from "@/lib/expert/mock-data";
 import type { OrderStatus, WarehouseStatus } from "@/lib/expert/types";
-import { formatNumber } from "@/lib/expert/utils";
+import { formatCurrency, formatNumber } from "@/lib/expert/utils";
 
 interface OrderSummaryCardProps {
+  customerName: string;
   itemCount: number;
   totalQuantity: number;
+  totalAmount: number;
   status: OrderStatus;
   warehouseStatus: WarehouseStatus;
 }
 
 export function OrderSummaryCard({
+  customerName,
   itemCount,
   totalQuantity,
+  totalAmount,
   status,
   warehouseStatus,
 }: OrderSummaryCardProps) {
   return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-      <h3 className="text-base font-semibold text-[#1F3A5F]">خلاصه سفارش</h3>
-      <dl className="mt-4 space-y-3 text-sm">
-        <div className="flex items-center justify-between">
-          <dt className="text-[#6B7280]">تعداد آیتم</dt>
-          <dd className="font-semibold text-[#1F3A5F]">
-            {formatNumber(itemCount)}
-          </dd>
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-base font-semibold text-[#102034]">خلاصه سفارش</h3>
+          <p className="mt-1 text-sm text-[#6B7280]">
+            نمای سریع از وضعیت جاری سفارش
+          </p>
         </div>
-        <div className="flex items-center justify-between">
-          <dt className="text-[#6B7280]">جمع تعداد</dt>
-          <dd className="font-semibold text-[#1F3A5F]">
-            {formatNumber(totalQuantity)}
-          </dd>
-        </div>
-        <div className="flex items-center justify-between">
-          <dt className="text-[#6B7280]">وضعیت سفارش</dt>
-          <dd className="font-semibold text-[#334155]">
-            {orderStatusLabel[status]}
-          </dd>
-        </div>
-        <div className="flex items-center justify-between">
-          <dt className="text-[#6B7280]">وضعیت انبار</dt>
-          <dd className="font-semibold text-[#334155]">
-            {warehouseStatusLabel[warehouseStatus]}
-          </dd>
-        </div>
+        <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DDE7F0] bg-[#F5F8FB] text-[#1F3A5F]">
+          <PackageCheck className="size-5" />
+        </span>
+      </div>
+
+      <dl className="mt-5 space-y-3 text-sm">
+        <SummaryRow label="مشتری" value={customerName} />
+        <SummaryRow label="تعداد آیتم" value={formatNumber(itemCount)} />
+        <SummaryRow label="جمع تعداد" value={formatNumber(totalQuantity)} />
+        <SummaryRow label="مبلغ تقریبی" value={formatCurrency(totalAmount)} />
+        <SummaryRow label="وضعیت سفارش" value={orderStatusLabel[status]} />
+        <SummaryRow
+          label="وضعیت انبار"
+          value={warehouseStatusLabel[warehouseStatus]}
+        />
       </dl>
+    </Card>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[16px] border border-[#E8EEF4] bg-[#FBFCFD] px-3.5 py-3">
+      <dt className="text-[#6B7280]">{label}</dt>
+      <dd className="font-semibold text-[#102034]">{value}</dd>
     </div>
   );
 }

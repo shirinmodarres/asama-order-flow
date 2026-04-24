@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Card } from "@/components/ui/card";
 
 interface SectionHeaderProps {
   title: string;
@@ -12,21 +13,22 @@ export function SectionHeader({
   actions,
 }: SectionHeaderProps) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-      <div>
-        <p className="text-[11px] font-medium tracking-wide text-[#6B7280]">
-          نمای عملیاتی
-        </p>
-        <h2 className="mt-1 text-lg font-semibold text-[#1F3A5F]">{title}</h2>
-        {description ? (
-          <p className="mt-1.5 max-w-3xl text-sm text-[#6B7280]">
-            {description}
-          </p>
+    <Card className="border-[#DDE5ED] bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,251,253,1))] px-5 py-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="mt-3 text-[1.35rem] font-bold text-[#102034]">
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#6B7280]">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {actions ? (
+          <div className="flex items-center gap-2">{actions}</div>
         ) : null}
       </div>
-      {actions ? (
-        <div className="flex items-center gap-2">{actions}</div>
-      ) : null}
-    </div>
+    </Card>
   );
 }

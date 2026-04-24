@@ -14,6 +14,8 @@ export interface Product {
   name: string;
   brand: string;
   category: string;
+  unit: string;
+  unitPrice: number;
   description?: string;
   status: "active" | "inactive";
   totalStock: number;
@@ -29,6 +31,7 @@ export interface ExpertOrder {
   id: string;
   code: string;
   createdBy: string;
+  customerName: string;
   createdAt: string;
   updatedAt: string;
   status: OrderStatus;
@@ -37,11 +40,13 @@ export interface ExpertOrder {
 }
 
 export interface CreateOrderInput {
+  customerName: string;
   items: OrderItem[];
 }
 
 export interface UpdateOrderInput {
   id: string;
+  customerName: string;
   items: OrderItem[];
 }
 
@@ -95,6 +100,8 @@ export interface CreateProductInput {
   name: string;
   brand: string;
   category: string;
+  unit: string;
+  unitPrice: number;
   initialStock: number;
   description?: string;
 }
@@ -104,6 +111,8 @@ export interface UpdateProductInput {
   name: string;
   brand: string;
   category: string;
+  unit: string;
+  unitPrice: number;
   description?: string;
   status: "active" | "inactive";
 }

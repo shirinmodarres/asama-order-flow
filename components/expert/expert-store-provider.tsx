@@ -116,11 +116,12 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     setInventoryHistory((current) => [{ id: `ih-${Date.now()}`, ...entry }, ...current]);
   };
 
-  const createOrder = ({ items }: CreateOrderInput): ActionResult => {
+  const createOrder = ({ customerName, items }: CreateOrderInput): ActionResult => {
     const mergedItems = mergeOrderItems(items);
     const baseValidation = validateOrderItems(mergedItems);
 
     if (baseValidation) return { ok: false, error: baseValidation };
+    if (!customerName.trim()) return { ok: false, error: "نام مشتری را وارد کنید." };
 
     for (const item of mergedItems) {
       const product = getProductById(item.productId);
@@ -138,6 +139,7 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
       id: `o-${Date.now()}`,
       code: buildNextOrderCode(orders),
       createdBy: "علی رضایی",
+      customerName: customerName.trim(),
       createdAt: timestamp,
       updatedAt: timestamp,
       status: "pending",
@@ -216,24 +218,42 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     return { ok: true, order: updatedOrder };
   };
 
-  const updateOrder = ({ id, items }: UpdateOrderInput): ActionResult => {
+  const updateOrder = ({ id, customerName, items }: UpdateOrderInput): ActionResult => {
     const targetOrder = getOrderById(id);
     if (!targetOrder) return { ok: false, error: "سفارش مورد نظر یافت نشد." };
     if (targetOrder.status !== "pending") return { ok: false, error: "فقط سفارش در انتظار تایید قابل ویرایش است." };
-
-    return updateOrderItemsWithStockCheck(targetOrder, items);
-  };
-
-  const supportEditOrder = ({ id, items }: UpdateOrderInput): ActionResult => {
-    const targetOrder = getOrderById(id);
-    if (!targetOrder) return { ok: false, error: "سفارش مورد نظر یافت نشد." };
+    if (!customerName.trim()) return { ok: false, error: "نام مشتری را وارد کنید." };
 
     const result = updateOrderItemsWithStockCheck(targetOrder, items);
     if (!result.ok || !result.order) return result;
 
+    const updatedOrder = {
+      ...result.order,
+      customerName: customerName.trim(),
+    };
+
+    setOrders((current) => current.map((order) => (order.id === targetOrder.id ? updatedOrder : order)));
+    return { ...result, order: updatedOrder };
+  };
+
+  const supportEditOrder = ({ id, customerName, items }: UpdateOrderInput): ActionResult => {
+    const targetOrder = getOrderById(id);
+    if (!targetOrder) return { ok: false, error: "سفارش مورد نظر یافت نشد." };
+    if (!customerName.trim()) return { ok: false, error: "نام مشتری را وارد کنید." };
+
+    const result = updateOrderItemsWithStockCheck(targetOrder, items);
+    if (!result.ok || !result.order) return result;
+
+    const updatedOrder = {
+      ...result.order,
+      customerName: customerName.trim(),
+    };
+
+    setOrders((current) => current.map((order) => (order.id === targetOrder.id ? updatedOrder : order)));
+
     return {
       ok: true,
-      order: result.order,
+      order: updatedOrder,
       message: "ویرایش ویژه پشتیبانی با موفقیت ثبت شد.",
     };
   };
@@ -451,13 +471,16 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const createProduct = ({ name, brand, category, initialStock, description }: CreateProductInput): ActionResult => {
-    if (!name.trim() || !brand.trim() || !category.trim()) {
+  const createProduct = ({ name, brand, category, unit, unitPrice, initialStock, description }: CreateProductInput): ActionResult => {
+    if (!name.trim() || !brand.trim() || !category.trim() || !unit.trim()) {
       return { ok: false, error: "اطلاعات اصلی کالا کامل نیست." };
     }
 
     if (initialStock < 0) {
       return { ok: false, error: "موجودی اولیه نمی تواند منفی باشد." };
+    }
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      return { ok: false, error: "قیمت واحد باید بیشتر از صفر باشد." };
     }
 
     const product: Product = {
@@ -465,6 +488,8 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
       name: name.trim(),
       brand: brand.trim(),
       category: category.trim(),
+      unit: unit.trim(),
+      unitPrice,
       description: description?.trim(),
       status: "active",
       totalStock: initialStock,
@@ -484,15 +509,23 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     return { ok: true, product, message: "کالای جدید با موفقیت ثبت شد." };
   };
 
-  const updateProduct = ({ id, name, brand, category, description, status }: UpdateProductInput): ActionResult => {
+  const updateProduct = ({ id, name, brand, category, unit, unitPrice, description, status }: UpdateProductInput): ActionResult => {
     const existing = getProductById(id);
     if (!existing) return { ok: false, error: "کالای مورد نظر یافت نشد." };
+    if (!name.trim() || !brand.trim() || !category.trim() || !unit.trim()) {
+      return { ok: false, error: "اطلاعات اصلی کالا کامل نیست." };
+    }
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      return { ok: false, error: "قیمت واحد باید بیشتر از صفر باشد." };
+    }
 
     const updated: Product = {
       ...existing,
       name: name.trim(),
       brand: brand.trim(),
       category: category.trim(),
+      unit: unit.trim(),
+      unitPrice,
       description: description?.trim(),
       status,
     };

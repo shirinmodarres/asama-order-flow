@@ -16,6 +16,10 @@ export function formatNumber(value: number): string {
   return value.toLocaleString("fa-IR");
 }
 
+export function formatCurrency(value: number): string {
+  return `${formatNumber(value)} ریال`;
+}
+
 export function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("fa-IR");
 }
@@ -44,6 +48,20 @@ export function getOrderItemCount(items: OrderItem[]): number {
 
 export function getOrderTotalQuantity(items: OrderItem[]): number {
   return items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+export function getOrderLineTotal(quantity: number, unitPrice: number): number {
+  return quantity * unitPrice;
+}
+
+export function getOrderTotalAmount(
+  items: OrderItem[],
+  productsById: Record<string, Product | undefined>,
+): number {
+  return items.reduce((sum, item) => {
+    const product = productsById[item.productId];
+    return sum + getOrderLineTotal(item.quantity, product?.unitPrice ?? 0);
+  }, 0);
 }
 
 export function mergeOrderItems(items: OrderItem[]): OrderItem[] {

@@ -1,16 +1,18 @@
 "use client";
 
+import { Search, Tags } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { InventorySummaryCard } from "@/components/shared/inventory-summary-card";
-import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { Product } from "@/lib/expert/types";
-import { formatNumber, getAvailableStock } from "@/lib/expert/utils";
+import { formatCurrency, formatNumber, getAvailableStock } from "@/lib/expert/utils";
 
 type InventoryStatus = "normal" | "warning" | "critical";
 
@@ -55,6 +57,12 @@ export default function ExpertInventoryPage() {
       ),
     },
     { key: "brand", header: "برند", render: (row) => row.brand },
+    { key: "unit", header: "واحد", render: (row) => row.unit },
+    {
+      key: "unit-price",
+      header: "قیمت واحد",
+      render: (row) => formatCurrency(row.unitPrice),
+    },
     {
       key: "total",
       header: "موجودی کل",
@@ -81,11 +89,6 @@ export default function ExpertInventoryPage() {
 
   return (
     <DashboardLayout role="expert" title="موجودی کالاها">
-      <SectionHeader
-        title="فهرست موجودی"
-        description="نمایش موجودی کل، رزرو شده و قابل استفاده برای ثبت سفارش"
-      />
-
       <section className="grid gap-4 md:grid-cols-3">
         <InventorySummaryCard
           title="موجودی کل"
@@ -106,24 +109,36 @@ export default function ExpertInventoryPage() {
 
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو بر اساس نام کالا"
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          />
-          <select
-            value={brand}
-            onChange={(event) => setBrand(event.target.value)}
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          >
-            <option value="all">همه برندها</option>
-            {brands.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>جستجو در کالاها</span>
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6CAE75]" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="نام کالا را وارد کنید"
+                className="pr-10"
+              />
+            </div>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>فیلتر برند</span>
+            <div className="relative">
+              <Tags className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+              <SearchableSelect
+                value={brand}
+                onValueChange={setBrand}
+                options={[
+                  { value: "all", label: "همه برندها" },
+                  ...brands.map((item) => ({ value: item, label: item })),
+                ]}
+                placeholder="همه برندها"
+                searchPlaceholder="جستجو در برندها"
+                emptyMessage="برندی پیدا نشد"
+                triggerClassName="pr-10"
+              />
+            </div>
+          </label>
         </div>
       </section>
 

@@ -1,3 +1,5 @@
+import { ArrowUpRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
 interface SummaryCardProps {
@@ -8,10 +10,26 @@ interface SummaryCardProps {
 
 export function SummaryCard({ label, value, hint }: SummaryCardProps) {
   return (
-    <Card className="p-6">
-      <p className="text-xs font-medium text-[#6B7280]">{label}</p>
-      <p className="mt-2 text-3xl font-bold tracking-tight text-[#1F3A5F]">{value}</p>
-      <p className="mt-3 text-xs leading-6 text-[#6B7280]">{hint}</p>
+    <Card className="relative p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold tracking-wide text-[#6B7280]">
+            {label}
+          </p>
+          <p className="mt-3 text-3xl font-black tracking-tight text-[#102034]">
+            {value}
+          </p>
+        </div>
+        <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#D7E4EF] bg-[#F4F8FC] text-[#1F3A5F]">
+          <ArrowUpRight className="size-5" />
+        </span>
+      </div>
+      <div className="mt-4 flex items-start justify-between gap-3">
+        <p className="max-w-[18rem] text-xs leading-6 text-[#6B7280]">{hint}</p>
+        <Badge variant="brand" dot className="shrink-0">
+          امروز
+        </Badge>
+      </div>
     </Card>
   );
 }

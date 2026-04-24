@@ -1,8 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { roles } from "@/lib/mock-data";
+import { Bell, ChevronLeft, Sparkles } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { AsamaLogo } from "@/components/branding/asama-logo";
+import { RoleSwitcher } from "@/components/dashboard/role-switcher";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { rolesByKey, sidebarByRole } from "@/lib/mock-data";
 import type { RoleKey } from "@/lib/types";
 
 interface HeaderProps {
@@ -11,81 +16,60 @@ interface HeaderProps {
 }
 
 export function Header({ title, role }: HeaderProps) {
-  const router = useRouter();
+  const pathname = usePathname();
+  const roleInfo = rolesByKey[role];
+  const currentSection =
+    sidebarByRole[role]
+      .filter(
+        (item) =>
+          pathname === item.href || pathname.startsWith(`${item.href}/`),
+      )
+      .sort((a, b) => b.href.length - a.href.length)[0] ?? null;
 
   return (
-    <header className="h-16 rounded-xl border border-[#E5E7EB] border-b-[#E5E7EB] bg-white px-4 md:px-6">
-      <div className="flex h-full items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="inline-flex h-9 w-[108px] items-center justify-center  bg-white px-2">
-            <Image
-              src="/logo-fn.png"
-              alt="لوگوی آساما"
-              width={96}
-              height={28}
-              className="h-auto w-full object-contain"
-              priority
-            />
-          </span>
+    <header className="sticky top-4 z-20 rounded-[22px] border border-[#DDE5ED] bg-white/90 px-4 py-4 shadow-[0_24px_60px_rgba(15,23,42,0.08)] backdrop-blur md:px-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <AsamaLogo compact />
+          <div className="min-w-0">
+            <h1 className="mt-3 truncate text-2xl font-black tracking-tight text-[#102034]">
+              {title}
+            </h1>
+            <p className="mt-1 text-sm leading-7 text-[#6B7280]">
+              {currentSection?.description ?? roleInfo.entrySummary}
+            </p>
+          </div>
         </div>
 
-        <h1 className="hidden flex-1 truncate px-4 text-center text-base font-medium text-[#1F3A5F] lg:block">
-          {title}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* <RoleSwitcher currentRole={role} /> */}
 
-        <div className="flex items-center gap-2 md:gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-2.5 py-1.5 transition-colors hover:border-[#CAD2DC]">
-            <select
-              aria-label="انتخاب نقش"
-              value={role}
-              onChange={(event) => {
-                const selectedRole = roles.find(
-                  (item) => item.key === (event.target.value as RoleKey),
-                );
-                router.push(selectedRole?.path ?? "/");
-              }}
-              className="cursor-pointer rounded-[10px] bg-transparent px-1.5 py-1 text-xs font-medium text-[#1F3A5F] outline-none"
-            >
-              {roles.map((item) => (
-                <option key={item.key} value={item.key}>
-                  {item.title}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-3 rounded-[16px] border border-[#D8E1EA] bg-[#F8FBFD] px-3 py-2.5">
+            <Avatar>
+              <AvatarFallback>{roleInfo.userName.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="text-right">
+              <div className="text-sm font-semibold text-[#102034]">
+                {roleInfo.userName}
+              </div>
+              <div className="flex items-center gap-1 text-xs text-[#6B7280]">
+                <span>{roleInfo.title}</span>
+                <ChevronLeft className="size-3.5" />
+                <span>کاربر دمو</span>
+              </div>
+            </div>
           </div>
-
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="icon"
             aria-label="اعلان ها"
-            className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#1F3A5F] transition-colors hover:border-[#CAD2DC] hover:bg-[#F8FAFC]"
+            className="relative rounded-[14px]"
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              aria-hidden
-            >
-              <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h11Z" />
-              <path d="M9.5 18a2.5 2.5 0 0 0 5 0" />
-            </svg>
-            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#1F3A5F] px-1 text-[10px] font-semibold text-white">
-              3
+            <Bell className="size-4 text-[#1F3A5F]" />
+            <span className="absolute -top-1 -right-1 flex min-w-5 items-center justify-center rounded-full bg-[#1F3A5F] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+              ۳
             </span>
-          </button>
-
-          <button
-            type="button"
-            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-2.5 py-1.5 text-right transition-colors hover:border-[#CAD2DC]"
-          >
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#1F3A5F] text-[11px] font-semibold text-white">
-              ع
-            </span>
-            <span className="hidden text-xs font-medium text-[#1F3A5F] md:inline">
-              علی رضایی
-            </span>
-          </button>
+          </Button>
         </div>
       </div>
     </header>

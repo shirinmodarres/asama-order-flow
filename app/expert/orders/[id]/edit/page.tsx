@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, PackageSearch } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -8,11 +9,17 @@ import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { EmptyState } from "@/components/shared/empty-state";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { SectionHeader } from "@/components/shared/section-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getOrderEditBlockReason } from "@/lib/expert/mock-data";
 import {
+  formatCurrency,
   formatNumber,
   getAvailableStock,
   getOrderItemCount,
+  getOrderLineTotal,
+  getOrderTotalAmount,
   getOrderTotalQuantity,
   isOrderEditable,
 } from "@/lib/expert/utils";
@@ -28,6 +35,7 @@ export default function EditExpertOrderPage() {
   const params = useParams<{ id: string }>();
   const { products, getOrderById, updateOrder } = useExpertStore();
   const order = getOrderById(params.id);
+  const [customerName, setCustomerName] = useState(order?.customerName ?? "");
 
   const [items, setItems] = useState<DraftItem[]>(() =>
     order
@@ -39,6 +47,17 @@ export default function EditExpertOrderPage() {
       : [],
   );
   const [error, setError] = useState("");
+  const productsById = useMemo(
+    () =>
+      products.reduce<Record<string, (typeof products)[number]>>(
+        (accumulator, product) => {
+          accumulator[product.id] = product;
+          return accumulator;
+        },
+        {},
+      ),
+    [products],
+  );
 
   const normalizedItems = useMemo(
     () =>
@@ -50,6 +69,7 @@ export default function EditExpertOrderPage() {
         })),
     [items],
   );
+  const totalAmount = getOrderTotalAmount(normalizedItems, productsById);
 
   if (!order) {
     return (
@@ -95,7 +115,11 @@ export default function EditExpertOrderPage() {
       return;
     }
 
-    const result = updateOrder({ id: order.id, items: normalizedItems });
+    const result = updateOrder({
+      id: order.id,
+      customerName,
+      items: normalizedItems,
+    });
 
     if (!result.ok) {
       setError(result.error ?? "ویرایش سفارش انجام نشد.");
@@ -128,6 +152,16 @@ export default function EditExpertOrderPage() {
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>نام مشتری</span>
+            <Input
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              disabled={!editable}
+              placeholder="نام مشتری یا نمایندگی"
+            />
+          </label>
+
           <h3 className="text-base font-semibold text-[#1F3A5F]">
             آیتم های قابل ویرایش
           </h3>
@@ -143,23 +177,26 @@ export default function EditExpertOrderPage() {
                   key={item.rowId}
                   className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] p-3 md:grid-cols-[1fr_140px_auto]"
                 >
-                  <select
-                    value={item.productId}
-                    onChange={(event) =>
-                      updateRow(item.rowId, { productId: event.target.value })
-                    }
-                    disabled={!editable}
-                    className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F] disabled:cursor-not-allowed disabled:bg-[#F8FAFC]"
-                  >
-                    <option value="">انتخاب کالا</option>
-                    {products.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name} - {option.brand}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <PackageSearch className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+                    <SearchableSelect
+                      value={item.productId || undefined}
+                      onValueChange={(value) =>
+                        updateRow(item.rowId, { productId: value })
+                      }
+                      disabled={!editable}
+                      options={products.map((option) => ({
+                        value: option.id,
+                        label: `${option.name} - ${option.brand}`,
+                      }))}
+                      placeholder="انتخاب کالا"
+                      searchPlaceholder="جستجو در کالاها"
+                      emptyMessage="کالایی پیدا نشد"
+                      triggerClassName="pr-10"
+                    />
+                  </div>
 
-                  <input
+                  <Input
                     type="number"
                     min={1}
                     value={item.quantity}
@@ -169,21 +206,20 @@ export default function EditExpertOrderPage() {
                       })
                     }
                     disabled={!editable}
-                    className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F] disabled:cursor-not-allowed disabled:bg-[#F8FAFC]"
                   />
 
-                  <button
+                  <Button
                     type="button"
                     onClick={() => removeRow(item.rowId)}
                     disabled={!editable}
-                    className="rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm text-[#64748B] hover:border-[#CBD5E1] disabled:cursor-not-allowed disabled:bg-[#F8FAFC]"
+                    variant="outline"
                   >
                     حذف
-                  </button>
+                  </Button>
 
                   <p className="md:col-span-3 text-xs text-[#6B7280]">
                     {product
-                      ? `موجودی قابل استفاده: ${formatNumber(getAvailableStock(product))}`
+                      ? `موجودی قابل استفاده: ${formatNumber(getAvailableStock(product))} ${product.unit} • قیمت واحد: ${formatCurrency(product.unitPrice)} • مبلغ ردیف: ${formatCurrency(getOrderLineTotal(item.quantity, product.unitPrice))}`
                       : `آیتم ${formatNumber(index + 1)}`}
                   </p>
                 </div>
@@ -191,24 +227,33 @@ export default function EditExpertOrderPage() {
             })}
           </div>
 
+          <div className="mt-4 rounded-[18px] border border-[#E7EDF3] bg-[#FBFCFD] px-4 py-3 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[#6B7280]">مبلغ تقریبی سفارش</span>
+              <span className="font-semibold text-[#102034]">
+                {formatCurrency(totalAmount)}
+              </span>
+            </div>
+          </div>
+
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <button
+            <Button
               type="button"
               onClick={addRow}
               disabled={!editable}
-              className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1] disabled:cursor-not-allowed disabled:bg-[#F8FAFC]"
+              variant="outline"
             >
               افزودن آیتم
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               onClick={handleSubmit}
               disabled={!editable}
-              className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm text-white hover:bg-[#294B79] disabled:cursor-not-allowed disabled:border-[#CBD5E1] disabled:bg-[#CBD5E1]"
             >
               ذخیره تغییرات
-            </button>
+              <ChevronLeft className="size-4" />
+            </Button>
           </div>
 
           {error ? (
@@ -217,8 +262,10 @@ export default function EditExpertOrderPage() {
         </div>
 
         <OrderSummaryCard
+          customerName={customerName}
           itemCount={getOrderItemCount(normalizedItems)}
           totalQuantity={getOrderTotalQuantity(normalizedItems)}
+          totalAmount={totalAmount}
           status={order.status}
           warehouseStatus={order.warehouseStatus}
         />

@@ -18,9 +18,11 @@ import {
   warehouseStatusLabel,
 } from "@/lib/expert/mock-data";
 import {
+  formatCurrency,
   formatDate,
   formatNumber,
   getOrderItemCount,
+  getOrderLineTotal,
   getOrderTotalQuantity,
   isOrderEditable,
 } from "@/lib/expert/utils";
@@ -29,6 +31,8 @@ interface OrderDetailRow {
   id: string;
   name: string;
   brand: string;
+  unit: string;
+  unitPrice: number;
   quantity: number;
 }
 
@@ -54,9 +58,15 @@ export default function ExpertOrderDetailsPage() {
       id: item.productId,
       name: product?.name ?? "کالای نامشخص",
       brand: product?.brand ?? "-",
+      unit: product?.unit ?? "-",
+      unitPrice: product?.unitPrice ?? 0,
       quantity: item.quantity,
     };
   });
+  const totalAmount = detailRows.reduce(
+    (sum, row) => sum + getOrderLineTotal(row.quantity, row.unitPrice),
+    0,
+  );
 
   const editable = isOrderEditable(order);
   const blockReason = getOrderEditBlockReason(order.status);
@@ -70,10 +80,21 @@ export default function ExpertOrderDetailsPage() {
       ),
     },
     { key: "brand", header: "برند", render: (row) => row.brand },
+    { key: "unit", header: "واحد", render: (row) => row.unit },
+    {
+      key: "unit-price",
+      header: "قیمت واحد",
+      render: (row) => formatCurrency(row.unitPrice),
+    },
     {
       key: "quantity",
       header: "تعداد",
       render: (row) => formatNumber(row.quantity),
+    },
+    {
+      key: "line-total",
+      header: "مبلغ",
+      render: (row) => formatCurrency(getOrderLineTotal(row.quantity, row.unitPrice)),
     },
   ];
 
@@ -111,6 +132,7 @@ export default function ExpertOrderDetailsPage() {
             </h3>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <InfoItem label="کد سفارش" value={order.code} />
+              <InfoItem label="مشتری" value={order.customerName} />
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
               <InfoItem
                 label="وضعیت سفارش"
@@ -141,8 +163,10 @@ export default function ExpertOrderDetailsPage() {
 
         <div className="space-y-4">
           <OrderSummaryCard
+            customerName={order.customerName}
             itemCount={getOrderItemCount(order.items)}
             totalQuantity={getOrderTotalQuantity(order.items)}
+            totalAmount={totalAmount}
             status={order.status}
             warehouseStatus={order.warehouseStatus}
           />

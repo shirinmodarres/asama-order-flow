@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   getOrderEditBlockReason,
   orderStatusLabel,
@@ -20,6 +19,9 @@ import {
   getOrderItemCount,
   isOrderEditable,
 } from "@/lib/expert/utils";
+import { ListFilter, Search } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 export default function ExpertOrdersPage() {
   const { orders } = useExpertStore();
@@ -34,7 +36,8 @@ export default function ExpertOrdersPage() {
       .filter((order) => {
         const matchesSearch = order.code
           .toLowerCase()
-          .includes(search.toLowerCase());
+          .includes(search.toLowerCase()) ||
+          order.customerName.toLowerCase().includes(search.toLowerCase());
         const matchesStatus =
           statusFilter === "all" || order.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -53,6 +56,11 @@ export default function ExpertOrdersPage() {
       key: "date",
       header: "تاریخ",
       render: (row) => formatDate(row.createdAt),
+    },
+    {
+      key: "customer",
+      header: "مشتری",
+      render: (row) => row.customerName,
     },
     {
       key: "items",
@@ -111,41 +119,43 @@ export default function ExpertOrdersPage() {
 
   return (
     <DashboardLayout role="expert" title="سفارش های من">
-      <SectionHeader
-        title="مدیریت سفارش ها"
-        description="ثبت، پیگیری و ویرایش سفارش های در انتظار تایید"
-        actions={
-          <Link
-            href="/expert/orders/new"
-            className="btn-primary rounded-xl px-4 py-2 text-sm font-medium text-white visited:text-white hover:text-white focus:text-white"
-          >
-            ثبت سفارش جدید
-          </Link>
-        }
-      />
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو بر اساس کد سفارش"
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          />
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value as "all" | OrderStatus)
-            }
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          >
-            <option value="all">همه وضعیت ها</option>
-            {Object.entries(orderStatusLabel).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>جستجو در سفارش ها</span>
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6CAE75]" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="کد سفارش یا نام مشتری را وارد کنید"
+                className="pr-10"
+              />
+            </div>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>فیلتر وضعیت</span>
+            <div className="relative">
+              <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+              <SearchableSelect
+                value={statusFilter}
+                onValueChange={(value) =>
+                  setStatusFilter(value as "all" | OrderStatus)
+                }
+                options={[
+                  { value: "all", label: "همه وضعیت ها" },
+                  ...Object.entries(orderStatusLabel).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                ]}
+                placeholder="همه وضعیت ها"
+                searchPlaceholder="جستجو در وضعیت ها"
+                emptyMessage="وضعیتی پیدا نشد"
+                triggerClassName="pr-10"
+              />
+            </div>
+          </label>
         </div>
       </section>
 
