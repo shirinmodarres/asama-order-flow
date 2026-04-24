@@ -1,14 +1,12 @@
 "use client";
 
-import { Bell, ChevronLeft, Sparkles } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { AsamaLogo } from "@/components/branding/asama-logo";
-import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { rolesByKey, sidebarByRole } from "@/lib/mock-data";
 import type { RoleKey } from "@/lib/types";
+import { Bell } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 
 interface HeaderProps {
   title: string;
@@ -16,6 +14,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, role }: HeaderProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const roleInfo = rolesByKey[role];
   const currentSection =
@@ -44,7 +43,14 @@ export function Header({ title, role }: HeaderProps) {
         <div className="flex flex-wrap items-center gap-3">
           {/* <RoleSwitcher currentRole={role} /> */}
 
-          <div className="flex items-center gap-3 rounded-[16px] border border-[#D8E1EA] bg-[#F8FBFD] px-3 py-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.removeItem("asama-demo-role");
+              router.push("/");
+            }}
+            className="flex items-center gap-3 rounded-[16px] border border-[#D8E1EA] bg-[#F8FBFD] px-3 py-2.5 text-right transition-colors hover:border-[#C8D3DF] hover:bg-white"
+          >
             <Avatar>
               <AvatarFallback>{roleInfo.userName.charAt(0)}</AvatarFallback>
             </Avatar>
@@ -54,11 +60,11 @@ export function Header({ title, role }: HeaderProps) {
               </div>
               <div className="flex items-center gap-1 text-xs text-[#6B7280]">
                 <span>{roleInfo.title}</span>
-                <ChevronLeft className="size-3.5" />
-                <span>کاربر دمو</span>
+                <span>•</span>
+                <span>خروج</span>
               </div>
             </div>
-          </div>
+          </button>
           <Button
             variant="outline"
             size="icon"

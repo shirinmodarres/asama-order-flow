@@ -1,5 +1,6 @@
 "use client";
 
+import { ListFilter, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
@@ -9,7 +10,8 @@ import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { getOrderLastStageLabel } from "@/lib/expert/mock-data";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { ExpertOrder } from "@/lib/expert/types";
 import { formatDate } from "@/lib/expert/utils";
 
@@ -35,7 +37,8 @@ export default function ManagerOrderTrackingPage() {
       .filter((order) => {
         const matchesSearch =
           order.code.toLowerCase().includes(search.toLowerCase()) ||
-          order.createdBy.toLowerCase().includes(search.toLowerCase());
+          order.createdBy.toLowerCase().includes(search.toLowerCase()) ||
+          order.customerName.toLowerCase().includes(search.toLowerCase());
 
         if (!matchesSearch) return false;
         if (filter === "all") return true;
@@ -57,6 +60,7 @@ export default function ManagerOrderTrackingPage() {
       ),
     },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
+    { key: "customer", header: "مشتری", render: (row) => row.customerName },
     {
       key: "order-status",
       header: "وضعیت سفارش",
@@ -68,11 +72,6 @@ export default function ManagerOrderTrackingPage() {
       render: (row) => (
         <StatusBadge type="warehouse" status={row.warehouseStatus} />
       ),
-    },
-    {
-      key: "stage",
-      header: "آخرین مرحله",
-      render: (row) => getOrderLastStageLabel(row),
     },
     {
       key: "updated",
@@ -95,34 +94,37 @@ export default function ManagerOrderTrackingPage() {
 
   return (
     <DashboardLayout role="manager" title="روند سفارش ها">
-      <SectionHeader
-        title="ردیابی فرآیند سفارش"
-        description="پایش کامل سفارش ها از مرحله تایید تا فاکتور"
-      />
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو بر اساس کد سفارش یا ثبت کننده"
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          />
-          <select
-            value={filter}
-            onChange={(event) =>
-              setFilter(event.target.value as TrackingFilter)
-            }
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          >
-            <option value="all">همه وضعیت ها</option>
-            <option value="pending">در انتظار تایید</option>
-            <option value="approved">تایید شده</option>
-            <option value="cancelled">لغو شده</option>
-            <option value="dispatchIssued">حواله خروج صادر شد</option>
-            <option value="delivered">تایید تحویل به مشتری</option>
-            <option value="invoiced">فاکتور شده</option>
-          </select>
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="جستجو بر اساس کد سفارش، مشتری یا ثبت کننده"
+              className="pr-10"
+            />
+          </div>
+          <div className="relative">
+            <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <SearchableSelect
+              value={filter}
+              onValueChange={(value) => setFilter(value as TrackingFilter)}
+              options={[
+                { value: "all", label: "همه وضعیت ها" },
+                { value: "pending", label: "در انتظار تایید" },
+                { value: "approved", label: "تایید شده" },
+                { value: "cancelled", label: "لغو شده" },
+                { value: "dispatchIssued", label: "حواله خروج صادر شد" },
+                { value: "delivered", label: "تایید تحویل به مشتری" },
+                { value: "invoiced", label: "فاکتور شده" },
+              ]}
+              placeholder="فیلتر وضعیت"
+              searchPlaceholder="جستجو در وضعیت ها"
+              emptyMessage="وضعیتی پیدا نشد"
+              triggerClassName="pr-10"
+            />
+          </div>
         </div>
       </section>
 

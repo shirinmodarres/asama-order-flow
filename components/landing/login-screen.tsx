@@ -13,13 +13,7 @@ import { AsamaLogo } from "@/components/branding/asama-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { roles, rolesByKey } from "@/lib/mock-data";
 import type { RoleKey } from "@/lib/types";
 
@@ -151,21 +145,18 @@ export function LoginScreen() {
 
             <label className="grid gap-2 text-sm font-medium text-[#334155]">
               <span>نقش ورود</span>
-              <Select
+              <SearchableSelect
                 value={selectedRole}
                 onValueChange={(value) => handleRoleChange(value as RoleKey)}
-              >
-                <SelectTrigger className="border-[#D6E2D9] bg-[#FBFDFC]">
-                  <SelectValue placeholder="انتخاب نقش" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.key} value={role.key}>
-                      {role.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={roles.map((role) => ({
+                  value: role.key,
+                  label: role.title,
+                }))}
+                placeholder="انتخاب نقش"
+                searchPlaceholder="جستجو در نقش ها"
+                emptyMessage="نقشی پیدا نشد"
+                triggerClassName="border-[#D6E2D9] bg-[#FBFDFC]"
+              />
             </label>
 
             <Button type="submit" variant="success" fullWidth size="lg">

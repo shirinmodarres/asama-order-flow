@@ -2,26 +2,23 @@
 
 import { sidebarIconMap } from "@/components/shared/app-icons";
 import { Card } from "@/components/ui/card";
-import { rolesByKey } from "@/lib/mock-data";
-import type { RoleKey, SidebarItem } from "@/lib/types";
+import type { SidebarItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 interface SidebarProps {
-  role: RoleKey;
   items: SidebarItem[];
 }
 
-export function Sidebar({ role, items }: SidebarProps) {
+export function Sidebar({ items }: SidebarProps) {
   const pathname = usePathname();
   const activeHref = getActiveItemHref(items, pathname);
-  const currentRole = rolesByKey[role];
 
   return (
     <aside className="w-full xl:max-w-[320px] xl:shrink-0">
       <div className="xl:sticky xl:top-6">
-        <Card className="overflow-hidden border-[#D7E0E8] bg-[linear-gradient(180deg,rgba(252,253,255,0.98),rgba(246,249,252,0.98))] p-5">
+        <Card className="h-[calc(100vh-3rem)] overflow-hidden border-[#D7E0E8] bg-[linear-gradient(180deg,rgba(252,253,255,0.98),rgba(246,249,252,0.98))] p-5">
           {/*  <div className="rounded-[20px] border border-[#DCE4EC] bg-[#102034] p-4 text-white shadow-[0_24px_60px_rgba(16,32,52,0.22)]">
            <div className="flex items-start justify-between gap-3">
               <div>
@@ -99,7 +96,6 @@ export function Sidebar({ role, items }: SidebarProps) {
               })}
             </nav>
           </div>
-
           {/* <div className="mt-5 rounded-[18px] border border-[#E5EBF1] bg-[#F8FBFD] px-4 py-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-[#1F3A5F]">
               <ActivitySquare className="size-4" />

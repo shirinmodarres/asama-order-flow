@@ -19,10 +19,12 @@ import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { getOrderLastStageLabel } from "@/lib/expert/mock-data";
 import {
+  formatCurrency,
   formatDate,
   formatNumber,
   getAvailableStock,
   getOrderItemCount,
+  getOrderLineTotal,
   getOrderTotalQuantity,
 } from "@/lib/expert/utils";
 
@@ -32,6 +34,8 @@ interface InventoryRow {
   id: string;
   name: string;
   brand: string;
+  unit: string;
+  unitPrice: number;
   requested: number;
   total: number;
   reserved: number;
@@ -57,6 +61,8 @@ export default function ManagerOrderReviewPage() {
         id: item.productId,
         name: product?.name ?? "کالای نامشخص",
         brand: product?.brand ?? "-",
+        unit: product?.unit ?? "-",
+        unitPrice: product?.unitPrice ?? 0,
         requested: item.quantity,
         total: product?.totalStock ?? 0,
         reserved: product?.reservedStock ?? 0,
@@ -77,6 +83,10 @@ export default function ManagerOrderReviewPage() {
   }
 
   const isPending = order.status === "pending";
+  const totalAmount = inventoryRows.reduce(
+    (sum, row) => sum + getOrderLineTotal(row.requested, row.unitPrice),
+    0,
+  );
   const disableReason = isPending
     ? ""
     : "این سفارش قبلا تعیین تکلیف شده و دیگر قابل تصمیم گیری نیست.";
@@ -90,6 +100,12 @@ export default function ManagerOrderReviewPage() {
       ),
     },
     { key: "brand", header: "برند", render: (row) => row.brand },
+    { key: "unit", header: "واحد", render: (row) => row.unit },
+    {
+      key: "unitPrice",
+      header: "قیمت واحد",
+      render: (row) => formatCurrency(row.unitPrice),
+    },
     {
       key: "requested",
       header: "تعداد درخواست",
@@ -161,6 +177,7 @@ export default function ManagerOrderReviewPage() {
             </h3>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <InfoItem label="کد سفارش" value={order.code} />
+              <InfoItem label="مشتری" value={order.customerName} />
               <InfoItem label="ثبت کننده" value={order.createdBy} />
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
               <InfoItem
@@ -198,8 +215,10 @@ export default function ManagerOrderReviewPage() {
 
         <div className="space-y-4">
           <OrderSummaryCard
+            customerName={order.customerName}
             itemCount={getOrderItemCount(order.items)}
             totalQuantity={getOrderTotalQuantity(order.items)}
+            totalAmount={totalAmount}
             status={order.status}
             warehouseStatus={order.warehouseStatus}
           />

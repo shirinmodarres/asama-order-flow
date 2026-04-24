@@ -1,5 +1,9 @@
 "use client";
 
+import { AlertCircle, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
 interface ApprovalActionsCardProps {
   disabled?: boolean;
   disableReason?: string;
@@ -14,36 +18,46 @@ export function ApprovalActionsCard({
   onCancel,
 }: ApprovalActionsCardProps) {
   return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
-      <h3 className="text-base font-semibold text-[#1F3A5F]">
-        اقدامات مدیر فروش
-      </h3>
-      <p className="mt-2 text-sm text-[#6B7280]">
-        در این مرحله، مدیر فروش تصمیم نهایی تایید یا لغو سفارش را ثبت می کند.
-      </p>
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-base font-semibold text-[#102034]">
+            اقدامات مدیر فروش
+          </h3>
+          <p className="mt-2 text-sm leading-7 text-[#6B7280]">
+            در این مرحله، مدیر فروش تصمیم نهایی تایید یا لغو سفارش را ثبت می کند.
+          </p>
+        </div>
+        <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DDE7F0] bg-[#F5F8FB] text-[#1F3A5F]">
+          <ShieldCheck className="size-5" />
+        </span>
+      </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Button
           type="button"
+          variant="success"
           disabled={disabled}
           onClick={onApprove}
-          className="rounded-xl border border-[#6CAE75] bg-[#6CAE75] px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:border-[#CBD5E1] disabled:bg-[#CBD5E1]"
         >
           تایید سفارش
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="destructive"
           disabled={disabled}
           onClick={onCancel}
-          className="rounded-xl border border-[#B91C1C] bg-[#B91C1C] px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:border-[#CBD5E1] disabled:bg-[#CBD5E1]"
         >
           لغو سفارش
-        </button>
+        </Button>
       </div>
 
       {disabled && disableReason ? (
-        <p className="mt-3 text-xs text-[#B91C1C]">{disableReason}</p>
+        <div className="mt-4 flex items-start gap-2 rounded-[16px] border border-[#F0D0D0] bg-[#FFF6F6] px-4 py-3 text-xs leading-6 text-[#9C3B3B]">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <p>{disableReason}</p>
+        </div>
       ) : null}
-    </div>
+    </Card>
   );
 }

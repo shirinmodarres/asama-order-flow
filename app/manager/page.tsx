@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
-import { SectionHeader } from "@/components/shared/section-header";
+import { ActionLinkCard } from "@/components/shared/action-link-card";
 
 export default function ManagerPage() {
   const { orders } = useExpertStore();
@@ -26,11 +25,6 @@ export default function ManagerPage() {
 
   return (
     <DashboardLayout role="manager" title="داشبورد مدیر فروش">
-      <SectionHeader
-        title="نمای کلی تصمیم گیری سفارش ها"
-        description="پایش سفارش های منتظر تایید و روند پردازش پس از تصمیم"
-      />
-
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ManagerSummaryCard
           title="سفارش های در انتظار تایید"
@@ -55,29 +49,18 @@ export default function ManagerPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <Link
+        <ActionLinkCard
           href="/manager/pending-orders"
-          className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:border-[#CBD5E1]"
-        >
-          <h3 className="text-base font-semibold text-[#1F3A5F]">
-            بررسی سفارش ها
-          </h3>
-          <p className="mt-2 text-sm text-[#6B7280]">
-            مشاهده سفارش های در انتظار تایید و ثبت تصمیم نهایی
-          </p>
-        </Link>
-
-        <Link
+          icon="clipboard-check"
+          title="بررسی سفارش ها"
+          description="مشاهده سفارش های در انتظار تایید و ثبت تصمیم نهایی"
+        />
+        <ActionLinkCard
           href="/manager/order-tracking"
-          className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:border-[#CBD5E1]"
-        >
-          <h3 className="text-base font-semibold text-[#1F3A5F]">
-            مشاهده روند سفارش ها
-          </h3>
-          <p className="mt-2 text-sm text-[#6B7280]">
-            پایش وضعیت کلی سفارش ها از تایید تا فاکتور
-          </p>
-        </Link>
+          icon="activity"
+          title="مشاهده روند سفارش ها"
+          description="پایش وضعیت کلی سفارش ها از تایید تا فاکتور"
+        />
       </section>
     </DashboardLayout>
   );

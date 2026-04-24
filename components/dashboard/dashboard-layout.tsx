@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Header } from "@/components/dashboard/Header";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { rolesByKey, sidebarByRole } from "@/lib/mock-data";
+import { sidebarByRole } from "@/lib/mock-data";
 import type { RoleKey } from "@/lib/types";
 
 interface DashboardLayoutProps {
@@ -11,16 +11,14 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ role, title, children }: DashboardLayoutProps) {
-  const currentRole = rolesByKey[role];
-
   return (
-    <div className="min-h-screen bg-[#F3F5F8]">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1480px] flex-row-reverse gap-0 px-4 py-6 lg:px-6">
-        <Sidebar roleTitle={currentRole.title} items={sidebarByRole[role]} />
+    <div className="min-h-screen">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1540px] flex-col gap-6 px-4 py-5 xl:flex-row xl:px-6 xl:py-6">
+        <Sidebar items={sidebarByRole[role]} />
 
-        <main className="flex-1 px-0 lg:px-6">
+        <main className="min-w-0 flex-1">
           <Header title={title} role={role} />
-          <div className="mt-6 space-y-6">{children}</div>
+          <div className="mt-6 space-y-6 pb-8">{children}</div>
         </main>
       </div>
     </div>

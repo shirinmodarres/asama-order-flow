@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { orderStatusLabel } from "@/lib/expert/mock-data";
 import type { ExpertOrder, OrderStatus } from "@/lib/expert/types";
 import {
@@ -16,6 +15,9 @@ import {
   formatNumber,
   getOrderItemCount,
 } from "@/lib/expert/utils";
+import { ListFilter, Search } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 export default function ManagerPendingOrdersPage() {
   const { orders } = useExpertStore();
@@ -32,7 +34,8 @@ export default function ManagerPendingOrdersPage() {
       .filter((order) => {
         const matchesSearch =
           order.code.toLowerCase().includes(search.toLowerCase()) ||
-          order.createdBy.toLowerCase().includes(search.toLowerCase());
+          order.createdBy.toLowerCase().includes(search.toLowerCase()) ||
+          order.customerName.toLowerCase().includes(search.toLowerCase());
         const matchesStatus =
           statusFilter === "all" ? true : order.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -48,6 +51,7 @@ export default function ManagerPendingOrdersPage() {
       ),
     },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
+    { key: "customer", header: "مشتری", render: (row) => row.customerName },
     {
       key: "date",
       header: "تاریخ",
@@ -86,36 +90,38 @@ export default function ManagerPendingOrdersPage() {
 
   return (
     <DashboardLayout role="manager" title="سفارش های در انتظار تایید">
-      <SectionHeader
-        title="صف تایید سفارش"
-        description="نمایش سفارش هایی که نیاز به تصمیم نهایی مدیر فروش دارند"
-      />
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو بر اساس کد سفارش یا نام ثبت کننده"
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          />
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(
-                event.target.value as "pending" | "all" | OrderStatus,
-              )
-            }
-            className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          >
-            <option value="pending">در انتظار تایید</option>
-            <option value="all">همه وضعیت ها</option>
-            {Object.entries(orderStatusLabel).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="جستجو بر اساس کد سفارش، مشتری یا نام ثبت کننده"
+              className="pr-10"
+            />
+          </div>
+          <div className="relative">
+            <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <SearchableSelect
+              value={statusFilter}
+              onValueChange={(value) =>
+                setStatusFilter(value as "pending" | "all" | OrderStatus)
+              }
+              options={[
+                { value: "pending", label: "در انتظار تایید" },
+                { value: "all", label: "همه وضعیت ها" },
+                ...Object.entries(orderStatusLabel).map(([value, label]) => ({
+                  value,
+                  label,
+                })),
+              ]}
+              placeholder="فیلتر وضعیت"
+              searchPlaceholder="جستجو در وضعیت ها"
+              emptyMessage="وضعیتی پیدا نشد"
+              triggerClassName="pr-10"
+            />
+          </div>
         </div>
       </section>
 

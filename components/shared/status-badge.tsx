@@ -1,5 +1,6 @@
 import { orderStatusLabel, warehouseStatusLabel } from "@/lib/expert/mock-data";
 import type { OrderStatus, WarehouseStatus } from "@/lib/expert/types";
+import { Badge } from "@/components/ui/badge";
 
 type BadgeType = "order" | "warehouse" | "inventory";
 type InventoryStatus = "normal" | "warning" | "critical";
@@ -10,14 +11,12 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ type, status }: StatusBadgeProps) {
-  const { label, className } = getBadgeConfig(type, status);
+  const { label, variant } = getBadgeConfig(type, status);
 
   return (
-    <span
-      className={`inline-flex items-center justify-center rounded-xl border px-2.5 py-1 text-xs font-medium ${className}`}
-    >
+    <Badge variant={variant} dot>
       {label}
-    </span>
+    </Badge>
   );
 }
 
@@ -27,21 +26,21 @@ function getBadgeConfig(type: BadgeType, status: StatusBadgeProps["status"]) {
     if (value === "pending")
       return {
         label: orderStatusLabel[value],
-        className: "border-[#F3D8A8] bg-[#FFF8EB] text-[#9A6C18]",
+        variant: "warning" as const,
       };
     if (value === "approved")
       return {
         label: orderStatusLabel[value],
-        className: "border-[#C5E3CB] bg-[#F3FAF4] text-[#4D7D54]",
+        variant: "success" as const,
       };
     if (value === "cancelled")
       return {
         label: orderStatusLabel[value],
-        className: "border-[#F4C8C8] bg-[#FFF3F3] text-[#A23D3D]",
+        variant: "destructive" as const,
       };
     return {
       label: orderStatusLabel[value],
-      className: "border-[#C9D7E8] bg-[#EEF3F8] text-[#1F3A5F]",
+      variant: "brand" as const,
     };
   }
 
@@ -50,36 +49,36 @@ function getBadgeConfig(type: BadgeType, status: StatusBadgeProps["status"]) {
     if (value === "reserved")
       return {
         label: warehouseStatusLabel[value],
-        className: "border-[#D6DCE5] bg-[#F5F7FA] text-[#4B5563]",
+        variant: "neutral" as const,
       };
     if (value === "reviewing")
       return {
         label: warehouseStatusLabel[value],
-        className: "border-[#CBD8E8] bg-[#EEF3F8] text-[#1F3A5F]",
+        variant: "brand" as const,
       };
     if (value === "returned")
       return {
         label: warehouseStatusLabel[value],
-        className: "border-[#E5E7EB] bg-[#F8FAFC] text-[#6B7280]",
+        variant: "neutral" as const,
       };
     if (value === "processing")
       return {
         label: warehouseStatusLabel[value],
-        className: "border-[#CBD8E8] bg-[#EEF3F8] text-[#1F3A5F]",
+        variant: "brand" as const,
       };
     if (value === "dispatchIssued")
       return {
         label: warehouseStatusLabel[value],
-        className: "border-[#BFD0E6] bg-[#EAF1F8] text-[#1F3A5F]",
+        variant: "brand" as const,
       };
     if (value === "delivered")
       return {
         label: warehouseStatusLabel[value],
-        className: "border-[#C5E3CB] bg-[#F3FAF4] text-[#4D7D54]",
+        variant: "success" as const,
       };
     return {
       label: warehouseStatusLabel[value],
-      className: "border-[#C9D7E8] bg-[#EEF3F8] text-[#1F3A5F]",
+      variant: "brand" as const,
     };
   }
 
@@ -87,18 +86,18 @@ function getBadgeConfig(type: BadgeType, status: StatusBadgeProps["status"]) {
   if (inventoryStatus === "critical") {
     return {
       label: "بحرانی",
-      className: "border-[#F4C8C8] bg-[#FFF3F3] text-[#A23D3D]",
+      variant: "destructive" as const,
     };
   }
   if (inventoryStatus === "warning") {
     return {
       label: "کم",
-      className: "border-[#F3D8A8] bg-[#FFF8EB] text-[#9A6C18]",
+      variant: "warning" as const,
     };
   }
 
   return {
     label: "مناسب",
-    className: "border-[#C5E3CB] bg-[#F3FAF4] text-[#4D7D54]",
+    variant: "success" as const,
   };
 }
