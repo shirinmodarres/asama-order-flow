@@ -1,13 +1,12 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
-import { ProductForm } from "@/components/support/product-form";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
+import { ProductForm } from "@/components/support/product-form";
 import type { UpdateProductInput } from "@/lib/expert/types";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function SupportEditProductPage() {
   const params = useParams<{ id: string }>();
@@ -44,10 +43,6 @@ export default function SupportEditProductPage() {
 
   return (
     <DashboardLayout role="support" title="ویرایش کالا">
-      <SectionHeader
-        title={`ویرایش ${product.name}`}
-        description="اطلاعات پایه و وضعیت کالا را به روز کنید."
-      />
       {message ? (
         <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">
           {message}
@@ -60,6 +55,8 @@ export default function SupportEditProductPage() {
           name: product.name,
           brand: product.brand,
           category: product.category,
+          unit: product.unit,
+          unitPrice: product.unitPrice,
           description: product.description,
           status: product.status,
         }}

@@ -5,11 +5,16 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { InventoryUpdateModal } from "@/components/support/inventory-update-modal";
 import { ProductStatusBadge } from "@/components/support/product-status-badge";
+import { Button } from "@/components/ui/button";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { SectionHeader } from "@/components/shared/section-header";
 import type { Product, UpdateInventoryInput } from "@/lib/expert/types";
-import { compareText, formatNumber, getAvailableStock } from "@/lib/expert/utils";
+import {
+  compareText,
+  formatNumber,
+  getAvailableStock,
+} from "@/lib/expert/utils";
 
 export default function SupportInventoryPage() {
   const { products, updateInventory } = useExpertStore();
@@ -58,20 +63,21 @@ export default function SupportInventoryPage() {
       header: "عملیات",
       render: (row) => (
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={() => openModal(row, "increase")}
-            className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs text-white"
           >
             افزایش موجودی
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            variant="destructive"
             onClick={() => openModal(row, "decrease")}
-            className="rounded-xl border border-[#B91C1C] bg-[#B91C1C] px-3 py-1.5 text-xs text-white"
           >
             کاهش موجودی
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -91,14 +97,8 @@ export default function SupportInventoryPage() {
 
   return (
     <DashboardLayout role="support" title="به روزرسانی موجودی">
-      <SectionHeader
-        title="کنترل موجودی"
-        description="افزایش یا کاهش کنترل شده موجودی کالاها"
-      />
       {message ? (
-        <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">
-          {message}
-        </div>
+        <div className="asama-banner px-4 py-3 text-sm">{message}</div>
       ) : null}
       <DataTable columns={columns} rows={rows} rowKey={(row) => row.id} />
 

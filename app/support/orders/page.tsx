@@ -1,15 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Input } from "@/components/ui/input";
 import type { ExpertOrder } from "@/lib/expert/types";
+import { Search } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 export default function SupportOrdersPage() {
   const { orders } = useExpertStore();
@@ -23,7 +24,8 @@ export default function SupportOrdersPage() {
       .filter(
         (order) =>
           order.code.toLowerCase().includes(search.toLowerCase()) ||
-          order.createdBy.toLowerCase().includes(search.toLowerCase()),
+          order.createdBy.toLowerCase().includes(search.toLowerCase()) ||
+          order.customerName.toLowerCase().includes(search.toLowerCase()),
       );
   }, [orders, search]);
 
@@ -36,6 +38,7 @@ export default function SupportOrdersPage() {
       ),
     },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
+    { key: "customer", header: "مشتری", render: (row) => row.customerName },
     {
       key: "status",
       header: "وضعیت سفارش",
@@ -64,18 +67,16 @@ export default function SupportOrdersPage() {
 
   return (
     <DashboardLayout role="support" title="ویرایش سفارش">
-      <SectionHeader
-        title="ویرایش ویژه سفارش ها"
-        description="ابزار اضطراری پشتیبانی برای اصلاح سفارش خارج از مسیر معمول"
-      />
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="جستجو بر اساس کد سفارش یا ثبت کننده"
-          className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-        />
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="جستجو بر اساس کد سفارش، مشتری یا ثبت کننده"
+            className="pr-10"
+          />
+        </div>
       </section>
 
       {filteredOrders.length > 0 ? (

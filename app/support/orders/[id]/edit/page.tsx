@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, PackageSearch } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -9,10 +10,16 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { SectionHeader } from "@/components/shared/section-header";
 import { SupportWarningBanner } from "@/components/support/support-warning-banner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
+  formatCurrency,
   formatNumber,
   getAvailableStock,
   getOrderItemCount,
+  getOrderLineTotal,
+  getOrderTotalAmount,
   getOrderTotalQuantity,
 } from "@/lib/expert/utils";
 
@@ -27,6 +34,7 @@ export default function SupportOrderEditPage() {
   const router = useRouter();
   const { products, getOrderById, supportEditOrder } = useExpertStore();
   const order = getOrderById(params.id);
+  const [customerName, setCustomerName] = useState(order?.customerName ?? "");
   const [message, setMessage] = useState("");
 
   const [items, setItems] = useState<DraftItem[]>(() =>
@@ -49,6 +57,18 @@ export default function SupportOrderEditPage() {
         })),
     [items],
   );
+  const productsById = useMemo(
+    () =>
+      products.reduce<Record<string, (typeof products)[number]>>(
+        (accumulator, product) => {
+          accumulator[product.id] = product;
+          return accumulator;
+        },
+        {},
+      ),
+    [products],
+  );
+  const totalAmount = getOrderTotalAmount(normalizedItems, productsById);
 
   if (!order) {
     return (
@@ -84,7 +104,11 @@ export default function SupportOrderEditPage() {
   };
 
   const saveChanges = () => {
-    const result = supportEditOrder({ id: order.id, items: normalizedItems });
+    const result = supportEditOrder({
+      id: order.id,
+      customerName,
+      items: normalizedItems,
+    });
 
     if (!result.ok) {
       setMessage(result.error ?? "ویرایش ویژه انجام نشد.");
@@ -121,6 +145,15 @@ export default function SupportOrderEditPage() {
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>نام مشتری</span>
+            <Input
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              placeholder="نام مشتری یا نمایندگی"
+            />
+          </label>
+
           <h3 className="text-base font-semibold text-[#1F3A5F]">
             اقلام سفارش
           </h3>
@@ -136,22 +169,25 @@ export default function SupportOrderEditPage() {
                   key={item.rowId}
                   className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] p-3 md:grid-cols-[1fr_140px_auto]"
                 >
-                  <select
-                    value={item.productId}
-                    onChange={(event) =>
-                      updateRow(item.rowId, { productId: event.target.value })
-                    }
-                    className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-                  >
-                    <option value="">انتخاب کالا</option>
-                    {products.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name} - {option.brand}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <PackageSearch className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+                    <SearchableSelect
+                      value={item.productId || undefined}
+                      onValueChange={(value) =>
+                        updateRow(item.rowId, { productId: value })
+                      }
+                      options={products.map((option) => ({
+                        value: option.id,
+                        label: `${option.name} - ${option.brand}`,
+                      }))}
+                      placeholder="انتخاب کالا"
+                      searchPlaceholder="جستجو در کالاها"
+                      emptyMessage="کالایی پیدا نشد"
+                      triggerClassName="pr-10"
+                    />
+                  </div>
 
-                  <input
+                  <Input
                     type="number"
                     min={1}
                     value={item.quantity}
@@ -160,20 +196,19 @@ export default function SupportOrderEditPage() {
                         quantity: Number(event.target.value),
                       })
                     }
-                    className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
                   />
 
-                  <button
+                  <Button
                     type="button"
                     onClick={() => removeRow(item.rowId)}
-                    className="rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm text-[#64748B]"
+                    variant="outline"
                   >
                     حذف
-                  </button>
+                  </Button>
 
                   <p className="md:col-span-3 text-xs text-[#6B7280]">
                     {product
-                      ? `موجودی قابل استفاده: ${formatNumber(getAvailableStock(product))}`
+                      ? `موجودی قابل استفاده: ${formatNumber(getAvailableStock(product))} ${product.unit} • قیمت واحد: ${formatCurrency(product.unitPrice)} • مبلغ ردیف: ${formatCurrency(getOrderLineTotal(item.quantity, product.unitPrice))}`
                       : `آیتم ${formatNumber(index + 1)}`}
                   </p>
                 </div>
@@ -181,27 +216,38 @@ export default function SupportOrderEditPage() {
             })}
           </div>
 
+          <div className="mt-4 rounded-[18px] border border-[#E7EDF3] bg-[#FBFCFD] px-4 py-3 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[#6B7280]">مبلغ تقریبی سفارش</span>
+              <span className="font-semibold text-[#102034]">
+                {formatCurrency(totalAmount)}
+              </span>
+            </div>
+          </div>
+
           <div className="mt-4 flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={addRow}
-              className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155]"
+              variant="outline"
             >
               افزودن آیتم
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={saveChanges}
-              className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm text-white"
             >
               ذخیره تغییرات
-            </button>
+              <ChevronLeft className="size-4" />
+            </Button>
           </div>
         </div>
 
         <OrderSummaryCard
+          customerName={customerName}
           itemCount={getOrderItemCount(normalizedItems)}
           totalQuantity={getOrderTotalQuantity(normalizedItems)}
+          totalAmount={totalAmount}
           status={order.status}
           warehouseStatus={order.warehouseStatus}
         />

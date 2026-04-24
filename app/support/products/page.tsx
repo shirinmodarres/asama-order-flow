@@ -9,8 +9,17 @@ import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeader } from "@/components/shared/section-header";
 import { ProductStatusBadge } from "@/components/support/product-status-badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Product } from "@/lib/expert/types";
-import { formatNumber, getAvailableStock } from "@/lib/expert/utils";
+import { formatCurrency, formatNumber, getAvailableStock } from "@/lib/expert/utils";
+import { Search, Tags } from "lucide-react";
 
 export default function SupportProductsPage() {
   const { products } = useExpertStore();
@@ -58,6 +67,12 @@ export default function SupportProductsPage() {
       header: "موجودی قابل استفاده",
       render: (row) => formatNumber(getAvailableStock(row)),
     },
+    { key: "unit", header: "واحد", render: (row) => row.unit },
+    {
+      key: "unitPrice",
+      header: "قیمت واحد",
+      render: (row) => formatCurrency(row.unitPrice),
+    },
     {
       key: "status",
       header: "وضعیت",
@@ -94,24 +109,31 @@ export default function SupportProductsPage() {
 
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو بر اساس نام کالا"
-            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          />
-          <select
-            value={brandFilter}
-            onChange={(event) => setBrandFilter(event.target.value)}
-            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#1F3A5F]"
-          >
-            <option value="all">همه برندها</option>
-            {brands.map((brand) => (
-              <option key={brand} value={brand}>
-                {brand}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="جستجو بر اساس نام کالا"
+              className="pr-10"
+            />
+          </div>
+          <div className="relative">
+            <Tags className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            <Select value={brandFilter} onValueChange={setBrandFilter}>
+              <SelectTrigger className="pr-10">
+                <SelectValue placeholder="همه برندها" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه برندها</SelectItem>
+                {brands.map((brand) => (
+                  <SelectItem key={brand} value={brand}>
+                    {brand}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </section>
 
