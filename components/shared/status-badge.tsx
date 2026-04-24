@@ -76,6 +76,16 @@ function getBadgeConfig(type: BadgeType, status: StatusBadgeProps["status"]) {
         label: warehouseStatusLabel[value],
         variant: "success" as const,
       };
+    if (value === "awaitingNajaDetails")
+      return {
+        label: warehouseStatusLabel[value],
+        variant: "warning" as const,
+      };
+    if (value === "najaDetailsCompleted")
+      return {
+        label: warehouseStatusLabel[value],
+        variant: "success" as const,
+      };
     return {
       label: warehouseStatusLabel[value],
       variant: "brand" as const,

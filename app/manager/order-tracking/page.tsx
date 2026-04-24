@@ -8,7 +8,7 @@ import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
+import { OrderSourceBadge } from "@/components/shared/order-source-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -58,6 +58,11 @@ export default function ManagerOrderTrackingPage() {
       render: (row) => (
         <span className="font-semibold text-[#1F3A5F]">{row.code}</span>
       ),
+    },
+    {
+      key: "source",
+      header: "منبع",
+      render: (row) => <OrderSourceBadge source={row.orderSource} />,
     },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
     { key: "customer", header: "مشتری", render: (row) => row.customerName },

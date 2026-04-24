@@ -1,6 +1,12 @@
 "use client";
 
-import { ArrowLeft, Clock3, FilePenLine, PlusCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock3,
+  FilePenLine,
+  PlusCircle,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
@@ -77,7 +83,7 @@ export function RoleDashboardPage({ role }: RoleDashboardPageProps) {
         {role === "expert" ? (
           <SectionCard
             title="دسترسی سریع"
-            description="برای  ثبت سفارش یا آخرین سفارش قابل ویرایش"
+            description="برای ثبت سفارش عادی، سفارش ناجا یا آخرین سفارش قابل ویرایش"
           >
             <div className="space-y-3">
               <div className="rounded-[18px] border border-[#DDEAE0] bg-[linear-gradient(180deg,rgba(247,251,248,1),rgba(255,255,255,1))] p-4">
@@ -97,6 +103,30 @@ export function RoleDashboardPage({ role }: RoleDashboardPageProps) {
                 <Button asChild variant="success" fullWidth className="mt-4">
                   <Link href="/expert/orders/new">
                     ورود به فرم ثبت سفارش
+                    <ArrowLeft className="size-4" />
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="rounded-[18px] border border-[#F0E7C7] bg-[linear-gradient(180deg,rgba(255,251,238,1),rgba(255,255,255,1))] p-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-11 items-center justify-center rounded-[14px] bg-[#EEDC98] text-[#7E6110] shadow-[0_14px_28px_rgba(191,160,69,0.16)]">
+                    <ShieldCheck className="size-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#102034]">
+                      <span>ثبت سفارش ناجا</span>
+                      <Badge variant="warning">موجودی اختصاصی</Badge>
+                    </div>
+                    <p className="mt-1 text-sm leading-7 text-[#6B7280]">
+                      سفارش های ناجا را از همین پنل ثبت کنید تا مستقیم وارد صف
+                      انبار شوند.
+                    </p>
+                  </div>
+                </div>
+                <Button asChild variant="outline" fullWidth className="mt-4">
+                  <Link href="/expert/naja-orders/new">
+                    ورود به فرم سفارش ناجا
                     <ArrowLeft className="size-4" />
                   </Link>
                 </Button>

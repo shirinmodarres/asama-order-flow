@@ -47,9 +47,9 @@ export default function FinanceInvoiceDetailsPage() {
   }
 
   const order = getOrderById(invoice.orderId);
-  const slip = getExitSlipById(invoice.exitSlipId);
+  const slip = invoice.exitSlipId ? getExitSlipById(invoice.exitSlipId) : undefined;
 
-  if (!order || !slip) {
+  if (!order || (order.orderSource === "normal" && !slip)) {
     return (
       <DashboardLayout role="finance" title="جزئیات فاکتور">
         <EmptyState
@@ -121,7 +121,7 @@ export default function FinanceInvoiceDetailsPage() {
               <div>
                 <p className="text-xs text-[#6B7280]">سند مالی داخلی</p>
                 <h3 className="mt-1 text-xl font-bold text-[#1F3A5F]">
-                  {invoice.invoiceNumber}
+                  {invoice.invoiceNumber} {invoice.invoiceName ? `- ${invoice.invoiceName}` : ""}
                 </h3>
               </div>
               <InvoiceStatusBadge status={invoice.status} />
@@ -129,8 +129,9 @@ export default function FinanceInvoiceDetailsPage() {
 
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <InfoItem label="کد سفارش مرتبط" value={order.code} />
+              <InfoItem label="نام صورتحساب" value={invoice.invoiceName ?? order.customerName} />
               <InfoItem label="مشتری" value={order.customerName} />
-              <InfoItem label="شماره حواله خروج" value={slip.slipNumber} />
+              <InfoItem label="شماره حواله خروج" value={slip?.slipNumber ?? "در مسیر ناجا نیاز نیست"} />
               <InfoItem label="ثبت کننده سفارش" value={order.createdBy} />
               <InfoItem label="مسئول صدور فاکتور" value={invoice.createdBy} />
               <InfoItem
@@ -140,9 +141,11 @@ export default function FinanceInvoiceDetailsPage() {
               <InfoItem
                 label="تاریخ تحویل"
                 value={
-                  slip.deliveredAt
+                  slip?.deliveredAt
                     ? formatDateTime(slip.deliveredAt)
-                    : formatDate(slip.exitDate)
+                    : slip
+                      ? formatDate(slip.exitDate)
+                      : formatDate(order.updatedAt)
                 }
               />
               <InfoItem
@@ -162,6 +165,35 @@ export default function FinanceInvoiceDetailsPage() {
           </section>
 
           <DataTable columns={columns} rows={rows} rowKey={(row) => row.id} />
+
+          {invoice.attachmentRecords?.length ? (
+            <section className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+              <h3 className="text-base font-semibold text-[#1F3A5F]">ضمیمه اطلاعات مشتریان ناجا</h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full text-right text-sm">
+                  <thead className="border-b border-[#E9EEF3] bg-[#F8FBFD]">
+                    <tr>
+                      {["نام مشتری", "کد ملی", "شماره موبایل", "کالا", "شناسه کالا", "کد رهگیری"].map((header) => (
+                        <th key={header} className="px-4 py-3 font-semibold text-[#5B6B7F]">{header}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoice.attachmentRecords.map((record, index) => (
+                      <tr key={`${record.nationalId}-${index}`} className="border-b border-[#EEF2F6]">
+                        <td className="px-4 py-3">{record.customerName}</td>
+                        <td className="px-4 py-3">{record.nationalId}</td>
+                        <td className="px-4 py-3">{record.phoneNumber}</td>
+                        <td className="px-4 py-3">{record.productName}</td>
+                        <td className="px-4 py-3">{record.productIdentifier}</td>
+                        <td className="px-4 py-3">{record.trackingCode}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
         </div>
 
         <InvoiceSummaryCard

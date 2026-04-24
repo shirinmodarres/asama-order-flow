@@ -1,4 +1,5 @@
 export type OrderStatus = "pending" | "approved" | "cancelled" | "invoiced";
+export type OrderSource = "normal" | "naja";
 
 export type WarehouseStatus =
   | "reserved"
@@ -7,7 +8,9 @@ export type WarehouseStatus =
   | "processing"
   | "dispatchIssued"
   | "delivered"
-  | "completed";
+  | "completed"
+  | "awaitingNajaDetails"
+  | "najaDetailsCompleted";
 
 export interface Product {
   id: string;
@@ -20,6 +23,7 @@ export interface Product {
   status: "active" | "inactive";
   totalStock: number;
   reservedStock: number;
+  najaInventoryQty: number;
 }
 
 export interface OrderItem {
@@ -30,8 +34,14 @@ export interface OrderItem {
 export interface ExpertOrder {
   id: string;
   code: string;
+  orderSource: OrderSource;
   createdBy: string;
+  najaExpertName?: string;
   customerName: string;
+  nationalId?: string;
+  phoneNumber?: string;
+  trackingCode?: string;
+  productIdentifier?: string;
   createdAt: string;
   updatedAt: string;
   status: OrderStatus;
@@ -44,10 +54,26 @@ export interface CreateOrderInput {
   items: OrderItem[];
 }
 
+export interface CreateNajaOrderInput {
+  productId: string;
+  quantity: number;
+  customerName: string;
+  nationalId: string;
+  phoneNumber: string;
+  najaExpertName: string;
+}
+
 export interface UpdateOrderInput {
   id: string;
   customerName: string;
   items: OrderItem[];
+}
+
+export interface CompleteNajaWarehouseInput {
+  orderId: string;
+  productIdentifier: string;
+  trackingCode: string;
+  createdBy: string;
 }
 
 export interface ExitSlip {
@@ -84,11 +110,22 @@ export interface Invoice {
   id: string;
   invoiceNumber: string;
   orderId: string;
-  exitSlipId: string;
+  exitSlipId?: string;
   createdBy: string;
   issuedAt: string;
   status: InvoiceStatus;
+  invoiceName?: string;
   items: OrderItem[];
+  attachmentRecords?: InvoiceAttachmentRecord[];
+}
+
+export interface InvoiceAttachmentRecord {
+  customerName: string;
+  nationalId: string;
+  phoneNumber: string;
+  productName: string;
+  productIdentifier: string;
+  trackingCode: string;
 }
 
 export interface CreateInvoiceInput {
@@ -120,6 +157,7 @@ export interface UpdateProductInput {
 export interface InventoryHistoryEntry {
   id: string;
   productId: string;
+  inventoryScope: "normal" | "naja";
   changeType: "increase" | "decrease";
   amount: number;
   note: string;
@@ -129,6 +167,7 @@ export interface InventoryHistoryEntry {
 
 export interface UpdateInventoryInput {
   productId: string;
+  inventoryScope?: "normal" | "naja";
   changeType: "increase" | "decrease";
   amount: number;
   note: string;

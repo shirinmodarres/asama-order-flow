@@ -10,7 +10,12 @@ export default function FinancePage() {
 
   const readyForInvoiceCount = orders.filter(
     (order) =>
-      order.status === "approved" && order.warehouseStatus === "delivered",
+      (order.orderSource === "normal" &&
+        order.status === "approved" &&
+        order.warehouseStatus === "delivered") ||
+      (order.orderSource === "naja" &&
+        order.status === "approved" &&
+        order.warehouseStatus === "najaDetailsCompleted"),
   ).length;
   const issuedInvoicesCount = invoices.length;
   const completedOrdersCount = orders.filter(
@@ -21,6 +26,7 @@ export default function FinancePage() {
     (order) =>
       order.status === "approved" &&
       order.warehouseStatus === "delivered" &&
+      order.orderSource === "normal" &&
       exitSlips.some((slip) => slip.orderId === order.id),
   ).length;
 
@@ -30,7 +36,7 @@ export default function FinancePage() {
         <ManagerSummaryCard
           title="سفارش های آماده فاکتور"
           value={readyForInvoiceCount}
-          hint="تایید فروش و تحویل انبار تکمیل شده است"
+          hint="شامل جریان عادی و سفارش های ناجا"
         />
         <ManagerSummaryCard
           title="فاکتورهای صادرشده"

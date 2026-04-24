@@ -7,7 +7,7 @@ import { SupportActionCard } from "@/components/support/support-action-card";
 import { getAvailableStock } from "@/lib/expert/utils";
 
 export default function SupportPage() {
-  const { products, orders, inventoryHistory } = useExpertStore();
+  const { products, orders } = useExpertStore();
 
   const lowStockCount = products.filter(
     (product) =>
@@ -17,6 +17,7 @@ export default function SupportPage() {
   const orderNeedsEditCount = orders.filter(
     (order) => order.status === "pending" || order.status === "approved",
   ).length;
+  const najaInventoryCount = products.filter((product) => product.najaInventoryQty > 0).length;
 
   return (
     <DashboardLayout role="support" title="داشبورد پشتیبانی">
@@ -37,13 +38,13 @@ export default function SupportPage() {
           hint="برای ویرایش ویژه قابل بررسی"
         />
         <ManagerSummaryCard
-          title="آخرین تغییرات موجودی"
-          value={inventoryHistory.length}
-          hint="تعداد کل ثبت های تاریخچه"
+          title="اقلام دارای موجودی ناجا"
+          value={najaInventoryCount}
+          hint="کالاهای قابل ثبت در مسیر ناجا"
         />
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SupportActionCard
           title="تعریف کالا"
           description="ثبت کالاهای جدید و تکمیل اطلاعات پایه"
@@ -58,6 +59,11 @@ export default function SupportPage() {
           title="ویرایش سفارش"
           description="ثبت ویرایش ویژه پشتیبانی خارج از روند عادی"
           href="/support/orders"
+        />
+        <SupportActionCard
+          title="موجودی ناجا"
+          description="تعریف و به روزرسانی موجودی اختصاصی سفارش های ناجا"
+          href="/support/naja-inventory"
         />
       </section>
     </DashboardLayout>

@@ -19,6 +19,7 @@ interface InventoryUpdateModalProps {
   open: boolean;
   product: Product | null;
   initialChangeType?: "increase" | "decrease";
+  inventoryScope?: "normal" | "naja";
   onClose: () => void;
   onSubmit: (input: UpdateInventoryInput) => void;
 }
@@ -27,6 +28,7 @@ export function InventoryUpdateModal({
   open,
   product,
   initialChangeType = "increase",
+  inventoryScope = "normal",
   onClose,
   onSubmit,
 }: InventoryUpdateModalProps) {
@@ -36,6 +38,7 @@ export function InventoryUpdateModal({
     <InventoryUpdateModalContent
       key={`${product.id}-${initialChangeType}`}
       initialChangeType={initialChangeType}
+      inventoryScope={inventoryScope}
       onClose={onClose}
       onSubmit={onSubmit}
       product={product}
@@ -48,6 +51,7 @@ function InventoryUpdateModalContent({
   open,
   product,
   initialChangeType = "increase",
+  inventoryScope = "normal",
   onClose,
   onSubmit,
 }: InventoryUpdateModalProps & { product: Product; open: boolean }) {
@@ -65,6 +69,7 @@ function InventoryUpdateModalContent({
             event.preventDefault();
             onSubmit({
               productId: product.id,
+              inventoryScope,
               changeType,
               amount,
               note,
@@ -73,7 +78,9 @@ function InventoryUpdateModalContent({
           }}
         >
           <DialogHeader>
-            <DialogTitle>به روزرسانی موجودی</DialogTitle>
+            <DialogTitle>
+              {inventoryScope === "naja" ? "به روزرسانی موجودی ناجا" : "به روزرسانی موجودی"}
+            </DialogTitle>
             <DialogDescription>{product.name}</DialogDescription>
           </DialogHeader>
 

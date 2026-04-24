@@ -8,11 +8,11 @@ import { InvoiceTable } from "@/components/finance/invoice-table";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SectionHeader } from "@/components/shared/section-header";
+import { OrderSourceBadge } from "@/components/shared/order-source-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
 import type { ExpertOrder } from "@/lib/expert/types";
-import { formatDateTime, formatNumber } from "@/lib/expert/utils";
+import { formatDateTime } from "@/lib/expert/utils";
 
 interface ReadyOrderRow {
   id: string;
@@ -30,7 +30,12 @@ export default function FinanceReadyPage() {
     return orders
       .filter(
         (order) =>
-          order.status === "approved" && order.warehouseStatus === "delivered",
+          (order.orderSource === "normal" &&
+            order.status === "approved" &&
+            order.warehouseStatus === "delivered") ||
+          (order.orderSource === "naja" &&
+            order.status === "approved" &&
+            order.warehouseStatus === "najaDetailsCompleted"),
       )
       .map((order) => {
         const slip = exitSlips.find((entry) => entry.orderId === order.id);
@@ -83,6 +88,11 @@ export default function FinanceReadyPage() {
       render: (row) => row.order.createdBy,
     },
     {
+      key: "source",
+      header: "منبع",
+      render: (row) => <OrderSourceBadge source={row.order.orderSource} />,
+    },
+    {
       key: "customer",
       header: "مشتری",
       render: (row) => row.order.customerName,
@@ -110,13 +120,21 @@ export default function FinanceReadyPage() {
       render: (row) => (
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href={`/finance/orders/${row.order.id}/reconcile`}
+            href={
+              row.order.orderSource === "naja"
+                ? `/finance/orders/${row.order.id}/naja-invoice`
+                : `/finance/orders/${row.order.id}/reconcile`
+            }
             className="btn-primary rounded-xl px-3 py-1.5 text-xs font-medium text-white visited:text-white hover:text-white focus:text-white"
           >
-            بررسی و تطبیق
+            {row.order.orderSource === "naja" ? "صدور فاکتور ناجا" : "بررسی و تطبیق"}
           </Link>
           <Link
-            href={`/finance/orders/${row.order.id}/reconcile`}
+            href={
+              row.order.orderSource === "naja"
+                ? `/finance/orders/${row.order.id}/naja-invoice`
+                : `/finance/orders/${row.order.id}/reconcile`
+            }
             className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs text-[#334155] hover:border-[#CBD5E1]"
           >
             مشاهده جزئیات

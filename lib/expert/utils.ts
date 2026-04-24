@@ -42,6 +42,10 @@ export function getAvailableStock(product: Product): number {
   return Math.max(product.totalStock - product.reservedStock, 0);
 }
 
+export function getNajaAvailableStock(product: Product): number {
+  return Math.max(product.najaInventoryQty, 0);
+}
+
 export function getOrderItemCount(items: OrderItem[]): number {
   return items.length;
 }

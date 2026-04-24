@@ -5,6 +5,7 @@ import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { OrderSourceBadge } from "@/components/shared/order-source-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -41,7 +42,12 @@ export default function WarehouseOrdersPage() {
     return [...orders]
       .filter(
         (order) =>
-          order.status === "approved" && order.warehouseStatus === "reviewing",
+          (order.orderSource === "normal" &&
+            order.status === "approved" &&
+            order.warehouseStatus === "reviewing") ||
+          (order.orderSource === "naja" &&
+            order.status === "approved" &&
+            order.warehouseStatus === "awaitingNajaDetails"),
       )
       .filter((order) => {
         const matchesSearch =
@@ -70,6 +76,11 @@ export default function WarehouseOrdersPage() {
       ),
     },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
+    {
+      key: "source",
+      header: "منبع",
+      render: (row) => <OrderSourceBadge source={row.orderSource} />,
+    },
     { key: "customer", header: "مشتری", render: (row) => row.customerName },
     {
       key: "date",
@@ -97,10 +108,16 @@ export default function WarehouseOrdersPage() {
       render: (row) => (
         <div className="flex flex-wrap gap-2">
           <Link
-            href={`/warehouse/orders/${row.id}/exit-slip`}
+            href={
+              row.orderSource === "naja"
+                ? `/warehouse/orders/${row.id}/naja-details`
+                : `/warehouse/orders/${row.id}/exit-slip`
+            }
             className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs !text-white"
           >
-            ثبت حواله خروج
+            {row.orderSource === "naja"
+              ? "تکمیل اطلاعات انبار"
+              : "ثبت حواله خروج"}
           </Link>
           <Link
             href={`/warehouse/orders/${row.id}`}

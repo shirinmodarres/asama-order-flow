@@ -108,6 +108,12 @@ export const sidebarByRole: Record<RoleKey, SidebarItem[]> = {
       icon: "plus-circle",
       description: "ایجاد سفارش جدید فروش",
     },
+    {
+      label: "ثبت سفارش ناجا",
+      href: "/expert/naja-orders/new",
+      icon: "plus-circle",
+      description: "ثبت سفارش از موجودی اختصاصی ناجا",
+    },
   ],
   manager: [
     {
@@ -193,6 +199,12 @@ export const sidebarByRole: Record<RoleKey, SidebarItem[]> = {
       href: "/support/inventory",
       icon: "package",
       description: "افزایش و کاهش کنترل شده موجودی",
+    },
+    {
+      label: "موجودی ناجا",
+      href: "/support/naja-inventory",
+      icon: "package",
+      description: "مدیریت موجودی اختصاصی سفارش های ناجا",
     },
     {
       label: "تاریخچه موجودی",

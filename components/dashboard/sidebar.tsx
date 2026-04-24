@@ -16,7 +16,7 @@ export function Sidebar({ items }: SidebarProps) {
   const activeHref = getActiveItemHref(items, pathname);
 
   return (
-    <aside className="w-full xl:max-w-[320px] xl:shrink-0">
+    <aside className="w-full xl:max-w-[300px] xl:shrink-0">
       <div className="xl:sticky xl:top-6">
         <Card className="h-[calc(100vh-3rem)] overflow-hidden border-[#D7E0E8] bg-[linear-gradient(180deg,rgba(252,253,255,0.98),rgba(246,249,252,0.98))] p-5">
           {/*  <div className="rounded-[20px] border border-[#DCE4EC] bg-[#102034] p-4 text-white shadow-[0_24px_60px_rgba(16,32,52,0.22)]">

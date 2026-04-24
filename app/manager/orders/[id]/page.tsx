@@ -14,6 +14,7 @@ import { ReserveInventoryNote } from "@/components/manager/reserve-inventory-not
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { OrderSourceBadge } from "@/components/shared/order-source-badge";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -83,13 +84,16 @@ export default function ManagerOrderReviewPage() {
   }
 
   const isPending = order.status === "pending";
+  const canDecide = isPending && order.orderSource === "normal";
   const totalAmount = inventoryRows.reduce(
     (sum, row) => sum + getOrderLineTotal(row.requested, row.unitPrice),
     0,
   );
-  const disableReason = isPending
-    ? ""
-    : "این سفارش قبلا تعیین تکلیف شده و دیگر قابل تصمیم گیری نیست.";
+  const disableReason = order.orderSource === "naja"
+    ? "سفارش های ناجا فقط برای پایش مدیر فروش نمایش داده می شوند و قابل تایید یا لغو نیستند."
+    : isPending
+      ? ""
+      : "این سفارش قبلا تعیین تکلیف شده و دیگر قابل تصمیم گیری نیست.";
 
   const columns: DataTableColumn<InventoryRow>[] = [
     {
@@ -177,8 +181,18 @@ export default function ManagerOrderReviewPage() {
             </h3>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <InfoItem label="کد سفارش" value={order.code} />
+              <InfoItem label="منبع سفارش" value={<OrderSourceBadge source={order.orderSource} />} />
               <InfoItem label="مشتری" value={order.customerName} />
               <InfoItem label="ثبت کننده" value={order.createdBy} />
+              {order.najaExpertName ? (
+                <InfoItem label="کارشناس ناجا" value={order.najaExpertName} />
+              ) : null}
+              {order.nationalId ? (
+                <InfoItem label="کد ملی" value={order.nationalId} />
+              ) : null}
+              {order.phoneNumber ? (
+                <InfoItem label="شماره موبایل" value={order.phoneNumber} />
+              ) : null}
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
               <InfoItem
                 label="وضعیت سفارش"
@@ -229,7 +243,7 @@ export default function ManagerOrderReviewPage() {
           />
 
           <ApprovalActionsCard
-            disabled={!isPending}
+            disabled={!canDecide}
             disableReason={disableReason}
             onApprove={() => setDecision("approve")}
             onCancel={() => setDecision("cancel")}

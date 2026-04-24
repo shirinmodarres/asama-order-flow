@@ -10,8 +10,10 @@ import {
   initialWarehouseHistory,
 } from "@/lib/expert/mock-data";
 import type {
+  CompleteNajaWarehouseInput,
   CreateExitSlipInput,
   CreateInvoiceInput,
+  CreateNajaOrderInput,
   CreateOrderInput,
   CreateProductInput,
   ExitSlip,
@@ -45,11 +47,13 @@ interface ExpertStoreValue {
   warehouseHistory: WarehouseHistoryEntry[];
   inventoryHistory: InventoryHistoryEntry[];
   createOrder: (input: CreateOrderInput) => ActionResult;
+  createNajaOrder: (input: CreateNajaOrderInput) => ActionResult;
   updateOrder: (input: UpdateOrderInput) => ActionResult;
   supportEditOrder: (input: UpdateOrderInput) => ActionResult;
   approveOrder: (id: string) => ActionResult;
   cancelOrder: (id: string) => ActionResult;
   createExitSlip: (input: CreateExitSlipInput) => ActionResult;
+  completeNajaWarehouseDetails: (input: CompleteNajaWarehouseInput) => ActionResult;
   confirmExitSlipDelivery: (slipId: string) => ActionResult;
   createInvoice: (input: CreateInvoiceInput) => ActionResult;
   createProduct: (input: CreateProductInput) => ActionResult;
@@ -81,6 +85,7 @@ function buildNextOrderCode(orders: ExpertOrder[]): string {
 }
 
 function shouldAffectReservedStock(order: ExpertOrder): boolean {
+  if (order.orderSource === "naja") return false;
   return order.warehouseStatus === "reserved" || order.warehouseStatus === "reviewing";
 }
 
@@ -138,6 +143,7 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     const newOrder: ExpertOrder = {
       id: `o-${Date.now()}`,
       code: buildNextOrderCode(orders),
+      orderSource: "normal",
       createdBy: "علی رضایی",
       customerName: customerName.trim(),
       createdAt: timestamp,
@@ -162,6 +168,81 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     setOrders((current) => [newOrder, ...current]);
 
     return { ok: true, order: newOrder };
+  };
+
+  const createNajaOrder = ({
+    productId,
+    quantity,
+    customerName,
+    nationalId,
+    phoneNumber,
+    najaExpertName,
+  }: CreateNajaOrderInput): ActionResult => {
+    if (!customerName.trim() || !nationalId.trim() || !phoneNumber.trim() || !najaExpertName.trim()) {
+      return { ok: false, error: "اطلاعات سفارش ناجا کامل نیست." };
+    }
+
+    const product = getProductById(productId);
+    if (!product) return { ok: false, error: "کالای انتخاب شده معتبر نیست." };
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return { ok: false, error: "تعداد سفارش باید بیشتر از صفر باشد." };
+    }
+    if (quantity > product.najaInventoryQty) {
+      return { ok: false, error: `موجودی ناجا برای «${product.name}» کافی نیست.` };
+    }
+
+    const timestamp = new Date().toISOString();
+    const maxCode = orders.reduce((max, order) => {
+      const numeric = Number(order.code.replace("NJ-", ""));
+      return Number.isNaN(numeric) ? max : Math.max(max, numeric);
+    }, 9100);
+
+    const newOrder: ExpertOrder = {
+      id: `o-${Date.now()}`,
+      code: `NJ-${maxCode + 1}`,
+      orderSource: "naja",
+      createdBy: "ناجا",
+      najaExpertName: najaExpertName.trim(),
+      customerName: customerName.trim(),
+      nationalId: nationalId.trim(),
+      phoneNumber: phoneNumber.trim(),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      status: "approved",
+      warehouseStatus: "awaitingNajaDetails",
+      items: [{ productId, quantity }],
+    };
+
+    setProducts((current) =>
+      current.map((entry) =>
+        entry.id === productId
+          ? { ...entry, najaInventoryQty: Math.max(entry.najaInventoryQty - quantity, 0) }
+          : entry,
+      ),
+    );
+    setOrders((current) => [newOrder, ...current]);
+    addInventoryHistory({
+      productId,
+      inventoryScope: "naja",
+      changeType: "decrease",
+      amount: quantity,
+      note: `کسر از موجودی ناجا بابت سفارش ${newOrder.code}`,
+      createdAt: timestamp,
+      createdBy: najaExpertName.trim(),
+    });
+    addWarehouseHistory({
+      orderId: newOrder.id,
+      status: "awaitingNajaDetails",
+      changedAt: timestamp,
+      changedBy: najaExpertName.trim(),
+      note: "سفارش ناجا ثبت شد و به صف تکمیل اطلاعات انبار رفت.",
+    });
+
+    return {
+      ok: true,
+      order: newOrder,
+      message: "سفارش ناجا ثبت شد و موجودی اختصاصی ناجا کسر گردید.",
+    };
   };
 
   const updateOrderItemsWithStockCheck = (targetOrder: ExpertOrder, nextItems: OrderItem[]): ActionResult => {
@@ -380,6 +461,47 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     };
   };
 
+  const completeNajaWarehouseDetails = ({
+    orderId,
+    productIdentifier,
+    trackingCode,
+    createdBy,
+  }: CompleteNajaWarehouseInput): ActionResult => {
+    const targetOrder = getOrderById(orderId);
+    if (!targetOrder) return { ok: false, error: "سفارش مورد نظر یافت نشد." };
+    if (targetOrder.orderSource !== "naja") return { ok: false, error: "این عملیات فقط برای سفارش ناجا مجاز است." };
+    if (targetOrder.warehouseStatus !== "awaitingNajaDetails") {
+      return { ok: false, error: "اطلاعات انبار این سفارش قبلا تکمیل شده است." };
+    }
+    if (!productIdentifier.trim() || !trackingCode.trim()) {
+      return { ok: false, error: "شناسه کالا و کد رهگیری را وارد کنید." };
+    }
+
+    const timestamp = new Date().toISOString();
+    const updatedOrder: ExpertOrder = {
+      ...targetOrder,
+      productIdentifier: productIdentifier.trim(),
+      trackingCode: trackingCode.trim(),
+      warehouseStatus: "najaDetailsCompleted",
+      updatedAt: timestamp,
+    };
+
+    setOrders((current) => current.map((order) => (order.id === orderId ? updatedOrder : order)));
+    addWarehouseHistory({
+      orderId,
+      status: "najaDetailsCompleted",
+      changedAt: timestamp,
+      changedBy: createdBy,
+      note: "اطلاعات انبار سفارش ناجا تکمیل شد.",
+    });
+
+    return {
+      ok: true,
+      order: updatedOrder,
+      message: "شناسه کالا و کد رهگیری برای سفارش ناجا ثبت شد.",
+    };
+  };
+
   const confirmExitSlipDelivery = (slipId: string): ActionResult => {
     const targetSlip = getExitSlipById(slipId);
     if (!targetSlip) return { ok: false, error: "حواله خروج یافت نشد." };
@@ -424,6 +546,64 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
   const createInvoice = ({ orderId, createdBy }: CreateInvoiceInput): ActionResult => {
     const targetOrder = getOrderById(orderId);
     if (!targetOrder) return { ok: false, error: "سفارش مورد نظر یافت نشد." };
+    if (targetOrder.orderSource === "naja") {
+      if (targetOrder.status !== "approved" || targetOrder.warehouseStatus !== "najaDetailsCompleted") {
+        return { ok: false, error: "صدور فاکتور ناجا فقط پس از تکمیل اطلاعات انبار ممکن است." };
+      }
+
+      const existingInvoice = getInvoiceByOrderId(orderId);
+      if (existingInvoice) return { ok: false, error: "برای این سفارش قبلا فاکتور صادر شده است." };
+      if (!targetOrder.nationalId || !targetOrder.phoneNumber || !targetOrder.productIdentifier || !targetOrder.trackingCode) {
+        return { ok: false, error: "اطلاعات ضمیمه سفارش ناجا کامل نیست." };
+      }
+
+      const timestamp = new Date().toISOString();
+      const product = getProductById(targetOrder.items[0]?.productId ?? "");
+      const newInvoice: Invoice = {
+        id: `inv-${Date.now()}`,
+        invoiceNumber: buildNextInvoiceNumber(invoices),
+        orderId,
+        createdBy,
+        issuedAt: timestamp,
+        status: "issued",
+        invoiceName: "ناجا",
+        items: targetOrder.items,
+        attachmentRecords: [
+          {
+            customerName: targetOrder.customerName,
+            nationalId: targetOrder.nationalId,
+            phoneNumber: targetOrder.phoneNumber,
+            productName: product?.name ?? "کالای نامشخص",
+            productIdentifier: targetOrder.productIdentifier,
+            trackingCode: targetOrder.trackingCode,
+          },
+        ],
+      };
+
+      const updatedOrder: ExpertOrder = {
+        ...targetOrder,
+        status: "invoiced",
+        updatedAt: timestamp,
+      };
+
+      setInvoices((current) => [newInvoice, ...current]);
+      setOrders((current) => current.map((order) => (order.id === orderId ? updatedOrder : order)));
+      addWarehouseHistory({
+        orderId,
+        status: targetOrder.warehouseStatus,
+        changedAt: timestamp,
+        changedBy: createdBy,
+        note: `فاکتور ناجا ${newInvoice.invoiceNumber} صادر شد.`,
+      });
+
+      return {
+        ok: true,
+        order: updatedOrder,
+        invoice: newInvoice,
+        message: "فاکتور سفارش ناجا با موفقیت صادر شد.",
+      };
+    }
+
     if (targetOrder.status !== "approved" || targetOrder.warehouseStatus !== "delivered") {
       return { ok: false, error: "فقط سفارش تاییدشده با تحویل تاییدشده قابل صدور فاکتور است." };
     }
@@ -494,11 +674,13 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
       status: "active",
       totalStock: initialStock,
       reservedStock: 0,
+      najaInventoryQty: 0,
     };
 
     setProducts((current) => [product, ...current]);
     addInventoryHistory({
       productId: product.id,
+      inventoryScope: "normal",
       changeType: "increase",
       amount: initialStock,
       note: "ثبت اولیه کالا توسط پشتیبانی",
@@ -534,25 +716,46 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     return { ok: true, product: updated, message: "اطلاعات کالا به روز شد." };
   };
 
-  const updateInventory = ({ productId, changeType, amount, note, createdBy }: UpdateInventoryInput): ActionResult => {
+  const updateInventory = ({ productId, inventoryScope = "normal", changeType, amount, note, createdBy }: UpdateInventoryInput): ActionResult => {
     const targetProduct = getProductById(productId);
     if (!targetProduct) return { ok: false, error: "کالای مورد نظر یافت نشد." };
     if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: "مقدار تغییر باید بیشتر از صفر باشد." };
 
-    if (changeType === "decrease" && targetProduct.totalStock - amount < targetProduct.reservedStock) {
+    if (
+      inventoryScope === "normal" &&
+      changeType === "decrease" &&
+      targetProduct.totalStock - amount < targetProduct.reservedStock
+    ) {
       return { ok: false, error: "با این کاهش، موجودی کل کمتر از موجودی رزروشده می شود." };
     }
-
-    const nextTotal = changeType === "increase" ? targetProduct.totalStock + amount : targetProduct.totalStock - amount;
+    if (
+      inventoryScope === "naja" &&
+      changeType === "decrease" &&
+      targetProduct.najaInventoryQty - amount < 0
+    ) {
+      return { ok: false, error: "موجودی ناجا برای این کاهش کافی نیست." };
+    }
 
     const updated: Product = {
       ...targetProduct,
-      totalStock: nextTotal,
+      totalStock:
+        inventoryScope === "normal"
+          ? changeType === "increase"
+            ? targetProduct.totalStock + amount
+            : targetProduct.totalStock - amount
+          : targetProduct.totalStock,
+      najaInventoryQty:
+        inventoryScope === "naja"
+          ? changeType === "increase"
+            ? targetProduct.najaInventoryQty + amount
+            : targetProduct.najaInventoryQty - amount
+          : targetProduct.najaInventoryQty,
     };
 
     setProducts((current) => current.map((product) => (product.id === productId ? updated : product)));
     addInventoryHistory({
       productId,
+      inventoryScope,
       changeType,
       amount,
       note: note.trim() || "ثبت تغییر موجودی",
@@ -560,7 +763,14 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
       createdBy,
     });
 
-    return { ok: true, product: updated, message: "موجودی کالا با موفقیت به روز شد." };
+    return {
+      ok: true,
+      product: updated,
+      message:
+        inventoryScope === "naja"
+          ? "موجودی ناجا با موفقیت به روز شد."
+          : "موجودی کالا با موفقیت به روز شد.",
+    };
   };
 
   const value = {
@@ -571,11 +781,13 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     warehouseHistory,
     inventoryHistory,
     createOrder,
+    createNajaOrder,
     updateOrder,
     supportEditOrder,
     approveOrder,
     cancelOrder,
     createExitSlip,
+    completeNajaWarehouseDetails,
     confirmExitSlipDelivery,
     createInvoice,
     createProduct,

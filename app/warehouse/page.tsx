@@ -12,6 +12,12 @@ export default function WarehousePage() {
     (order) =>
       order.status === "approved" && order.warehouseStatus === "reviewing",
   ).length;
+  const najaPendingCount = orders.filter(
+    (order) =>
+      order.orderSource === "naja" &&
+      order.status === "approved" &&
+      order.warehouseStatus === "awaitingNajaDetails",
+  ).length;
   const issuedCount = orders.filter(
     (order) => order.warehouseStatus === "dispatchIssued",
   ).length;
@@ -21,11 +27,16 @@ export default function WarehousePage() {
 
   return (
     <DashboardLayout role="warehouse" title="داشبورد انبار">
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ManagerSummaryCard
           title="سفارش های در بررسی انبار"
           value={reviewingCount}
           hint="منتظر صدور حواله خروج"
+        />
+        <ManagerSummaryCard
+          title="سفارش های ناجا"
+          value={najaPendingCount}
+          hint="منتظر ثبت شناسه کالا و کد رهگیری"
         />
         <ManagerSummaryCard
           title="حواله های خروج صادرشده"

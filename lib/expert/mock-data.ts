@@ -2,6 +2,7 @@ import type {
   ExitSlip,
   ExpertOrder,
   Invoice,
+  InvoiceAttachmentRecord,
   InventoryHistoryEntry,
   OrderStatus,
   Product,
@@ -24,6 +25,8 @@ export const warehouseStatusLabel: Record<WarehouseStatus, string> = {
   dispatchIssued: "حواله خروج صادر شد",
   delivered: "تأیید تحویل به مشتری",
   completed: "نهایی شده",
+  awaitingNajaDetails: "در انتظار تکمیل اطلاعات انبار",
+  najaDetailsCompleted: "اطلاعات انبار تکمیل شد",
 };
 
 export const invoiceStatusLabel = {
@@ -42,6 +45,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 74,
     reservedStock: 11,
+    najaInventoryQty: 14,
   },
   {
     id: "p-101",
@@ -54,6 +58,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 58,
     reservedStock: 9,
+    najaInventoryQty: 9,
   },
   {
     id: "p-102",
@@ -66,6 +71,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 39,
     reservedStock: 6,
+    najaInventoryQty: 7,
   },
   {
     id: "p-103",
@@ -78,6 +84,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 132,
     reservedStock: 21,
+    najaInventoryQty: 25,
   },
   {
     id: "p-104",
@@ -90,6 +97,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 44,
     reservedStock: 12,
+    najaInventoryQty: 8,
   },
   {
     id: "p-105",
@@ -102,6 +110,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 63,
     reservedStock: 8,
+    najaInventoryQty: 11,
   },
   {
     id: "p-106",
@@ -114,6 +123,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 51,
     reservedStock: 4,
+    najaInventoryQty: 6,
   },
   {
     id: "p-107",
@@ -126,6 +136,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 47,
     reservedStock: 7,
+    najaInventoryQty: 5,
   },
   {
     id: "p-108",
@@ -138,6 +149,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 36,
     reservedStock: 5,
+    najaInventoryQty: 4,
   },
   {
     id: "p-109",
@@ -150,6 +162,7 @@ export const initialProducts: Product[] = [
     status: "active",
     totalStock: 26,
     reservedStock: 6,
+    najaInventoryQty: 3,
   },
 ];
 
@@ -157,6 +170,7 @@ export const initialOrders: ExpertOrder[] = [
   {
     id: "o-9001",
     code: "EX-9001",
+    orderSource: "normal",
     createdBy: "علی رضایی",
     customerName: "فروشگاه خانه مدرن تهران",
     createdAt: "2026-04-15T08:45:00.000Z",
@@ -171,6 +185,7 @@ export const initialOrders: ExpertOrder[] = [
   {
     id: "o-9002",
     code: "EX-9002",
+    orderSource: "normal",
     createdBy: "علی رضایی",
     customerName: "نمایندگی مرکزی آریا",
     createdAt: "2026-04-14T10:30:00.000Z",
@@ -186,6 +201,7 @@ export const initialOrders: ExpertOrder[] = [
   {
     id: "o-9003",
     code: "EX-9003",
+    orderSource: "normal",
     createdBy: "علی رضایی",
     customerName: "فروشگاه سپهر لوازم",
     createdAt: "2026-04-12T12:00:00.000Z",
@@ -197,6 +213,7 @@ export const initialOrders: ExpertOrder[] = [
   {
     id: "o-9004",
     code: "EX-9004",
+    orderSource: "normal",
     createdBy: "علی رضایی",
     customerName: "شعبه غرب بازار خانه",
     createdAt: "2026-04-10T09:15:00.000Z",
@@ -211,6 +228,7 @@ export const initialOrders: ExpertOrder[] = [
   {
     id: "o-9005",
     code: "EX-9005",
+    orderSource: "normal",
     createdBy: "علی رضایی",
     customerName: "فروشگاه امین کالا",
     createdAt: "2026-04-16T09:20:00.000Z",
@@ -225,6 +243,7 @@ export const initialOrders: ExpertOrder[] = [
   {
     id: "o-9006",
     code: "EX-9006",
+    orderSource: "normal",
     createdBy: "علی رضایی",
     customerName: "نمایندگی جنوب آساما",
     createdAt: "2026-04-13T11:05:00.000Z",
@@ -235,6 +254,55 @@ export const initialOrders: ExpertOrder[] = [
       { productId: "p-100", quantity: 2 },
       { productId: "p-109", quantity: 1 },
     ],
+  },
+  {
+    id: "o-9101",
+    code: "NJ-9101",
+    orderSource: "naja",
+    createdBy: "ناجا",
+    najaExpertName: "کارشناس مرادی",
+    customerName: "امیرحسین جعفری",
+    nationalId: "0012345678",
+    phoneNumber: "09121234567",
+    createdAt: "2026-04-18T08:40:00.000Z",
+    updatedAt: "2026-04-18T08:40:00.000Z",
+    status: "approved",
+    warehouseStatus: "awaitingNajaDetails",
+    items: [{ productId: "p-101", quantity: 1 }],
+  },
+  {
+    id: "o-9102",
+    code: "NJ-9102",
+    orderSource: "naja",
+    createdBy: "ناجا",
+    najaExpertName: "کارشناس احمدی",
+    customerName: "زهرا موسوی",
+    nationalId: "0087654321",
+    phoneNumber: "09129876543",
+    productIdentifier: "GH24-NA-4432",
+    trackingCode: "TRK-443218",
+    createdAt: "2026-04-17T10:10:00.000Z",
+    updatedAt: "2026-04-17T14:20:00.000Z",
+    status: "approved",
+    warehouseStatus: "najaDetailsCompleted",
+    items: [{ productId: "p-104", quantity: 1 }],
+  },
+  {
+    id: "o-9103",
+    code: "NJ-9103",
+    orderSource: "naja",
+    createdBy: "ناجا",
+    najaExpertName: "کارشناس رضوی",
+    customerName: "محمدامین حیدری",
+    nationalId: "0045678912",
+    phoneNumber: "09123334455",
+    productIdentifier: "TV55-NA-1120",
+    trackingCode: "TRK-112045",
+    createdAt: "2026-04-16T11:35:00.000Z",
+    updatedAt: "2026-04-18T09:15:00.000Z",
+    status: "invoiced",
+    warehouseStatus: "najaDetailsCompleted",
+    items: [{ productId: "p-107", quantity: 1 }],
   },
 ];
 
@@ -284,6 +352,26 @@ export const initialInvoices: Invoice[] = [
       { productId: "p-107", quantity: 2 },
     ],
   },
+  {
+    id: "inv-1002",
+    invoiceNumber: "INV-1002",
+    orderId: "o-9103",
+    createdBy: "مریم نادری",
+    issuedAt: "2026-04-18T09:15:00.000Z",
+    status: "issued",
+    invoiceName: "ناجا",
+    items: [{ productId: "p-107", quantity: 1 }],
+    attachmentRecords: [
+      {
+        customerName: "محمدامین حیدری",
+        nationalId: "0045678912",
+        phoneNumber: "09123334455",
+        productName: "تلویزیون دیپوینت 55 اینچ مدل TV55-UHD",
+        productIdentifier: "TV55-NA-1120",
+        trackingCode: "TRK-112045",
+      },
+    ] as InvoiceAttachmentRecord[],
+  },
 ];
 
 export const initialWarehouseHistory: WarehouseHistoryEntry[] = [
@@ -311,12 +399,29 @@ export const initialWarehouseHistory: WarehouseHistoryEntry[] = [
     changedBy: "رضا احمدی",
     note: "تحویل سفارش در مقصد تایید شد.",
   },
+  {
+    id: "wh-1004",
+    orderId: "o-9101",
+    status: "awaitingNajaDetails",
+    changedAt: "2026-04-18T08:40:00.000Z",
+    changedBy: "کارشناس مرادی",
+    note: "سفارش ناجا ثبت شد و منتظر تکمیل اطلاعات انبار است.",
+  },
+  {
+    id: "wh-1005",
+    orderId: "o-9102",
+    status: "najaDetailsCompleted",
+    changedAt: "2026-04-17T14:20:00.000Z",
+    changedBy: "رضا احمدی",
+    note: "شناسه کالا و کد رهگیری برای سفارش ناجا ثبت شد.",
+  },
 ];
 
 export const initialInventoryHistory: InventoryHistoryEntry[] = [
   {
     id: "ih-1001",
     productId: "p-100",
+    inventoryScope: "normal",
     changeType: "increase",
     amount: 12,
     note: "ورود سری جدید یخچال فریزر دیپوینت",
@@ -326,11 +431,22 @@ export const initialInventoryHistory: InventoryHistoryEntry[] = [
   {
     id: "ih-1002",
     productId: "p-104",
+    inventoryScope: "normal",
     changeType: "decrease",
     amount: 4,
     note: "اصلاح مغایرت شمارش کولر گازی",
     createdAt: "2026-04-16T09:05:00.000Z",
     createdBy: "سارا کریمی",
+  },
+  {
+    id: "ih-1003",
+    productId: "p-101",
+    inventoryScope: "naja",
+    changeType: "decrease",
+    amount: 1,
+    note: "کسر از موجودی ناجا بابت سفارش NJ-9101",
+    createdAt: "2026-04-18T08:40:00.000Z",
+    createdBy: "کارشناس مرادی",
   },
 ];
 
@@ -342,6 +458,12 @@ export function getOrderEditBlockReason(status: OrderStatus): string {
 }
 
 export function getOrderLastStageLabel(order: ExpertOrder): string {
+  if (order.orderSource === "naja" && order.warehouseStatus === "awaitingNajaDetails") {
+    return "منتظر ثبت شناسه کالا و کد رهگیری";
+  }
+  if (order.orderSource === "naja" && order.warehouseStatus === "najaDetailsCompleted") {
+    return "آماده صدور فاکتور ناجا";
+  }
   if (order.status === "pending") return "در انتظار تصمیم مدیر فروش";
   if (order.status === "cancelled") return "بازگشت رزرو به موجودی";
   if (order.status === "invoiced") return "فاکتور صادر شده";
