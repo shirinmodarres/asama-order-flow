@@ -22,7 +22,9 @@ type TrackingFilter =
   | "cancelled"
   | "dispatchIssued"
   | "delivered"
-  | "invoiced";
+  | "invoiced"
+  | "returned"
+  | "returnedAfterInvoice";
 
 export default function ManagerOrderTrackingPage() {
   const { orders } = useExpertStore();
@@ -123,6 +125,8 @@ export default function ManagerOrderTrackingPage() {
                 { value: "dispatchIssued", label: "حواله خروج صادر شد" },
                 { value: "delivered", label: "تایید تحویل به مشتری" },
                 { value: "invoiced", label: "فاکتور شده" },
+                { value: "returned", label: "برگشتی" },
+                { value: "returnedAfterInvoice", label: "برگشتی پس از فاکتور" },
               ]}
               placeholder="فیلتر وضعیت"
               searchPlaceholder="جستجو در وضعیت ها"

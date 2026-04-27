@@ -55,7 +55,7 @@ export function Sidebar({ items }: SidebarProps) {
 
                 return (
                   <Link
-                    key={item.label}
+                    key={item.href}
                     href={item.href}
                     className={cn(
                       "group rounded-[16px] border px-4 py-3 transition-all duration-200",

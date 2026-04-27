@@ -21,6 +21,18 @@ export const roles: Role[] = [
     accent: "brand",
   },
   {
+    key: "naja",
+    title: "کارشناس ناجا",
+    description: "ثبت سفارش های مربوط به ناجا از موجودی اختصاصی این جریان.",
+    path: "/naja",
+    userName: "کارشناس مرادی",
+    team: "سفارش های اختصاصی ناجا",
+    icon: "shield-check",
+    entrySummary:
+      "ثبت سفارش های ناجا، پیگیری تکمیل اطلاعات انبار و مشاهده وضعیت برگشت.",
+    accent: "neutral",
+  },
+  {
     key: "manager",
     title: "مدیر فروش",
     description:
@@ -108,11 +120,25 @@ export const sidebarByRole: Record<RoleKey, SidebarItem[]> = {
       icon: "plus-circle",
       description: "ایجاد سفارش جدید فروش",
     },
+  ],
+  naja: [
+    {
+      label: "داشبورد",
+      href: "/naja",
+      icon: "dashboard",
+      description: "مرور وضعیت سفارش های ناجا",
+    },
     {
       label: "ثبت سفارش ناجا",
-      href: "/expert/naja-orders/new",
+      href: "/naja/orders/new",
       icon: "plus-circle",
-      description: "ثبت سفارش از موجودی اختصاصی ناجا",
+      description: "ایجاد سفارش جدید از موجودی اختصاصی ناجا",
+    },
+    {
+      label: "سفارش های ناجا",
+      href: "/naja/orders",
+      icon: "shopping-cart",
+      description: "فهرست سفارش های ثبت شده و برگشتی",
     },
   ],
   manager: [
@@ -242,6 +268,26 @@ export const statsByRole: Record<RoleKey, DashboardStat[]> = {
       hint: "ارسال شده برای مدیر فروش",
     },
   ],
+  naja: [
+    {
+      id: "1",
+      label: "سفارش های ثبت شده",
+      value: "۴",
+      hint: "ثبت شده توسط کارشناسان ناجا",
+    },
+    {
+      id: "2",
+      label: "در انتظار انبار",
+      value: "۱",
+      hint: "منتظر تکمیل شناسه کالا و کد رهگیری",
+    },
+    {
+      id: "3",
+      label: "سفارش های برگشتی",
+      value: "۱",
+      hint: "بازگردانی شده به جریان موجودی ناجا",
+    },
+  ],
   manager: [
     {
       id: "1",
@@ -329,6 +375,23 @@ export const activityByRole: Record<RoleKey, ActivityItem[]> = {
     {
       id: "3",
       text: "اصلاح تعداد سفارش جاروبرقی نانیوا انجام شد.",
+      time: "۱ ساعت پیش",
+    },
+  ],
+  naja: [
+    {
+      id: "1",
+      text: "سفارش NJ-9101 توسط کارشناس مرادی ثبت و به انبار ارجاع شد.",
+      time: "۱۲ دقیقه پیش",
+    },
+    {
+      id: "2",
+      text: "اطلاعات انبار سفارش NJ-9102 تکمیل و آماده صدور فاکتور شد.",
+      time: "۴۸ دقیقه پیش",
+    },
+    {
+      id: "3",
+      text: "سفارش NJ-9104 با دلیل انصراف مشتری به موجودی ناجا بازگردانی شد.",
       time: "۱ ساعت پیش",
     },
   ],

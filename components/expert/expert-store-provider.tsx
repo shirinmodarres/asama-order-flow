@@ -22,6 +22,7 @@ import type {
   InventoryHistoryEntry,
   OrderItem,
   Product,
+  ReturnNajaOrderInput,
   UpdateInventoryInput,
   UpdateOrderInput,
   UpdateProductInput,
@@ -54,6 +55,7 @@ interface ExpertStoreValue {
   cancelOrder: (id: string) => ActionResult;
   createExitSlip: (input: CreateExitSlipInput) => ActionResult;
   completeNajaWarehouseDetails: (input: CompleteNajaWarehouseInput) => ActionResult;
+  returnNajaOrder: (input: ReturnNajaOrderInput) => ActionResult;
   confirmExitSlipDelivery: (slipId: string) => ActionResult;
   createInvoice: (input: CreateInvoiceInput) => ActionResult;
   createProduct: (input: CreateProductInput) => ActionResult;
@@ -201,7 +203,7 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
       id: `o-${Date.now()}`,
       code: `NJ-${maxCode + 1}`,
       orderSource: "naja",
-      createdBy: "ناجا",
+      createdBy: najaExpertName.trim(),
       najaExpertName: najaExpertName.trim(),
       customerName: customerName.trim(),
       nationalId: nationalId.trim(),
@@ -502,6 +504,92 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     };
   };
 
+  const returnNajaOrder = ({
+    orderId,
+    reason,
+    createdBy,
+  }: ReturnNajaOrderInput): ActionResult => {
+    const targetOrder = getOrderById(orderId);
+    if (!targetOrder) return { ok: false, error: "سفارش مورد نظر یافت نشد." };
+    if (targetOrder.orderSource !== "naja") {
+      return { ok: false, error: "بازگردانی فقط برای سفارش های ناجا فعال است." };
+    }
+    if (!reason.trim()) {
+      return { ok: false, error: "دلیل برگشت را وارد کنید." };
+    }
+    if (targetOrder.status === "returned" || targetOrder.status === "returnedAfterInvoice") {
+      return { ok: false, error: "این سفارش قبلا بازگردانی شده است." };
+    }
+
+    const timestamp = new Date().toISOString();
+    let nextStatus: ExpertOrder["status"] = "returned";
+    let nextWarehouseStatus: ExpertOrder["warehouseStatus"] = "returnedToInventory";
+    let warehouseNote = `سفارش ناجا پیش از تکمیل اطلاعات انبار بازگردانی شد. دلیل: ${reason.trim()}`;
+    let successMessage = "سفارش ناجا بازگردانی شد و موجودی اختصاصی اصلاح گردید.";
+
+    if (targetOrder.status === "approved" && targetOrder.warehouseStatus === "awaitingNajaDetails") {
+      nextStatus = "returned";
+      nextWarehouseStatus = "returnedToInventory";
+    } else if (targetOrder.status === "approved" && targetOrder.warehouseStatus === "najaDetailsCompleted") {
+      nextStatus = "returned";
+      nextWarehouseStatus = "returnedFromWarehouse";
+      warehouseNote = `سفارش ناجا پس از تکمیل اطلاعات انبار بازگردانی شد. دلیل: ${reason.trim()}`;
+    } else if (targetOrder.status === "invoiced") {
+      nextStatus = "returnedAfterInvoice";
+      nextWarehouseStatus = "returnedFromWarehouse";
+      warehouseNote = `سفارش ناجا پس از صدور فاکتور بازگردانی شد. دلیل: ${reason.trim()}`;
+      successMessage = "سفارش ناجا پس از صدور فاکتور بازگردانی شد و نیازمند پیگیری مالی است.";
+    } else {
+      return { ok: false, error: "بازگردانی در وضعیت فعلی این سفارش ممکن نیست." };
+    }
+
+    const updatedOrder: ExpertOrder = {
+      ...targetOrder,
+      status: nextStatus,
+      warehouseStatus: nextWarehouseStatus,
+      returnReason: reason.trim(),
+      returnedAt: timestamp,
+      returnedBy: createdBy,
+      updatedAt: timestamp,
+    };
+
+    setProducts((current) =>
+      current.map((product) => {
+        const matchedItem = targetOrder.items.find((item) => item.productId === product.id);
+        return matchedItem
+          ? { ...product, najaInventoryQty: product.najaInventoryQty + matchedItem.quantity }
+          : product;
+      }),
+    );
+    setOrders((current) => current.map((order) => (order.id === orderId ? updatedOrder : order)));
+
+    targetOrder.items.forEach((item) => {
+      addInventoryHistory({
+        productId: item.productId,
+        inventoryScope: "naja",
+        changeType: "increase",
+        amount: item.quantity,
+        note: `بازگشت موجودی ناجا بابت سفارش ${targetOrder.code}`,
+        createdAt: timestamp,
+        createdBy,
+      });
+    });
+
+    addWarehouseHistory({
+      orderId,
+      status: nextWarehouseStatus,
+      changedAt: timestamp,
+      changedBy: createdBy,
+      note: warehouseNote,
+    });
+
+    return {
+      ok: true,
+      order: updatedOrder,
+      message: successMessage,
+    };
+  };
+
   const confirmExitSlipDelivery = (slipId: string): ActionResult => {
     const targetSlip = getExitSlipById(slipId);
     if (!targetSlip) return { ok: false, error: "حواله خروج یافت نشد." };
@@ -788,6 +876,7 @@ export function ExpertStoreProvider({ children }: { children: ReactNode }) {
     cancelOrder,
     createExitSlip,
     completeNajaWarehouseDetails,
+    returnNajaOrder,
     confirmExitSlipDelivery,
     createInvoice,
     createProduct,

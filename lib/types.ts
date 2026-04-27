@@ -1,4 +1,10 @@
-export type RoleKey = "expert" | "manager" | "warehouse" | "finance" | "support";
+export type RoleKey =
+  | "expert"
+  | "naja"
+  | "manager"
+  | "warehouse"
+  | "finance"
+  | "support";
 
 export type RoleIconName =
   | "briefcase"

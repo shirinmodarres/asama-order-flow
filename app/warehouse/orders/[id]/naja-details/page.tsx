@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
+import { NajaReturnAction } from "@/components/naja/naja-return-action";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeader } from "@/components/shared/section-header";
 import { Badge } from "@/components/ui/badge";
@@ -78,12 +79,16 @@ export default function WarehouseNajaDetailsPage() {
           </div>
         </Card>
 
-        <Card className="p-5 text-sm leading-7 text-[#6B7280]">
-          <p className="font-semibold text-[#102034]">خلاصه سفارش</p>
-          <p className="mt-2">مشتری: {order.customerName}</p>
-          <p>ثبت کننده: {order.createdBy}</p>
-          <p>کارشناس ناجا: {order.najaExpertName ?? "-"}</p>
-        </Card>
+        <div className="space-y-4">
+          <Card className="p-5 text-sm leading-7 text-[#6B7280]">
+            <p className="font-semibold text-[#102034]">خلاصه سفارش</p>
+            <p className="mt-2">مشتری: {order.customerName}</p>
+            <p>ثبت کننده: {order.createdBy}</p>
+            <p>کارشناس ناجا: {order.najaExpertName ?? "-"}</p>
+          </Card>
+
+          <NajaReturnAction order={order} actorName="رضا احمدی" />
+        </div>
       </section>
     </DashboardLayout>
   );

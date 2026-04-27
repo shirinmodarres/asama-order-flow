@@ -1,13 +1,8 @@
 "use client";
 
-import { ChevronLeft, PackageSearch, ShieldCheck } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
-import { SectionHeader } from "@/components/shared/section-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,8 +12,16 @@ import {
   formatNumber,
   getNajaAvailableStock,
 } from "@/lib/expert/utils";
+import type { RoleKey } from "@/lib/types";
+import { ChevronLeft, PackageSearch } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
-export function NajaOrderPage() {
+interface NajaOrderPageProps {
+  role?: RoleKey;
+}
+
+export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const router = useRouter();
   const { products, createNajaOrder } = useExpertStore();
   const [productId, setProductId] = useState("");
@@ -26,11 +29,13 @@ export function NajaOrderPage() {
   const [customerName, setCustomerName] = useState("");
   const [nationalId, setNationalId] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [najaExpertName, setNajaExpertName] = useState("");
+  const [najaExpertName, setNajaExpertName] = useState("کارشناس مرادی");
   const [error, setError] = useState("");
 
   const selectedProduct = products.find((product) => product.id === productId);
-  const totalAmount = selectedProduct ? selectedProduct.unitPrice * quantity : 0;
+  const totalAmount = selectedProduct
+    ? selectedProduct.unitPrice * quantity
+    : 0;
   const productOptions = useMemo(
     () =>
       products
@@ -59,34 +64,13 @@ export function NajaOrderPage() {
       return;
     }
 
-    router.push("/warehouse/orders");
+    router.push(`/naja/orders/${result.order.id}`);
   };
 
   return (
-    <DashboardLayout role="expert" title="ثبت سفارش ناجا">
-      <SectionHeader
-        title="ثبت سفارش اختصاصی ناجا"
-        description="این سفارش توسط کارشناس ثبت می شود، از موجودی اختصاصی ناجا کسر می گردد و بدون مرحله تایید مدیر فروش مستقیما وارد صف انبار می شود."
-        actions={<Badge variant="warning">سفارش ناجا</Badge>}
-      />
-
+    <DashboardLayout role={role} title="ثبت سفارش ناجا">
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <Card className="p-5">
-          <div className="mb-5 flex items-start gap-3 rounded-[18px] border border-[#E9E3C8] bg-[#FFFDF5] px-4 py-4">
-            <span className="flex size-11 items-center justify-center rounded-[14px] bg-[#F4E6A8] text-[#8A6A0A]">
-              <ShieldCheck className="size-5" />
-            </span>
-            <div>
-              <div className="text-sm font-semibold text-[#102034]">
-                مسیر ثبت توسط کارشناس
-              </div>
-              <p className="mt-1 text-sm leading-7 text-[#6B7280]">
-                سفارش های ناجا از داخل پنل کارشناس ثبت می شوند تا مسیر عادی ثبت
-                سفارش حفظ شود و منبع سفارش فقط در workflow مشخص باشد.
-              </p>
-            </div>
-          </div>
-
           <div className="grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm font-medium text-[#334155] md:col-span-2">
               <span>کالای ناجا</span>
@@ -115,7 +99,7 @@ export function NajaOrderPage() {
             </label>
 
             <label className="grid gap-2 text-sm font-medium text-[#334155]">
-              <span>نام کارشناس ناجا</span>
+              <span>نام ثبت کننده / کارشناس ناجا</span>
               <Input
                 value={najaExpertName}
                 onChange={(event) => setNajaExpertName(event.target.value)}

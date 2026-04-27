@@ -161,6 +161,9 @@ export default function FinanceInvoiceDetailsPage() {
                   />
                 }
               />
+              {order.returnReason ? (
+                <InfoItem label="دلیل برگشت" value={order.returnReason} />
+              ) : null}
             </dl>
           </section>
 

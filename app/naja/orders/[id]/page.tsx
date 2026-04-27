@@ -5,25 +5,26 @@ import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
+import { NajaOrderTimeline } from "@/components/naja/naja-order-timeline";
 import { NajaReturnAction } from "@/components/naja/naja-return-action";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { OrderSourceBadge } from "@/components/shared/order-source-badge";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { SectionHeader } from "@/components/shared/section-header";
-import { WarehouseActionPanel } from "@/components/warehouse/warehouse-action-panel";
-import { WarehouseStatusBadge } from "@/components/warehouse/warehouse-status-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import {
   formatCurrency,
   formatDate,
+  formatDateTime,
   formatNumber,
   getOrderItemCount,
   getOrderLineTotal,
   getOrderTotalQuantity,
 } from "@/lib/expert/utils";
+import type { ExpertOrder } from "@/lib/expert/types";
 
-interface ItemRow {
+interface OrderDetailRow {
   id: string;
   name: string;
   brand: string;
@@ -32,25 +33,25 @@ interface ItemRow {
   quantity: number;
 }
 
-export default function WarehouseOrderDetailsPage() {
+export default function NajaOrderDetailsPage() {
   const params = useParams<{ id: string }>();
-  const { getOrderById, getProductById, getExitSlipByOrderId } =
+  const { getOrderById, getProductById, getInvoiceByOrderId } =
     useExpertStore();
   const order = getOrderById(params.id);
 
-  if (!order) {
+  if (!order || order.orderSource !== "naja") {
     return (
-      <DashboardLayout role="warehouse" title="جزئیات سفارش">
+      <DashboardLayout role="naja" title="جزئیات سفارش ناجا">
         <EmptyState
-          title="سفارش یافت نشد"
-          description="شناسه سفارش معتبر نیست یا در داده های نمونه وجود ندارد."
+          title="سفارش ناجا یافت نشد"
+          description="این شناسه در جریان اختصاصی ناجا وجود ندارد."
         />
       </DashboardLayout>
     );
   }
 
-  const hasSlip = Boolean(getExitSlipByOrderId(order.id));
-  const rows: ItemRow[] = order.items.map((item) => {
+  const invoice = getInvoiceByOrderId(order.id);
+  const detailRows: OrderDetailRow[] = order.items.map((item) => {
     const product = getProductById(item.productId);
     return {
       id: item.productId,
@@ -61,12 +62,12 @@ export default function WarehouseOrderDetailsPage() {
       quantity: item.quantity,
     };
   });
-  const totalAmount = rows.reduce(
+  const totalAmount = detailRows.reduce(
     (sum, row) => sum + getOrderLineTotal(row.quantity, row.unitPrice),
     0,
   );
 
-  const columns: DataTableColumn<ItemRow>[] = [
+  const columns: DataTableColumn<OrderDetailRow>[] = [
     {
       key: "name",
       header: "نام کالا",
@@ -83,24 +84,26 @@ export default function WarehouseOrderDetailsPage() {
     },
     {
       key: "quantity",
-      header: "تعداد تاییدشده",
+      header: "تعداد",
       render: (row) => formatNumber(row.quantity),
+    },
+    {
+      key: "lineTotal",
+      header: "مبلغ",
+      render: (row) =>
+        formatCurrency(getOrderLineTotal(row.quantity, row.unitPrice)),
     },
   ];
 
   return (
-    <DashboardLayout role="warehouse" title="جزئیات سفارش انبار">
+    <DashboardLayout role="naja" title="جزئیات سفارش ناجا">
       <SectionHeader
         title={`سفارش ${order.code}`}
-        description={
-          order.orderSource === "naja"
-            ? "مشاهده سفارش ناجا و وضعیت تکمیل شناسه کالا و کد رهگیری"
-            : "مشاهده اقلام تاییدشده برای عملیات خروج از انبار"
-        }
+        description="مشاهده اطلاعات مشتری، وضعیت انبار، فاکتور و سوابق بازگردانی سفارش ناجا"
         actions={
           <Link
-            href="/warehouse/orders"
-            className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
+            href="/naja/orders"
+            className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155]"
           >
             بازگشت به لیست
           </Link>
@@ -110,19 +113,34 @@ export default function WarehouseOrderDetailsPage() {
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
-            <dl className="grid gap-3 sm:grid-cols-2">
-              <InfoItem
-                label="منبع سفارش"
-                value={<OrderSourceBadge source={order.orderSource} />}
-              />
-              <InfoItem label="مشتری" value={order.customerName} />
+            <h3 className="text-base font-semibold text-[#1F3A5F]">
+              اطلاعات سفارش ناجا
+            </h3>
+            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+              <InfoItem label="کد سفارش" value={order.code} />
+
               <InfoItem label="ثبت کننده" value={order.createdBy} />
-              {order.najaExpertName ? (
-                <InfoItem label="کارشناس ناجا" value={order.najaExpertName} />
-              ) : null}
+              <InfoItem label="نام مشتری" value={order.customerName} />
+              <InfoItem label="کد ملی" value={order.nationalId ?? "-"} />
+              <InfoItem label="شماره موبایل" value={order.phoneNumber ?? "-"} />
+              <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
               <InfoItem
-                label="تاریخ تایید"
-                value={formatDate(order.updatedAt)}
+                label="وضعیت سفارش"
+                value={<StatusBadge type="order" status={order.status} />}
+              />
+              <InfoItem
+                label="وضعیت انبار"
+                value={
+                  <StatusBadge
+                    type="warehouse"
+                    status={order.warehouseStatus}
+                  />
+                }
+              />
+
+              <InfoItem
+                label="آخرین تغییر"
+                value={formatDateTime(order.updatedAt)}
               />
               {order.productIdentifier ? (
                 <InfoItem label="شناسه کالا" value={order.productIdentifier} />
@@ -131,13 +149,23 @@ export default function WarehouseOrderDetailsPage() {
                 <InfoItem label="کد رهگیری" value={order.trackingCode} />
               ) : null}
               <InfoItem
-                label="وضعیت انبار"
-                value={<WarehouseStatusBadge status={order.warehouseStatus} />}
+                label="وضعیت فاکتور"
+                value={
+                  invoice
+                    ? `صادر شده - ${invoice.invoiceNumber}`
+                    : "هنوز صادر نشده"
+                }
               />
             </dl>
           </div>
 
-          <DataTable columns={columns} rows={rows} rowKey={(row) => row.id} />
+          <DataTable
+            columns={columns}
+            rows={detailRows}
+            rowKey={(row) => row.id}
+          />
+
+          <NajaOrderTimeline order={order} />
         </div>
 
         <div className="space-y-4">
@@ -150,26 +178,10 @@ export default function WarehouseOrderDetailsPage() {
             warehouseStatus={order.warehouseStatus}
           />
 
-          <WarehouseActionPanel
-            orderId={order.id}
-            showIssueSlip={
-              order.orderSource === "normal" &&
-              !hasSlip &&
-              order.warehouseStatus === "reviewing"
-            }
+          <NajaReturnAction
+            order={order as ExpertOrder}
+            actorName="کارشناس مرادی"
           />
-          {order.orderSource === "naja" && order.warehouseStatus === "awaitingNajaDetails" ? (
-            <Link
-              href={`/warehouse/orders/${order.id}/naja-details`}
-              className="btn-primary block rounded-xl px-4 py-3 text-center text-sm font-medium text-white visited:text-white hover:text-white focus:text-white"
-            >
-              تکمیل شناسه کالا و کد رهگیری
-            </Link>
-          ) : null}
-
-          {order.orderSource === "naja" ? (
-            <NajaReturnAction order={order} actorName="رضا احمدی" />
-          ) : null}
         </div>
       </section>
     </DashboardLayout>

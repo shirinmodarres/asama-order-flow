@@ -5,20 +5,47 @@ interface ProgressTimelineProps {
 }
 
 export function ProgressTimeline({ order }: ProgressTimelineProps) {
-  const steps = [
-    { key: "created", label: "ثبت سفارش", done: true },
-    { key: "reserved", label: "رزرو موجودی", done: true },
-    {
-      key: "decision",
-      label: "تصمیم مدیر فروش",
-      done: order.status !== "pending",
-    },
-    {
-      key: "warehouse",
-      label: "جریان انبار",
-      done: order.status === "approved" || order.status === "invoiced",
-    },
-  ];
+  const steps =
+    order.orderSource === "naja"
+      ? [
+          { key: "created", label: "ثبت سفارش ناجا", done: true },
+          { key: "inventory", label: "کسر موجودی ناجا", done: true },
+          {
+            key: "warehouse",
+            label: "تکمیل اطلاعات انبار",
+            done:
+              order.warehouseStatus !== "awaitingNajaDetails" &&
+              order.status !== "returned",
+          },
+          {
+            key: "invoice",
+            label: "صدور فاکتور",
+            done:
+              order.status === "invoiced" ||
+              order.status === "returnedAfterInvoice",
+          },
+          {
+            key: "return",
+            label: "برگشت سفارش",
+            done:
+              order.status === "returned" ||
+              order.status === "returnedAfterInvoice",
+          },
+        ]
+      : [
+          { key: "created", label: "ثبت سفارش", done: true },
+          { key: "reserved", label: "رزرو موجودی", done: true },
+          {
+            key: "decision",
+            label: "تصمیم مدیر فروش",
+            done: order.status !== "pending",
+          },
+          {
+            key: "warehouse",
+            label: "جریان انبار",
+            done: order.status === "approved" || order.status === "invoiced",
+          },
+        ];
 
   return (
     <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">

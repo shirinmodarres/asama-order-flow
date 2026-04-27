@@ -23,91 +23,48 @@ export function StatusBadge({ type, status }: StatusBadgeProps) {
 function getBadgeConfig(type: BadgeType, status: StatusBadgeProps["status"]) {
   if (type === "order") {
     const value = status as OrderStatus;
-    if (value === "pending")
-      return {
-        label: orderStatusLabel[value],
-        variant: "warning" as const,
-      };
-    if (value === "approved")
-      return {
-        label: orderStatusLabel[value],
-        variant: "success" as const,
-      };
-    if (value === "cancelled")
-      return {
-        label: orderStatusLabel[value],
-        variant: "destructive" as const,
-      };
-    return {
-      label: orderStatusLabel[value],
-      variant: "brand" as const,
-    };
+    if (value === "pending") {
+      return { label: orderStatusLabel[value], variant: "warning" as const };
+    }
+    if (value === "approved") {
+      return { label: orderStatusLabel[value], variant: "success" as const };
+    }
+    if (value === "cancelled" || value === "returned") {
+      return { label: orderStatusLabel[value], variant: "destructive" as const };
+    }
+    if (value === "returnedAfterInvoice") {
+      return { label: orderStatusLabel[value], variant: "warning" as const };
+    }
+    return { label: orderStatusLabel[value], variant: "brand" as const };
   }
 
   if (type === "warehouse") {
     const value = status as WarehouseStatus;
-    if (value === "reserved")
-      return {
-        label: warehouseStatusLabel[value],
-        variant: "neutral" as const,
-      };
-    if (value === "reviewing")
-      return {
-        label: warehouseStatusLabel[value],
-        variant: "brand" as const,
-      };
-    if (value === "returned")
-      return {
-        label: warehouseStatusLabel[value],
-        variant: "neutral" as const,
-      };
-    if (value === "processing")
-      return {
-        label: warehouseStatusLabel[value],
-        variant: "brand" as const,
-      };
-    if (value === "dispatchIssued")
-      return {
-        label: warehouseStatusLabel[value],
-        variant: "brand" as const,
-      };
-    if (value === "delivered")
-      return {
-        label: warehouseStatusLabel[value],
-        variant: "success" as const,
-      };
-    if (value === "awaitingNajaDetails")
-      return {
-        label: warehouseStatusLabel[value],
-        variant: "warning" as const,
-      };
-    if (value === "najaDetailsCompleted")
-      return {
-        label: warehouseStatusLabel[value],
-        variant: "success" as const,
-      };
-    return {
-      label: warehouseStatusLabel[value],
-      variant: "brand" as const,
-    };
+    if (value === "reserved" || value === "returned") {
+      return { label: warehouseStatusLabel[value], variant: "neutral" as const };
+    }
+    if (value === "reviewing" || value === "processing" || value === "dispatchIssued") {
+      return { label: warehouseStatusLabel[value], variant: "brand" as const };
+    }
+    if (value === "delivered" || value === "najaDetailsCompleted") {
+      return { label: warehouseStatusLabel[value], variant: "success" as const };
+    }
+    if (value === "awaitingNajaDetails" || value === "returnedFromWarehouse") {
+      return { label: warehouseStatusLabel[value], variant: "warning" as const };
+    }
+    if (value === "returnedToInventory") {
+      return { label: warehouseStatusLabel[value], variant: "destructive" as const };
+    }
+    return { label: warehouseStatusLabel[value], variant: "brand" as const };
   }
 
   const inventoryStatus = status as InventoryStatus;
   if (inventoryStatus === "critical") {
-    return {
-      label: "بحرانی",
-      variant: "destructive" as const,
-    };
+    return { label: "بحرانی", variant: "destructive" as const };
   }
   if (inventoryStatus === "warning") {
-    return {
-      label: "کم",
-      variant: "warning" as const,
-    };
+    return { label: "کم", variant: "warning" as const };
   }
 
-  return {
-    label: "مناسب",
-    variant: "success" as const,
-  };
+  return { label: "مناسب", variant: "success" as const };
 }

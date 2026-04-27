@@ -6,6 +6,9 @@ export interface DataTableColumn<T> {
   key: string;
   header: string;
   className?: string;
+  headerClassName?: string;
+  cellClassName?: string;
+  sticky?: "left" | "right";
   render: (row: T) => ReactNode;
 }
 
@@ -18,7 +21,7 @@ interface DataTableProps<T> {
 export function DataTable<T>({ columns, rows, rowKey }: DataTableProps<T>) {
   return (
     <Card className="overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overscroll-x-contain">
         <table className="min-w-full text-right">
           <thead className="border-b border-[#E9EEF3] bg-[#F8FBFD]">
             <tr>
@@ -26,8 +29,13 @@ export function DataTable<T>({ columns, rows, rowKey }: DataTableProps<T>) {
                 <th
                   key={column.key}
                   className={cn(
-                    "px-5 py-4 text-xs font-semibold tracking-wide text-[#5B6B7F]",
+                    "whitespace-nowrap px-5 py-4 text-xs font-semibold tracking-wide text-[#5B6B7F]",
                     column.className,
+                    column.headerClassName,
+                    column.sticky === "left" &&
+                      "sticky left-0 z-20 bg-[#F8FBFD] shadow-[-10px_0_20px_rgba(15,23,42,0.04)]",
+                    column.sticky === "right" &&
+                      "sticky right-0 z-20 bg-[#F8FBFD] shadow-[10px_0_20px_rgba(15,23,42,0.04)]",
                   )}
                 >
                   {column.header}
@@ -48,8 +56,13 @@ export function DataTable<T>({ columns, rows, rowKey }: DataTableProps<T>) {
                   <td
                     key={column.key}
                     className={cn(
-                      "px-5 py-4 align-middle text-sm text-[#334155]",
+                      "whitespace-nowrap px-5 py-4 align-middle text-sm text-[#334155]",
                       column.className,
+                      column.cellClassName,
+                      column.sticky === "left" &&
+                        "sticky left-0 z-10 bg-inherit shadow-[-10px_0_20px_rgba(15,23,42,0.03)]",
+                      column.sticky === "right" &&
+                        "sticky right-0 z-10 bg-inherit shadow-[10px_0_20px_rgba(15,23,42,0.03)]",
                     )}
                   >
                     {column.render(row)}

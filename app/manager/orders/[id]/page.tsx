@@ -193,6 +193,9 @@ export default function ManagerOrderReviewPage() {
               {order.phoneNumber ? (
                 <InfoItem label="شماره موبایل" value={order.phoneNumber} />
               ) : null}
+              {order.returnReason ? (
+                <InfoItem label="دلیل برگشت" value={order.returnReason} />
+              ) : null}
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
               <InfoItem
                 label="وضعیت سفارش"

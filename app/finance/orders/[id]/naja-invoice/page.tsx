@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useExpertStore } from "@/components/expert/expert-store-provider";
+import { NajaReturnAction } from "@/components/naja/naja-return-action";
 import { EmptyState } from "@/components/shared/empty-state";
 import { OrderSourceBadge } from "@/components/shared/order-source-badge";
 import { SectionHeader } from "@/components/shared/section-header";
@@ -67,8 +68,8 @@ export default function FinanceNajaInvoicePage() {
           </div>
 
           <div className="mt-5 flex gap-2">
-            <Button type="button" onClick={handleIssue} disabled={Boolean(existingInvoice)}>
-              {existingInvoice ? "فاکتور قبلا صادر شده" : "صدور فاکتور به نام ناجا"}
+            <Button type="button" onClick={handleIssue} disabled={Boolean(existingInvoice) || order.status === "returned" || order.status === "returnedAfterInvoice"}>
+              {existingInvoice ? "فاکتور قبلا صادر شده" : order.status === "returned" || order.status === "returnedAfterInvoice" ? "امکان صدور فاکتور وجود ندارد" : "صدور فاکتور به نام ناجا"}
             </Button>
             <Button type="button" variant="outline" asChild>
               <Link href="/finance/ready">بازگشت</Link>
@@ -76,13 +77,22 @@ export default function FinanceNajaInvoicePage() {
           </div>
         </Card>
 
-        <Card className="p-5">
-          <Badge variant="warning">ضمیمه مشتری ناجا</Badge>
-          <p className="mt-4 text-sm leading-7 text-[#6B7280]">
-            اطلاعات مشتری، کد ملی، شماره موبایل، شناسه کالا و کد رهگیری به عنوان
-            ضمیمه فاکتور ذخیره می شود و نام صورتحساب روی «ناجا» قرار می گیرد.
-          </p>
-        </Card>
+        <div className="space-y-4">
+          <Card className="p-5">
+            <Badge variant="warning">ضمیمه مشتری ناجا</Badge>
+            <p className="mt-4 text-sm leading-7 text-[#6B7280]">
+              اطلاعات مشتری، کد ملی، شماره موبایل، شناسه کالا و کد رهگیری به عنوان
+              ضمیمه فاکتور ذخیره می شود و نام صورتحساب روی «ناجا» قرار می گیرد.
+            </p>
+            {order.status === "returnedAfterInvoice" ? (
+              <p className="mt-3 rounded-[14px] border border-[#F0D0D0] bg-[#FFF6F6] px-3 py-2 text-xs text-[#9C3B3B]">
+                این سفارش پس از صدور فاکتور برگشت خورده و نیازمند پیگیری مالی است.
+              </p>
+            ) : null}
+          </Card>
+
+          <NajaReturnAction order={order} actorName="مریم نادری" />
+        </div>
       </section>
     </DashboardLayout>
   );

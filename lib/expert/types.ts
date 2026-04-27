@@ -1,4 +1,10 @@
-export type OrderStatus = "pending" | "approved" | "cancelled" | "invoiced";
+export type OrderStatus =
+  | "pending"
+  | "approved"
+  | "cancelled"
+  | "invoiced"
+  | "returned"
+  | "returnedAfterInvoice";
 export type OrderSource = "normal" | "naja";
 
 export type WarehouseStatus =
@@ -10,7 +16,9 @@ export type WarehouseStatus =
   | "delivered"
   | "completed"
   | "awaitingNajaDetails"
-  | "najaDetailsCompleted";
+  | "najaDetailsCompleted"
+  | "returnedToInventory"
+  | "returnedFromWarehouse";
 
 export interface Product {
   id: string;
@@ -42,6 +50,9 @@ export interface ExpertOrder {
   phoneNumber?: string;
   trackingCode?: string;
   productIdentifier?: string;
+  returnReason?: string;
+  returnedAt?: string;
+  returnedBy?: string;
   createdAt: string;
   updatedAt: string;
   status: OrderStatus;
@@ -73,6 +84,12 @@ export interface CompleteNajaWarehouseInput {
   orderId: string;
   productIdentifier: string;
   trackingCode: string;
+  createdBy: string;
+}
+
+export interface ReturnNajaOrderInput {
+  orderId: string;
+  reason: string;
   createdBy: string;
 }
 

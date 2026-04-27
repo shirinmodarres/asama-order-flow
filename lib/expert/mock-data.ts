@@ -15,6 +15,8 @@ export const orderStatusLabel: Record<OrderStatus, string> = {
   approved: "تأیید شده",
   cancelled: "لغو شده",
   invoiced: "فاکتور شده",
+  returned: "برگشتی",
+  returnedAfterInvoice: "برگشتی پس از فاکتور",
 };
 
 export const warehouseStatusLabel: Record<WarehouseStatus, string> = {
@@ -27,6 +29,8 @@ export const warehouseStatusLabel: Record<WarehouseStatus, string> = {
   completed: "نهایی شده",
   awaitingNajaDetails: "در انتظار تکمیل اطلاعات انبار",
   najaDetailsCompleted: "اطلاعات انبار تکمیل شد",
+  returnedToInventory: "برگشت به موجودی",
+  returnedFromWarehouse: "برگشتی از انبار",
 };
 
 export const invoiceStatusLabel = {
@@ -259,7 +263,7 @@ export const initialOrders: ExpertOrder[] = [
     id: "o-9101",
     code: "NJ-9101",
     orderSource: "naja",
-    createdBy: "ناجا",
+    createdBy: "کارشناس مرادی",
     najaExpertName: "کارشناس مرادی",
     customerName: "امیرحسین جعفری",
     nationalId: "0012345678",
@@ -274,7 +278,7 @@ export const initialOrders: ExpertOrder[] = [
     id: "o-9102",
     code: "NJ-9102",
     orderSource: "naja",
-    createdBy: "ناجا",
+    createdBy: "کارشناس احمدی",
     najaExpertName: "کارشناس احمدی",
     customerName: "زهرا موسوی",
     nationalId: "0087654321",
@@ -291,7 +295,7 @@ export const initialOrders: ExpertOrder[] = [
     id: "o-9103",
     code: "NJ-9103",
     orderSource: "naja",
-    createdBy: "ناجا",
+    createdBy: "کارشناس رضوی",
     najaExpertName: "کارشناس رضوی",
     customerName: "محمدامین حیدری",
     nationalId: "0045678912",
@@ -303,6 +307,24 @@ export const initialOrders: ExpertOrder[] = [
     status: "invoiced",
     warehouseStatus: "najaDetailsCompleted",
     items: [{ productId: "p-107", quantity: 1 }],
+  },
+  {
+    id: "o-9104",
+    code: "NJ-9104",
+    orderSource: "naja",
+    createdBy: "کارشناس قاسمی",
+    najaExpertName: "کارشناس قاسمی",
+    customerName: "نرگس کریمی",
+    nationalId: "0055512345",
+    phoneNumber: "09125550011",
+    createdAt: "2026-04-15T08:10:00.000Z",
+    updatedAt: "2026-04-15T11:40:00.000Z",
+    status: "returned",
+    warehouseStatus: "returnedToInventory",
+    returnReason: "انصراف مشتری پیش از تکمیل اطلاعات انبار",
+    returnedAt: "2026-04-15T11:40:00.000Z",
+    returnedBy: "کارشناس قاسمی",
+    items: [{ productId: "p-103", quantity: 2 }],
   },
 ];
 
@@ -415,6 +437,14 @@ export const initialWarehouseHistory: WarehouseHistoryEntry[] = [
     changedBy: "رضا احمدی",
     note: "شناسه کالا و کد رهگیری برای سفارش ناجا ثبت شد.",
   },
+  {
+    id: "wh-1006",
+    orderId: "o-9104",
+    status: "returnedToInventory",
+    changedAt: "2026-04-15T11:40:00.000Z",
+    changedBy: "کارشناس قاسمی",
+    note: "سفارش ناجا با دلیل انصراف مشتری به موجودی اختصاصی بازگردانده شد.",
+  },
 ];
 
 export const initialInventoryHistory: InventoryHistoryEntry[] = [
@@ -448,16 +478,36 @@ export const initialInventoryHistory: InventoryHistoryEntry[] = [
     createdAt: "2026-04-18T08:40:00.000Z",
     createdBy: "کارشناس مرادی",
   },
+  {
+    id: "ih-1004",
+    productId: "p-103",
+    inventoryScope: "naja",
+    changeType: "increase",
+    amount: 2,
+    note: "بازگشت موجودی ناجا بابت سفارش NJ-9104",
+    createdAt: "2026-04-15T11:40:00.000Z",
+    createdBy: "کارشناس قاسمی",
+  },
 ];
 
 export function getOrderEditBlockReason(status: OrderStatus): string {
   if (status === "approved") return "این سفارش تایید شده و قابل ویرایش نیست.";
   if (status === "cancelled") return "این سفارش لغو شده و قابل ویرایش نیست.";
   if (status === "invoiced") return "این سفارش فاکتور شده و قابل ویرایش نیست.";
+  if (status === "returned") return "این سفارش برگشتی شده و قابل ویرایش نیست.";
+  if (status === "returnedAfterInvoice") return "این سفارش پس از صدور فاکتور برگشت خورده و قابل ویرایش نیست.";
   return "";
 }
 
 export function getOrderLastStageLabel(order: ExpertOrder): string {
+  if (order.status === "returnedAfterInvoice") {
+    return "برگشتی پس از فاکتور و نیازمند پیگیری مالی";
+  }
+  if (order.status === "returned") {
+    return order.warehouseStatus === "returnedFromWarehouse"
+      ? "برگشتی از انبار"
+      : "برگشت به موجودی ناجا";
+  }
   if (order.orderSource === "naja" && order.warehouseStatus === "awaitingNajaDetails") {
     return "منتظر ثبت شناسه کالا و کد رهگیری";
   }
