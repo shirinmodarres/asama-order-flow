@@ -221,7 +221,7 @@ export default function NewExpertOrderPage() {
           </div>
 
           {error ? (
-            <p className="mt-4 rounded-[16px] border border-[#F0D0D0] bg-[#FFF6F6] px-4 py-3 text-sm text-[#9C3B3B]">
+            <p className="mt-4 rounded-2xl border border-[#F0D0D0] bg-[#FFF6F6] px-4 py-3 text-sm text-[#9C3B3B]">
               {error}
             </p>
           ) : null}

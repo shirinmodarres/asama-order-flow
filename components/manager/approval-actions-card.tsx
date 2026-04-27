@@ -25,7 +25,8 @@ export function ApprovalActionsCard({
             اقدامات مدیر فروش
           </h3>
           <p className="mt-2 text-sm leading-7 text-[#6B7280]">
-            در این مرحله، مدیر فروش تصمیم نهایی تایید یا لغو سفارش را ثبت می کند.
+            در این مرحله، مدیر فروش تصمیم نهایی تایید یا لغو سفارش را ثبت می
+            کند.
           </p>
         </div>
         <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DDE7F0] bg-[#F5F8FB] text-[#1F3A5F]">
@@ -53,7 +54,7 @@ export function ApprovalActionsCard({
       </div>
 
       {disabled && disableReason ? (
-        <div className="mt-4 flex items-start gap-2 rounded-[16px] border border-[#F0D0D0] bg-[#FFF6F6] px-4 py-3 text-xs leading-6 text-[#9C3B3B]">
+        <div className="mt-4 flex items-start gap-2 rounded-2xl border border-[#F0D0D0] bg-[#FFF6F6] px-4 py-3 text-xs leading-6 text-[#9C3B3B]">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <p>{disableReason}</p>
         </div>

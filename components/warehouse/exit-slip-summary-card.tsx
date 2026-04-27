@@ -20,9 +20,7 @@ export function ExitSlipSummaryCard({
           <h3 className="text-base font-semibold text-[#102034]">
             خلاصه حواله خروج
           </h3>
-          <p className="mt-1 text-sm text-[#6B7280]">
-            اطلاعات ثبت اولیه حواله
-          </p>
+          <p className="mt-1 text-sm text-[#6B7280]">اطلاعات ثبت اولیه حواله</p>
         </div>
         <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DDE7F0] bg-[#F5F8FB] text-[#1F3A5F]">
           <PackageOpen className="size-5" />
@@ -39,7 +37,7 @@ export function ExitSlipSummaryCard({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[16px] border border-[#E8EEF4] bg-[#FBFCFD] px-3.5 py-3">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#E8EEF4] bg-[#FBFCFD] px-3.5 py-3">
       <dt className="text-[#6B7280]">{label}</dt>
       <dd className="font-semibold text-[#102034]">{value}</dd>
     </div>

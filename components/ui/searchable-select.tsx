@@ -144,55 +144,55 @@ export function SearchableSelect({
             <div
               ref={menuRef}
               style={menuStyle}
-              className="rounded-[16px] border border-[#D7DEE6] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
+              className="rounded-2xl border border-[#D7DEE6] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
             >
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6B7280]" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={searchPlaceholder}
-              className="pr-10"
-              autoFocus
-            />
-          </div>
-
-          <div className="mt-2 max-h-64 overflow-y-auto">
-            {filteredOptions.length > 0 ? (
-              <div className="space-y-1">
-                {filteredOptions.map((option) => {
-                  const isSelected = option.value === value;
-
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        onValueChange(option.value);
-                        setOpen(false);
-                        setQuery("");
-                      }}
-                      className={cn(
-                        "flex w-full items-center justify-between gap-3 rounded-[12px] px-3 py-2.5 text-right text-sm transition-colors",
-                        isSelected
-                          ? "bg-[#F3F7FB] text-[#1F3A5F]"
-                          : "text-[#334155] hover:bg-[#EFF4F8]",
-                      )}
-                    >
-                      <span className="truncate">{option.label}</span>
-                      {isSelected ? (
-                        <Check className="size-4 shrink-0 text-[#1F3A5F]" />
-                      ) : null}
-                    </button>
-                  );
-                })}
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6B7280]" />
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={searchPlaceholder}
+                  className="pr-10"
+                  autoFocus
+                />
               </div>
-            ) : (
-              <div className="px-3 py-4 text-sm text-[#6B7280]">
-                {emptyMessage}
+
+              <div className="mt-2 max-h-64 overflow-y-auto">
+                {filteredOptions.length > 0 ? (
+                  <div className="space-y-1">
+                    {filteredOptions.map((option) => {
+                      const isSelected = option.value === value;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            onValueChange(option.value);
+                            setOpen(false);
+                            setQuery("");
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between gap-3 rounded-[12px] px-3 py-2.5 text-right text-sm transition-colors",
+                            isSelected
+                              ? "bg-[#F3F7FB] text-[#1F3A5F]"
+                              : "text-[#334155] hover:bg-[#EFF4F8]",
+                          )}
+                        >
+                          <span className="truncate">{option.label}</span>
+                          {isSelected ? (
+                            <Check className="size-4 shrink-0 text-[#1F3A5F]" />
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="px-3 py-4 text-sm text-[#6B7280]">
+                    {emptyMessage}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
             </div>,
             document.body,
           )

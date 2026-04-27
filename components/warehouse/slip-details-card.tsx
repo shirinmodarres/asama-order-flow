@@ -25,7 +25,9 @@ export function SlipDetailsCard({
     <Card className="p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-base font-semibold text-[#102034]">اطلاعات حواله</h3>
+          <h3 className="text-base font-semibold text-[#102034]">
+            اطلاعات حواله
+          </h3>
           <p className="mt-1 text-sm text-[#6B7280]">
             جزئیات عملیات خروج و تحویل
           </p>
@@ -45,7 +47,7 @@ export function SlipDetailsCard({
           value={deliveredAt ? formatDateTime(deliveredAt) : "-"}
         />
       </dl>
-      <div className="mt-4 rounded-[16px] border border-[#E8EEF4] bg-[#FBFCFD] p-4 text-sm leading-7 text-[#475569]">
+      <div className="mt-4 rounded-2xl border border-[#E8EEF4] bg-[#FBFCFD] p-4 text-sm leading-7 text-[#475569]">
         {notes || "توضیحی ثبت نشده است."}
       </div>
     </Card>
@@ -54,7 +56,7 @@ export function SlipDetailsCard({
 
 function Item({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[16px] border border-[#E8EEF4] bg-[#FBFCFD] p-3.5">
+    <div className="rounded-2xl border border-[#E8EEF4] bg-[#FBFCFD] p-3.5">
       <dt className="text-xs text-[#6B7280]">{label}</dt>
       <dd className="mt-1 font-medium text-[#102034]">{value}</dd>
     </div>

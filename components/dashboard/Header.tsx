@@ -49,7 +49,7 @@ export function Header({ title, role }: HeaderProps) {
               localStorage.removeItem("asama-demo-role");
               router.push("/");
             }}
-            className="flex items-center gap-3 rounded-[16px] border border-[#D8E1EA] bg-[#F8FBFD] px-3 py-2.5 text-right transition-colors hover:border-[#C8D3DF] hover:bg-white"
+            className="flex items-center gap-3 rounded-2xl border border-[#D8E1EA] bg-[#F8FBFD] px-3 py-2.5 text-right transition-colors hover:border-[#C8D3DF] hover:bg-white"
           >
             <Avatar>
               <AvatarFallback>{roleInfo.userName.charAt(0)}</AvatarFallback>

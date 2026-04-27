@@ -56,7 +56,7 @@ export function InvoiceSummaryCard({
           />
         </div>
       ) : (
-        <p className="mt-4 rounded-[16px] border border-[#E7EDF3] bg-[#FBFCFD] px-4 py-3 text-sm leading-7 text-[#6B7280]">
+        <p className="mt-4 rounded-2xl border border-[#E7EDF3] bg-[#FBFCFD] px-4 py-3 text-sm leading-7 text-[#6B7280]">
           فاکتور برای این سفارش هنوز صادر نشده است.
         </p>
       )}
@@ -66,7 +66,7 @@ export function InvoiceSummaryCard({
 
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[16px] border border-[#E8EEF4] bg-[#FBFCFD] px-3.5 py-3">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#E8EEF4] bg-[#FBFCFD] px-3.5 py-3">
       <span className="text-[#6B7280]">{label}</span>
       <span className="font-medium text-[#102034]">{value}</span>
     </div>

@@ -2,11 +2,7 @@
 
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function Select({
@@ -58,7 +54,7 @@ function SelectContent({
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         className={cn(
-          "relative z-50 max-h-96 min-w-[10rem] overflow-hidden rounded-[16px] border border-[#D7DEE6] bg-white p-1.5 text-[#102034] opacity-100 shadow-[0_24px_60px_rgba(15,23,42,0.18)] transition-opacity duration-150 data-[state=closed]:opacity-0",
+          "relative z-50 max-h-96 min-w-[10rem] overflow-hidden rounded-2xl border border-[#D7DEE6] bg-white p-1.5 text-[#102034] opacity-100 shadow-[0_24px_60px_rgba(15,23,42,0.18)] transition-opacity duration-150 data-[state=closed]:opacity-0",
           position === "popper" &&
             "data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
           className,
@@ -92,7 +88,10 @@ function SelectLabel({
 }: React.ComponentProps<typeof SelectPrimitive.Label>) {
   return (
     <SelectPrimitive.Label
-      className={cn("px-2 py-1.5 text-xs font-semibold text-[#6B7280]", className)}
+      className={cn(
+        "px-2 py-1.5 text-xs font-semibold text-[#6B7280]",
+        className,
+      )}
       {...props}
     />
   );

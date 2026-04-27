@@ -103,7 +103,7 @@ export function LoginScreen() {
                 ورود بر اساس همین نقش تنظیم می شود.
               </p>
             </div>
-            <div className="flex size-12 items-center justify-center rounded-[16px] border border-[#D6E8DA] bg-[#F3FAF4] text-[#6CAE75]">
+            <div className="flex size-12 items-center justify-center rounded-2xl border border-[#D6E8DA] bg-[#F3FAF4] text-[#6CAE75]">
               <LockKeyhole className="size-5" />
             </div>
           </div>

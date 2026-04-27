@@ -58,7 +58,7 @@ export function Sidebar({ items }: SidebarProps) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "group rounded-[16px] border px-4 py-3 transition-all duration-200",
+                      "group rounded-2xl border px-4 py-3 transition-all duration-200",
                       isActive
                         ? "border-[#D2E6D6] bg-[linear-gradient(180deg,rgba(243,250,244,1),rgba(255,255,255,1))] shadow-[0_16px_32px_rgba(108,174,117,0.12)]"
                         : "border-transparent bg-transparent hover:border-[#DCE4EC] hover:bg-white",
