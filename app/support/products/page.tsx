@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -17,17 +16,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Product } from "@/lib/expert/types";
-import { formatCurrency, formatNumber, getAvailableStock } from "@/lib/expert/utils";
+import { formatCurrency, formatNumber } from "@/lib/expert/utils";
+import { listProducts, type Product } from "@/lib/products";
 import { Search, Tags } from "lucide-react";
 
 export default function SupportProductsPage() {
-  const { products } = useExpertStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("all");
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProducts() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await listProducts();
+        if (isMounted) setProducts(data);
+      } catch (requestError) {
+        if (isMounted) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "دریافت فهرست کالاها انجام نشد.",
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const brands = useMemo(
-    () => Array.from(new Set(products.map((product) => product.brand))),
+    () =>
+      Array.from(
+        new Set(
+          products
+            .map((product) => product.brand)
+            .filter(
+              (b): b is string => typeof b === "string" && b.trim().length > 0,
+            ),
+        ),
+      ),
     [products],
   );
 
@@ -56,16 +96,6 @@ export default function SupportProductsPage() {
       key: "total",
       header: "موجودی کل",
       render: (row) => formatNumber(row.totalStock),
-    },
-    {
-      key: "reserved",
-      header: "موجودی رزروشده",
-      render: (row) => formatNumber(row.reservedStock),
-    },
-    {
-      key: "available",
-      header: "موجودی قابل استفاده",
-      render: (row) => formatNumber(getAvailableStock(row)),
     },
     { key: "unit", header: "واحد", render: (row) => row.unit },
     {
@@ -127,7 +157,7 @@ export default function SupportProductsPage() {
               <SelectContent>
                 <SelectItem value="all">همه برندها</SelectItem>
                 {brands.map((brand) => (
-                  <SelectItem key={brand} value={brand}>
+                  <SelectItem key={`brand-${brand}`} value={brand}>
                     {brand}
                   </SelectItem>
                 ))}
@@ -137,7 +167,14 @@ export default function SupportProductsPage() {
         </div>
       </section>
 
-      {filteredProducts.length > 0 ? (
+      {isLoading ? (
+        <EmptyState
+          title="در حال دریافت کالاها"
+          description="فهرست کالاها از سرور دریافت می شود."
+        />
+      ) : error ? (
+        <EmptyState title="دریافت کالاها انجام نشد" description={error} />
+      ) : filteredProducts.length > 0 ? (
         <DataTable
           columns={columns}
           rows={filteredProducts}

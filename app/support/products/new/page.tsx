@@ -1,29 +1,48 @@
 "use client";
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
-import { ProductForm } from "@/components/support/product-form";
-import type { CreateProductInput } from "@/lib/expert/types";
+import {
+  ProductForm,
+  type CreateProductFormInput,
+} from "@/components/support/product-form";
+import { createProduct } from "@/lib/products";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function SupportCreateProductPage() {
   const router = useRouter();
-  const { createProduct } = useExpertStore();
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = (input: CreateProductInput) => {
-    const result = createProduct(input);
+  const onSubmit = async (input: CreateProductFormInput) => {
+    setIsSubmitting(true);
+    setMessage("");
 
-    if (!result.ok) {
-      setMessage(result.error ?? "ثبت کالا انجام نشد.");
-      return;
+    try {
+      await createProduct({
+        id: input.id.trim(),
+        name: input.name.trim(),
+        brand: input.brand.trim(),
+        category: input.category.trim(),
+        unit: input.unit.trim(),
+        unitPrice: Number(input.unitPrice),
+        description: input.description?.trim() || undefined,
+        status: input.status,
+        totalStock: Number(input.totalStock) || 0,
+      });
+
+      setMessage("کالا با موفقیت ثبت شد.");
+      setTimeout(() => {
+        router.push("/support/products");
+        router.refresh();
+      }, 700);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "ثبت کالا انجام نشد.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setMessage(result.message ?? "کالا ثبت شد.");
-    setTimeout(() => {
-      router.push("/support/products");
-    }, 700);
   };
 
   return (
@@ -34,6 +53,7 @@ export default function SupportCreateProductPage() {
       <ProductForm
         mode="create"
         onSubmit={onSubmit}
+        isSubmitting={isSubmitting}
         onCancel={() => router.push("/support/products")}
       />
     </DashboardLayout>

@@ -5,18 +5,29 @@ const textCollator = (() => {
     return new Intl.Collator("fa", { sensitivity: "base", numeric: true });
   } catch {
     try {
-      return new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+      return new Intl.Collator(undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
     } catch {
       return null;
     }
   }
 })();
 
-export function formatNumber(value: number): string {
-  return value.toLocaleString("fa-IR");
+export function formatNumber(value?: number | string | null): string {
+  const numericValue =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim().length > 0
+        ? Number(value)
+        : 0;
+
+  const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
+  return safeValue.toLocaleString("fa-IR");
 }
 
-export function formatCurrency(value: number): string {
+export function formatCurrency(value?: number | string | null): string {
   return `${formatNumber(value)} ریال`;
 }
 
@@ -75,7 +86,10 @@ export function mergeOrderItems(items: OrderItem[]): OrderItem[] {
     map.set(item.productId, (map.get(item.productId) ?? 0) + item.quantity);
   }
 
-  return Array.from(map.entries()).map(([productId, quantity]) => ({ productId, quantity }));
+  return Array.from(map.entries()).map(([productId, quantity]) => ({
+    productId,
+    quantity,
+  }));
 }
 
 export function compareText(a: string, b: string): number {

@@ -13,17 +13,29 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type {
-  CreateProductInput,
   UpdateProductInput,
 } from "@/lib/expert/types";
 
 interface BaseProps {
   onCancel: () => void;
+  isSubmitting?: boolean;
+}
+
+export interface CreateProductFormInput {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  unit: string;
+  unitPrice: number;
+  totalStock: number;
+  description?: string;
+  status: "active" | "inactive";
 }
 
 interface CreateModeProps extends BaseProps {
   mode: "create";
-  onSubmit: (input: CreateProductInput) => void;
+  onSubmit: (input: CreateProductFormInput) => void;
 }
 
 interface EditModeProps extends BaseProps {
@@ -44,6 +56,9 @@ interface EditModeProps extends BaseProps {
 type ProductFormProps = CreateModeProps | EditModeProps;
 
 export function ProductForm(props: ProductFormProps) {
+  const [id, setId] = useState(
+    props.mode === "edit" ? props.initialValues.id : "",
+  );
   const [name, setName] = useState(
     props.mode === "edit" ? props.initialValues.name : "",
   );
@@ -62,7 +77,7 @@ export function ProductForm(props: ProductFormProps) {
   const [unitPrice, setUnitPrice] = useState(
     props.mode === "edit" ? props.initialValues.unitPrice : 0,
   );
-  const [initialStock, setInitialStock] = useState(0);
+  const [totalStock, setTotalStock] = useState(0);
   const [status, setStatus] = useState<"active" | "inactive">(
     props.mode === "edit" ? props.initialValues.status : "active",
   );
@@ -74,13 +89,15 @@ export function ProductForm(props: ProductFormProps) {
 
         if (props.mode === "create") {
           props.onSubmit({
+            id,
             name,
             brand,
             category,
             unit,
             unitPrice,
-            initialStock,
+            totalStock: Number(totalStock) || 0,
             description,
+            status,
           });
           return;
         }
@@ -100,6 +117,9 @@ export function ProductForm(props: ProductFormProps) {
     >
       <Card className="p-5">
         <div className="grid gap-4 md:grid-cols-2">
+          {props.mode === "create" ? (
+            <InputField label="شناسه کالا" value={id} onChange={setId} />
+          ) : null}
           <InputField label="نام کالا" value={name} onChange={setName} />
           <InputField label="برند" value={brand} onChange={setBrand} />
           <InputField label="دسته بندی" value={category} onChange={setCategory} />
@@ -116,16 +136,35 @@ export function ProductForm(props: ProductFormProps) {
           </label>
 
           {props.mode === "create" ? (
-            <label className="grid gap-2 text-sm font-medium text-[#334155]">
-              <span>موجودی اولیه</span>
-              <Input
-                type="number"
-                min={0}
-                value={initialStock}
-                onChange={(event) => setInitialStock(Number(event.target.value))}
-                required
-              />
-            </label>
+            <>
+              <label className="grid gap-2 text-sm font-medium text-[#334155]">
+                <span>موجودی اولیه</span>
+                <Input
+                  type="number"
+                  min={0}
+                  value={totalStock}
+                  onChange={(event) => setTotalStock(Number(event.target.value))}
+                  required
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-medium text-[#334155]">
+                <span>وضعیت</span>
+                <Select
+                  value={status}
+                  onValueChange={(value) =>
+                    setStatus(value as "active" | "inactive")
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="وضعیت کالا" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">فعال</SelectItem>
+                    <SelectItem value="inactive">غیرفعال</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            </>
           ) : (
             <label className="grid gap-2 text-sm font-medium text-[#334155]">
               <span>وضعیت</span>
@@ -157,10 +196,19 @@ export function ProductForm(props: ProductFormProps) {
         </label>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button type="submit">
-            {props.mode === "create" ? "ثبت کالا" : "ذخیره تغییرات"}
+          <Button type="submit" disabled={props.isSubmitting}>
+            {props.isSubmitting
+              ? "در حال ثبت..."
+              : props.mode === "create"
+                ? "ثبت کالا"
+                : "ذخیره تغییرات"}
           </Button>
-          <Button type="button" variant="outline" onClick={props.onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={props.onCancel}
+            disabled={props.isSubmitting}
+          >
             انصراف
           </Button>
         </div>

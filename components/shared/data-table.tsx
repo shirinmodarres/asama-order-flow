@@ -46,7 +46,7 @@ export function DataTable<T>({ columns, rows, rowKey }: DataTableProps<T>) {
           <tbody className="divide-y divide-[#EEF2F6]">
             {rows.map((row, index) => (
               <tr
-                key={rowKey(row)}
+                key={`${rowKey(row) ?? "row"}-${index}`}
                 className={cn(
                   "transition-colors hover:bg-[#F8FBFD]",
                   index % 2 === 1 && "bg-[#FCFDFE]",
