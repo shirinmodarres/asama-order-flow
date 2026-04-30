@@ -1,25 +1,54 @@
 "use client";
 
 import { Search, Tags } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { InventorySummaryCard } from "@/components/shared/inventory-summary-card";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import type { Product } from "@/lib/expert/types";
-import { formatCurrency, formatNumber, getAvailableStock } from "@/lib/expert/utils";
+import { getErrorMessage } from "@/lib/api/api-error";
+import { formatCurrency, formatNumber } from "@/lib/expert/utils";
+import type { Product } from "@/lib/models/product.model";
+import { listProducts } from "@/lib/services/product.service";
 
 type InventoryStatus = "normal" | "warning" | "critical";
 
 export default function ExpertInventoryPage() {
-  const { products } = useExpertStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [brand, setBrand] = useState("all");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProducts() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await listProducts();
+        if (isMounted) setProducts(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const brands = useMemo(
     () => Array.from(new Set(products.map((product) => product.brand))),
@@ -41,7 +70,7 @@ export default function ExpertInventoryPage() {
       (acc, product) => {
         acc.total += product.totalStock;
         acc.reserved += product.reservedStock;
-        acc.available += getAvailableStock(product);
+        acc.available += product.availableStock;
         return acc;
       },
       { total: 0, reserved: 0, available: 0 },
@@ -76,7 +105,7 @@ export default function ExpertInventoryPage() {
     {
       key: "available",
       header: "موجودی قابل استفاده",
-      render: (row) => formatNumber(getAvailableStock(row)),
+      render: (row) => formatNumber(row.availableStock),
     },
     {
       key: "status",
@@ -142,11 +171,15 @@ export default function ExpertInventoryPage() {
         </div>
       </section>
 
-      {filteredProducts.length > 0 ? (
+      {isLoading ? (
+        <LoadingState title="در حال دریافت موجودی" />
+      ) : error ? (
+        <PageErrorMessage title="دریافت موجودی انجام نشد" message={error} />
+      ) : filteredProducts.length > 0 ? (
         <DataTable
           columns={columns}
           rows={filteredProducts}
-          rowKey={(row) => row.id}
+          rowKey={(row) => row.objectId || row.id}
         />
       ) : (
         <EmptyState
@@ -159,7 +192,7 @@ export default function ExpertInventoryPage() {
 }
 
 function getInventoryStatus(product: Product): InventoryStatus {
-  const available = getAvailableStock(product);
+  const available = product.availableStock;
   if (available <= 0) return "critical";
   if (available <= product.totalStock * 0.2) return "warning";
   return "normal";

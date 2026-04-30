@@ -1,32 +1,59 @@
 "use client";
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import {
-  getOrderEditBlockReason,
-  orderStatusLabel,
-} from "@/lib/expert/mock-data";
-import type { ExpertOrder, OrderStatus } from "@/lib/expert/types";
+import { getErrorMessage } from "@/lib/api/api-error";
 import {
   formatDate,
   formatNumber,
-  getOrderItemCount,
-  isOrderEditable,
 } from "@/lib/expert/utils";
+import type { Order } from "@/lib/models/order.model";
+import { listOrders } from "@/lib/services/order.service";
 import { ListFilter, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function ExpertOrdersPage() {
-  const { orders } = useExpertStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadOrders() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await listOrders();
+        if (isMounted) setOrders(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const statusOptions = useMemo(
+    () => Array.from(new Set(orders.map((order) => order.orderStatus).filter(Boolean))),
+    [orders],
+  );
 
   const filteredOrders = useMemo(() => {
     return [...orders]
@@ -37,14 +64,14 @@ export default function ExpertOrdersPage() {
         const matchesSearch = order.code
           .toLowerCase()
           .includes(search.toLowerCase()) ||
-          order.customerName.toLowerCase().includes(search.toLowerCase());
+          (order.customerName ?? "").toLowerCase().includes(search.toLowerCase());
         const matchesStatus =
-          statusFilter === "all" || order.status === statusFilter;
+          statusFilter === "all" || order.orderStatus === statusFilter;
         return matchesSearch && matchesStatus;
       });
   }, [orders, search, statusFilter]);
 
-  const columns: DataTableColumn<ExpertOrder>[] = [
+  const columns: DataTableColumn<Order>[] = [
     {
       key: "code",
       header: "کد سفارش",
@@ -60,43 +87,40 @@ export default function ExpertOrdersPage() {
     {
       key: "customer",
       header: "مشتری",
-      render: (row) => row.customerName,
+      render: (row) => row.customerName ?? "-",
     },
     {
       key: "items",
       header: "تعداد آیتم",
-      render: (row) => formatNumber(getOrderItemCount(row.items)),
+      render: (row) => formatNumber(row.items.reduce((sum, item) => sum + item.quantity, 0)),
     },
     {
       key: "order-status",
       header: "وضعیت سفارش",
-      render: (row) => <StatusBadge type="order" status={row.status} />,
+      render: (row) => row.orderStatus || "-",
     },
     {
       key: "warehouse-status",
       header: "وضعیت انبار",
       render: (row) => (
-        <StatusBadge type="warehouse" status={row.warehouseStatus} />
+        row.warehouseStatus || "-"
       ),
     },
     {
       key: "actions",
       header: "عملیات",
       render: (row) => {
-        const editable = isOrderEditable(row);
-        const reason = getOrderEditBlockReason(row.status);
-
         return (
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href={`/expert/orders/${row.id}`}
+              href={`/expert/orders/${row.objectId}`}
               className="rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-xs text-[#334155] hover:border-[#CBD5E1]"
             >
               مشاهده جزئیات
             </Link>
-            {editable ? (
+            {row.orderStatus === "pending" ? (
               <Link
-                href={`/expert/orders/${row.id}/edit`}
+                href={`/expert/orders/${row.objectId}/edit`}
                 className="btn-primary rounded-xl px-3 py-1.5 text-sm font-medium text-white visited:text-white hover:text-white focus:text-white"
               >
                 ویرایش
@@ -105,7 +129,7 @@ export default function ExpertOrdersPage() {
               <button
                 type="button"
                 disabled
-                title={reason}
+                title="ویرایش فقط برای سفارش های در انتظار امکان پذیر است."
                 className="cursor-not-allowed rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-1.5 text-sm text-[#64748B]"
               >
                 ویرایش
@@ -139,15 +163,10 @@ export default function ExpertOrdersPage() {
               <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
               <SearchableSelect
                 value={statusFilter}
-                onValueChange={(value) =>
-                  setStatusFilter(value as "all" | OrderStatus)
-                }
+                onValueChange={setStatusFilter}
                 options={[
                   { value: "all", label: "همه وضعیت ها" },
-                  ...Object.entries(orderStatusLabel).map(([value, label]) => ({
-                    value,
-                    label,
-                  })),
+                  ...statusOptions.map((value) => ({ value, label: value })),
                 ]}
                 placeholder="همه وضعیت ها"
                 searchPlaceholder="جستجو در وضعیت ها"
@@ -159,11 +178,15 @@ export default function ExpertOrdersPage() {
         </div>
       </section>
 
-      {filteredOrders.length > 0 ? (
+      {isLoading ? (
+        <LoadingState title="در حال دریافت سفارش ها" />
+      ) : error ? (
+        <PageErrorMessage title="دریافت سفارش ها انجام نشد" message={error} />
+      ) : filteredOrders.length > 0 ? (
         <DataTable
           columns={columns}
           rows={filteredOrders}
-          rowKey={(row) => row.id}
+          rowKey={(row) => row.objectId || row.id}
         />
       ) : (
         <EmptyState

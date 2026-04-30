@@ -1,7 +1,8 @@
 "use client";
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
+import { InlineErrorMessage } from "@/components/shared/inline-error-message";
+import { LoadingState } from "@/components/shared/loading-state";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,15 +11,17 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   formatCurrency,
   formatNumber,
-  getAvailableStock,
   getOrderItemCount,
   getOrderLineTotal,
-  getOrderTotalAmount,
   getOrderTotalQuantity,
 } from "@/lib/expert/utils";
+import { getErrorMessage } from "@/lib/api/api-error";
+import type { Product } from "@/lib/models/product.model";
+import { createOrder } from "@/lib/services/order.service";
+import { listProducts } from "@/lib/services/product.service";
 import { ChevronLeft, PackageSearch, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface DraftItem {
   rowId: string;
@@ -28,12 +31,38 @@ interface DraftItem {
 
 export default function NewExpertOrderPage() {
   const router = useRouter();
-  const { products, createOrder } = useExpertStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [items, setItems] = useState<DraftItem[]>([
     { rowId: "1", productId: "", quantity: 1 },
   ]);
   const [customerName, setCustomerName] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProducts() {
+      setIsLoadingProducts(true);
+      setError("");
+
+      try {
+        const data = await listProducts();
+        if (isMounted) setProducts(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoadingProducts(false);
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const normalizedItems = useMemo(
     () =>
@@ -52,14 +81,17 @@ export default function NewExpertOrderPage() {
     () =>
       products.reduce<Record<string, (typeof products)[number]>>(
         (accumulator, product) => {
-          accumulator[product.id] = product;
+          accumulator[product.objectId] = product;
           return accumulator;
         },
         {},
       ),
     [products],
   );
-  const totalAmount = getOrderTotalAmount(normalizedItems, productsById);
+  const totalAmount = normalizedItems.reduce((sum, item) => {
+    const product = productsById[item.productId];
+    return sum + item.quantity * (product?.unitPrice ?? 0);
+  }, 0);
 
   const addRow = () => {
     setItems((current) => [
@@ -83,7 +115,7 @@ export default function NewExpertOrderPage() {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("");
 
     if (normalizedItems.length === 0) {
@@ -91,14 +123,21 @@ export default function NewExpertOrderPage() {
       return;
     }
 
-    const result = createOrder({ customerName, items: normalizedItems });
-
-    if (!result.ok || !result.order) {
-      setError(result.error ?? "ثبت سفارش انجام نشد.");
-      return;
+    setIsSubmitting(true);
+    try {
+      const order = await createOrder({
+        customerName: customerName.trim(),
+        items: normalizedItems.map((item) => ({
+          productObjectId: item.productId,
+          quantity: item.quantity,
+        })),
+      });
+      router.push(`/expert/orders/${order.objectId}`);
+    } catch (submitError) {
+      setError(getErrorMessage(submitError));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.push(`/expert/orders/${result.order.id}`);
   };
 
   return (
@@ -126,10 +165,19 @@ export default function NewExpertOrderPage() {
             </div>
           </div>
 
+          {isLoadingProducts ? (
+            <div className="mt-5">
+              <LoadingState
+                title="در حال دریافت کالاها"
+                description="فهرست کالاها از سرور دریافت می شود."
+              />
+            </div>
+          ) : null}
+
           <div className="mt-5 space-y-3">
             {items.map((item, index) => {
               const product = products.find(
-                (entry) => entry.id === item.productId,
+                (entry) => entry.objectId === item.productId,
               );
 
               return (
@@ -145,7 +193,7 @@ export default function NewExpertOrderPage() {
                         updateRow(item.rowId, { productId: value })
                       }
                       options={products.map((option) => ({
-                        value: option.id,
+                        value: option.objectId,
                         label: `${option.name} - ${option.brand}`,
                       }))}
                       placeholder="انتخاب کالا"
@@ -192,7 +240,7 @@ export default function NewExpertOrderPage() {
 
                   <p className="text-xs text-[#6B7280] md:col-span-4">
                     {product
-                      ? `موجودی قابل استفاده: ${formatNumber(getAvailableStock(product))} ${product.unit} • قیمت واحد: ${formatCurrency(product.unitPrice)}`
+                      ? `موجودی قابل استفاده: ${formatNumber(product.availableStock)} ${product.unit} • قیمت واحد: ${formatCurrency(product.unitPrice)}`
                       : `آیتم ${formatNumber(index + 1)}`}
                   </p>
                 </div>
@@ -214,16 +262,16 @@ export default function NewExpertOrderPage() {
               افزودن آیتم
             </Button>
 
-            <Button type="button" onClick={handleSubmit}>
+            <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
               ثبت سفارش
               <ChevronLeft className="size-4" />
             </Button>
           </div>
 
           {error ? (
-            <p className="mt-4 rounded-2xl border border-[#F0D0D0] bg-[#FFF6F6] px-4 py-3 text-sm text-[#9C3B3B]">
-              {error}
-            </p>
+            <div className="mt-4">
+              <InlineErrorMessage message={error} />
+            </div>
           ) : null}
         </Card>
 
