@@ -1,37 +1,77 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
 import { ActionLinkCard } from "@/components/shared/action-link-card";
+import { InlineErrorMessage } from "@/components/shared/inline-error-message";
+import { getErrorMessage } from "@/lib/api/api-error";
+import type { Invoice } from "@/lib/models/invoice.model";
+import type { Order } from "@/lib/models/order.model";
+import type { ExitSlip } from "@/lib/models/warehouse.model";
+import { listInvoices } from "@/lib/services/invoice.service";
+import { listOrders } from "@/lib/services/order.service";
+import { listExitSlips } from "@/lib/services/warehouse.service";
 
 export default function FinancePage() {
-  const { orders, invoices, exitSlips } = useExpertStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [exitSlips, setExitSlips] = useState<ExitSlip[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDashboard() {
+      try {
+        const [orderData, invoiceData, slipData] = await Promise.all([
+          listOrders(),
+          listInvoices(),
+          listExitSlips(),
+        ]);
+        if (isMounted) {
+          setOrders(orderData);
+          setInvoices(invoiceData);
+          setExitSlips(slipData);
+        }
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const readyForInvoiceCount = orders.filter(
     (order) =>
-      (order.orderSource === "normal" &&
-        order.status === "approved" &&
+      (order.orderType === "normal" &&
+        order.orderStatus === "approved" &&
         order.warehouseStatus === "delivered") ||
-      (order.orderSource === "naja" &&
-        order.status === "approved" &&
+      (order.orderType === "naja" &&
+        order.orderStatus === "approved" &&
         order.warehouseStatus === "najaDetailsCompleted"),
   ).length;
   const issuedInvoicesCount = invoices.length;
   const completedOrdersCount = orders.filter(
     (order) =>
-      order.warehouseStatus === "delivered" || order.status === "invoiced",
+      order.warehouseStatus === "delivered" || order.orderStatus === "invoiced",
   ).length;
   const reconciliableCount = orders.filter(
     (order) =>
-      order.status === "approved" &&
+      order.orderStatus === "approved" &&
       order.warehouseStatus === "delivered" &&
-      order.orderSource === "normal" &&
-      exitSlips.some((slip) => slip.orderId === order.id),
+      order.orderType === "normal" &&
+      exitSlips.some((slip) => slip.orderId === order.objectId),
   ).length;
 
   return (
     <DashboardLayout role="finance" title="داشبورد حسابداری">
+      {error ? <InlineErrorMessage message={error} /> : null}
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <ManagerSummaryCard
           title="سفارش های آماده فاکتور"

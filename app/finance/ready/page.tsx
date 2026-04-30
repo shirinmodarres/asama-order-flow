@@ -2,48 +2,84 @@
 
 import { CalendarDays, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { InvoiceTable } from "@/components/finance/invoice-table";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { OrderSourceBadge } from "@/components/shared/order-source-badge";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { Input } from "@/components/ui/input";
-import type { ExpertOrder } from "@/lib/expert/types";
+import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDateTime } from "@/lib/expert/utils";
+import type { Order } from "@/lib/models/order.model";
+import type { ExitSlip } from "@/lib/models/warehouse.model";
+import { listOrders } from "@/lib/services/order.service";
+import { listExitSlips } from "@/lib/services/warehouse.service";
 
 interface ReadyOrderRow {
   id: string;
-  order: ExpertOrder;
+  order: Order;
   slipNumber: string;
   deliveredAt: string;
 }
 
 export default function FinanceReadyPage() {
-  const { orders, exitSlips } = useExpertStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [exitSlips, setExitSlips] = useState<ExitSlip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [deliveredDateFilter, setDeliveredDateFilter] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadReady() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const [orderData, slipData] = await Promise.all([
+          listOrders(),
+          listExitSlips(),
+        ]);
+        if (isMounted) {
+          setOrders(orderData);
+          setExitSlips(slipData);
+        }
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadReady();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const rows = useMemo<ReadyOrderRow[]>(() => {
     return orders
       .filter(
         (order) =>
-          (order.orderSource === "normal" &&
-            order.status === "approved" &&
+          (order.orderType === "normal" &&
+            order.orderStatus === "approved" &&
             order.warehouseStatus === "delivered") ||
-          (order.orderSource === "naja" &&
-            order.status === "approved" &&
+          (order.orderType === "naja" &&
+            order.orderStatus === "approved" &&
             order.warehouseStatus === "najaDetailsCompleted"),
       )
       .map((order) => {
-        const slip = exitSlips.find((entry) => entry.orderId === order.id);
+        const slip = exitSlips.find((entry) => entry.orderId === order.objectId);
         return {
-          id: order.id,
+          id: order.objectId || order.id,
           order,
-          slipNumber: slip?.slipNumber ?? "-",
-          deliveredAt: slip?.deliveredAt ?? order.updatedAt,
+          slipNumber: slip?.slipCode ?? "-",
+          deliveredAt: slip?.deliveryConfirmedAt ?? order.updatedAt,
         };
       })
       .sort(
@@ -55,8 +91,8 @@ export default function FinanceReadyPage() {
         const matchesSearch =
           query.length === 0 ||
           row.order.code.toLowerCase().includes(query) ||
-          row.order.createdBy.toLowerCase().includes(query) ||
-          row.order.customerName.toLowerCase().includes(query) ||
+          row.order.createdByName.toLowerCase().includes(query) ||
+          (row.order.customerName ?? "").toLowerCase().includes(query) ||
           row.slipNumber.toLowerCase().includes(query);
 
         const deliveredDate = row.deliveredAt
@@ -85,17 +121,17 @@ export default function FinanceReadyPage() {
     {
       key: "createdBy",
       header: "ثبت کننده",
-      render: (row) => row.order.createdBy,
+      render: (row) => row.order.createdByName,
     },
     {
       key: "source",
       header: "منبع",
-      render: (row) => <OrderSourceBadge source={row.order.orderSource} />,
+      render: (row) => (row.order.orderType === "naja" ? "ناجا" : "عادی"),
     },
     {
       key: "customer",
       header: "مشتری",
-      render: (row) => row.order.customerName,
+      render: (row) => row.order.customerName ?? "-",
     },
     {
       key: "deliveryDate",
@@ -105,13 +141,13 @@ export default function FinanceReadyPage() {
     {
       key: "orderStatus",
       header: "وضعیت سفارش",
-      render: (row) => <StatusBadge type="order" status={row.order.status} />,
+      render: (row) => row.order.orderStatus || "-",
     },
     {
       key: "warehouseStatus",
       header: "وضعیت انبار",
       render: (row) => (
-        <StatusBadge type="warehouse" status={row.order.warehouseStatus} />
+        row.order.warehouseStatus || "-"
       ),
     },
     {
@@ -121,19 +157,19 @@ export default function FinanceReadyPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={
-              row.order.orderSource === "naja"
-                ? `/finance/orders/${row.order.id}/naja-invoice`
-                : `/finance/orders/${row.order.id}/reconcile`
+              row.order.orderType === "naja"
+                ? `/finance/orders/${row.order.objectId}/naja-invoice`
+                : `/finance/orders/${row.order.objectId}/reconcile`
             }
             className="btn-primary rounded-xl px-3 py-1.5 text-xs font-medium text-white visited:text-white hover:text-white focus:text-white"
           >
-            {row.order.orderSource === "naja" ? "صدور فاکتور ناجا" : "بررسی و تطبیق"}
+            {row.order.orderType === "naja" ? "صدور فاکتور ناجا" : "بررسی و تطبیق"}
           </Link>
           <Link
             href={
-              row.order.orderSource === "naja"
-                ? `/finance/orders/${row.order.id}/naja-invoice`
-                : `/finance/orders/${row.order.id}/reconcile`
+              row.order.orderType === "naja"
+                ? `/finance/orders/${row.order.objectId}/naja-invoice`
+                : `/finance/orders/${row.order.objectId}/reconcile`
             }
             className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs text-[#334155] hover:border-[#CBD5E1]"
           >
@@ -170,7 +206,11 @@ export default function FinanceReadyPage() {
         </div>
       </section>
 
-      {rows.length > 0 ? (
+      {isLoading ? (
+        <LoadingState title="در حال دریافت سفارش های آماده فاکتور" />
+      ) : error ? (
+        <PageErrorMessage title="دریافت سفارش های آماده فاکتور انجام نشد" message={error} />
+      ) : rows.length > 0 ? (
         <InvoiceTable columns={columns} rows={rows} rowKey={(row) => row.id} />
       ) : (
         <EmptyState

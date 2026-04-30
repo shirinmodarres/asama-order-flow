@@ -1,56 +1,78 @@
 "use client";
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
-import { InvoiceStatusBadge } from "@/components/finance/invoice-status-badge";
 import { InvoiceTable } from "@/components/finance/invoice-table";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { Input } from "@/components/ui/input";
-import type { Invoice } from "@/lib/expert/types";
+import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDateTime } from "@/lib/expert/utils";
+import type { Invoice } from "@/lib/models/invoice.model";
+import { listInvoices } from "@/lib/services/invoice.service";
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface InvoiceRow {
   id: string;
   invoice: Invoice;
   orderCode: string;
   createdBy: string;
-  customerName: string;
 }
 
 export default function FinanceInvoicesPage() {
-  const { invoices, getOrderById } = useExpertStore();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadInvoices() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await listInvoices();
+        if (isMounted) setInvoices(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadInvoices();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const rows = useMemo<InvoiceRow[]>(() => {
     return [...invoices]
       .sort(
-        (a, b) => Number(new Date(b.issuedAt)) - Number(new Date(a.issuedAt)),
+        (a, b) => Number(new Date(b.createdAt)) - Number(new Date(a.createdAt)),
       )
-      .map((invoice) => {
-        const order = getOrderById(invoice.orderId);
-        return {
-          id: invoice.id,
-          invoice,
-          orderCode: order?.code ?? "-",
-          createdBy: order?.createdBy ?? "-",
-          customerName: order?.customerName ?? "-",
-        };
-      })
+      .map((invoice) => ({
+        id: invoice.objectId || invoice.id,
+        invoice,
+        orderCode: invoice.orderCode || "-",
+        createdBy: invoice.createdByName || "-",
+      }))
       .filter((row) => {
         const query = search.toLowerCase().trim();
         if (!query) return true;
         return (
-          row.invoice.invoiceNumber.toLowerCase().includes(query) ||
+          row.invoice.invoiceCode.toLowerCase().includes(query) ||
           row.orderCode.toLowerCase().includes(query) ||
-          row.createdBy.toLowerCase().includes(query) ||
-          row.customerName.toLowerCase().includes(query)
+          row.createdBy.toLowerCase().includes(query)
         );
       });
-  }, [invoices, getOrderById, search]);
+  }, [invoices, search]);
 
   const columns: DataTableColumn<InvoiceRow>[] = [
     {
@@ -58,29 +80,29 @@ export default function FinanceInvoicesPage() {
       header: "شماره فاکتور",
       render: (row) => (
         <span className="font-semibold text-[#1F3A5F]">
-          {row.invoice.invoiceNumber}
+          {row.invoice.invoiceCode}
         </span>
       ),
     },
     { key: "orderCode", header: "کد سفارش", render: (row) => row.orderCode },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
-    { key: "customer", header: "مشتری", render: (row) => row.customerName },
     {
       key: "issuedAt",
       header: "تاریخ صدور",
-      render: (row) => formatDateTime(row.invoice.issuedAt),
+      render: (row) => formatDateTime(row.invoice.createdAt),
     },
     {
       key: "status",
       header: "وضعیت",
-      render: (row) => <InvoiceStatusBadge status={row.invoice.status} />,
+      render: (row) =>
+        row.invoice.status === "needs_follow_up" ? "نیازمند پیگیری" : "صادر شده",
     },
     {
       key: "actions",
       header: "عملیات",
       render: (row) => (
         <Link
-          href={`/finance/invoices/${row.invoice.id}`}
+          href={`/finance/invoices/${row.invoice.objectId || row.invoice.id}`}
           className="btn-primary rounded-xl px-3 py-1.5 text-xs font-medium text-white visited:text-white hover:text-white focus:text-white"
         >
           مشاهده فاکتور
@@ -103,7 +125,11 @@ export default function FinanceInvoicesPage() {
         </div>
       </section>
 
-      {rows.length > 0 ? (
+      {isLoading ? (
+        <LoadingState title="در حال دریافت فاکتورها" />
+      ) : error ? (
+        <PageErrorMessage title="دریافت فاکتورها انجام نشد" message={error} />
+      ) : rows.length > 0 ? (
         <InvoiceTable columns={columns} rows={rows} rowKey={(row) => row.id} />
       ) : (
         <EmptyState
