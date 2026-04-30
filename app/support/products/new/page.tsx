@@ -5,18 +5,22 @@ import {
   ProductForm,
   type CreateProductFormInput,
 } from "@/components/support/product-form";
-import { createProduct } from "@/lib/products";
+import { InlineErrorMessage } from "@/components/shared/inline-error-message";
+import { getErrorMessage } from "@/lib/api/api-error";
+import { createProduct } from "@/lib/services/product.service";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function SupportCreateProductPage() {
   const router = useRouter();
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error">("error");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (input: CreateProductFormInput) => {
     setIsSubmitting(true);
     setMessage("");
+    setMessageType("error");
 
     try {
       await createProduct({
@@ -31,15 +35,15 @@ export default function SupportCreateProductPage() {
         totalStock: Number(input.totalStock) || 0,
       });
 
+      setMessageType("success");
       setMessage("کالا با موفقیت ثبت شد.");
       setTimeout(() => {
         router.push("/support/products");
         router.refresh();
       }, 700);
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "ثبت کالا انجام نشد.",
-      );
+      setMessageType("error");
+      setMessage(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -47,8 +51,11 @@ export default function SupportCreateProductPage() {
 
   return (
     <DashboardLayout role="support" title="تعریف کالای جدید">
-      {message ? (
+      {message && messageType === "success" ? (
         <div className="asama-banner px-4 py-3 text-sm">{message}</div>
+      ) : null}
+      {message && messageType === "error" ? (
+        <InlineErrorMessage message={message} />
       ) : null}
       <ProductForm
         mode="create"

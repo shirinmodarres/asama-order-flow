@@ -1,24 +1,63 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
-import { InventoryUpdateModal } from "@/components/support/inventory-update-modal";
+import {
+  InventoryUpdateModal,
+  type InventoryUpdateFormInput,
+} from "@/components/support/inventory-update-modal";
 import { ProductStatusBadge } from "@/components/support/product-status-badge";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
+import { EmptyState } from "@/components/shared/empty-state";
+import { InlineErrorMessage } from "@/components/shared/inline-error-message";
+import { LoadingState } from "@/components/shared/loading-state";
 import { SectionHeader } from "@/components/shared/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Product, UpdateInventoryInput } from "@/lib/expert/types";
-import { compareText, formatNumber, getNajaAvailableStock } from "@/lib/expert/utils";
+import { getErrorMessage } from "@/lib/api/api-error";
+import { compareText, formatNumber } from "@/lib/expert/utils";
+import type { Product } from "@/lib/models/product.model";
+import {
+  listProducts,
+  updateProductNajaStock,
+} from "@/lib/services/product.service";
 
 export default function SupportNajaInventoryPage() {
-  const { products, updateInventory } = useExpertStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalChangeType, setModalChangeType] = useState<"increase" | "decrease">("increase");
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error">("error");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProducts() {
+      setIsLoading(true);
+      setMessage("");
+
+      try {
+        const data = await listProducts();
+        if (isMounted) setProducts(data);
+      } catch (error) {
+        if (isMounted) {
+          setMessageType("error");
+          setMessage(getErrorMessage(error));
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const rows = useMemo(
     () => [...products].sort((a, b) => compareText(a.name, b.name)),
@@ -34,10 +73,11 @@ export default function SupportNajaInventoryPage() {
   const columns: DataTableColumn<Product>[] = [
     { key: "name", header: "کالا", render: (row) => row.name },
     { key: "brand", header: "برند", render: (row) => row.brand },
+    { key: "sku", header: "شناسه کالا", render: (row) => row.id || row.sku || "-" },
     {
       key: "naja",
       header: "موجودی ناجا",
-      render: (row) => formatNumber(getNajaAvailableStock(row)),
+      render: (row) => formatNumber(row.najaInventoryQty),
     },
     {
       key: "status",
@@ -65,16 +105,27 @@ export default function SupportNajaInventoryPage() {
     },
   ];
 
-  const submitInventory = (input: UpdateInventoryInput) => {
-    const result = updateInventory(input);
+  const submitInventory = async (input: InventoryUpdateFormInput) => {
+    if (!selectedProduct) return;
 
-    if (!result.ok) {
-      setMessage(result.error ?? "تغییر موجودی ناجا ثبت نشد.");
-      return;
+    try {
+      const updated = await updateProductNajaStock(selectedProduct.objectId, {
+        changeType: input.changeType,
+        amount: Number(input.amount),
+        notes: input.note.trim() || undefined,
+      });
+      setProducts((current) =>
+        current.map((product) =>
+          product.objectId === updated.objectId ? updated : product,
+        ),
+      );
+      setMessageType("success");
+      setMessage("تغییر موجودی ناجا ثبت شد.");
+      setModalOpen(false);
+    } catch (error) {
+      setMessageType("error");
+      setMessage(getErrorMessage(error));
     }
-
-    setMessage(result.message ?? "تغییر موجودی ناجا ثبت شد.");
-    setModalOpen(false);
   };
 
   return (
@@ -85,9 +136,16 @@ export default function SupportNajaInventoryPage() {
         actions={<Badge variant="warning">موجودی ناجا</Badge>}
       />
 
-      {message ? <div className="asama-banner px-4 py-3 text-sm">{message}</div> : null}
+      {message && messageType === "success" ? <div className="asama-banner px-4 py-3 text-sm">{message}</div> : null}
+      {message && messageType === "error" ? <InlineErrorMessage message={message} /> : null}
 
-      <DataTable columns={columns} rows={rows} rowKey={(row) => row.id} />
+      {isLoading ? (
+        <LoadingState title="در حال دریافت موجودی ناجا" />
+      ) : rows.length > 0 ? (
+        <DataTable columns={columns} rows={rows} rowKey={(row) => row.objectId || row.id} />
+      ) : (
+        <EmptyState title="کالایی یافت نشد" description="هنوز کالایی برای موجودی ناجا ثبت نشده است." />
+      )}
 
       <InventoryUpdateModal
         open={modalOpen}

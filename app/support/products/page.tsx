@@ -6,6 +6,8 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { SectionHeader } from "@/components/shared/section-header";
 import { ProductStatusBadge } from "@/components/support/product-status-badge";
 import { Input } from "@/components/ui/input";
@@ -16,8 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getErrorMessage } from "@/lib/api/api-error";
 import { formatCurrency, formatNumber } from "@/lib/expert/utils";
-import { listProducts, type Product } from "@/lib/products";
+import type { Product } from "@/lib/models/product.model";
+import { listProducts } from "@/lib/services/product.service";
 import { Search, Tags } from "lucide-react";
 
 export default function SupportProductsPage() {
@@ -39,11 +43,7 @@ export default function SupportProductsPage() {
         if (isMounted) setProducts(data);
       } catch (requestError) {
         if (isMounted) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "دریافت فهرست کالاها انجام نشد.",
-          );
+          setError(getErrorMessage(requestError));
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -113,7 +113,7 @@ export default function SupportProductsPage() {
       header: "عملیات",
       render: (row) => (
         <Link
-          href={`/support/products/${row.id}/edit`}
+          href={`/support/products/${row.objectId || row.id}/edit`}
           className="rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-xs text-[#334155]"
         >
           ویرایش
@@ -168,17 +168,17 @@ export default function SupportProductsPage() {
       </section>
 
       {isLoading ? (
-        <EmptyState
+        <LoadingState
           title="در حال دریافت کالاها"
           description="فهرست کالاها از سرور دریافت می شود."
         />
       ) : error ? (
-        <EmptyState title="دریافت کالاها انجام نشد" description={error} />
+        <PageErrorMessage title="دریافت کالاها انجام نشد" message={error} />
       ) : filteredProducts.length > 0 ? (
         <DataTable
           columns={columns}
           rows={filteredProducts}
-          rowKey={(row) => row.id}
+          rowKey={(row) => row.objectId || row.id}
         />
       ) : (
         <EmptyState

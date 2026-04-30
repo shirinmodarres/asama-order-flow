@@ -1,20 +1,48 @@
 "use client";
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { Input } from "@/components/ui/input";
-import type { ExpertOrder } from "@/lib/expert/types";
+import { getErrorMessage } from "@/lib/api/api-error";
+import type { Order } from "@/lib/models/order.model";
+import { listOrders } from "@/lib/services/order.service";
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function SupportOrdersPage() {
-  const { orders } = useExpertStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadOrders() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await listOrders();
+        if (isMounted) setOrders(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredOrders = useMemo(() => {
     return [...orders]
@@ -24,12 +52,12 @@ export default function SupportOrdersPage() {
       .filter(
         (order) =>
           order.code.toLowerCase().includes(search.toLowerCase()) ||
-          order.createdBy.toLowerCase().includes(search.toLowerCase()) ||
-          order.customerName.toLowerCase().includes(search.toLowerCase()),
+          order.createdByName.toLowerCase().includes(search.toLowerCase()) ||
+          (order.customerName ?? "").toLowerCase().includes(search.toLowerCase()),
       );
   }, [orders, search]);
 
-  const columns: DataTableColumn<ExpertOrder>[] = [
+  const columns: DataTableColumn<Order>[] = [
     {
       key: "code",
       header: "کد سفارش",
@@ -37,18 +65,18 @@ export default function SupportOrdersPage() {
         <span className="font-semibold text-[#1F3A5F]">{row.code}</span>
       ),
     },
-    { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
-    { key: "customer", header: "مشتری", render: (row) => row.customerName },
+    { key: "creator", header: "ثبت کننده", render: (row) => row.createdByName },
+    { key: "customer", header: "مشتری", render: (row) => row.customerName ?? "-" },
     {
       key: "status",
       header: "وضعیت سفارش",
-      render: (row) => <StatusBadge type="order" status={row.status} />,
+      render: (row) => row.orderStatus || "-",
     },
     {
       key: "warehouse",
       header: "وضعیت انبار",
       render: (row) => (
-        <StatusBadge type="warehouse" status={row.warehouseStatus} />
+        row.warehouseStatus || "-"
       ),
     },
     {
@@ -56,7 +84,7 @@ export default function SupportOrdersPage() {
       header: "عملیات",
       render: (row) => (
         <Link
-          href={`/support/orders/${row.id}/edit`}
+          href={`/support/orders/${row.objectId}/edit`}
           className="rounded-xl border border-[#F59E0B] bg-[#FFFBEB] px-3 py-1.5 text-xs text-[#92400E]"
         >
           ویرایش ویژه
@@ -79,11 +107,15 @@ export default function SupportOrdersPage() {
         </div>
       </section>
 
-      {filteredOrders.length > 0 ? (
+      {isLoading ? (
+        <LoadingState title="در حال دریافت سفارش ها" />
+      ) : error ? (
+        <PageErrorMessage title="دریافت سفارش ها انجام نشد" message={error} />
+      ) : filteredOrders.length > 0 ? (
         <DataTable
           columns={columns}
           rows={filteredOrders}
-          rowKey={(row) => row.id}
+          rowKey={(row) => row.objectId || row.id}
         />
       ) : (
         <EmptyState

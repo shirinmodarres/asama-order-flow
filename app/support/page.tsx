@@ -1,26 +1,60 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
+import { InlineErrorMessage } from "@/components/shared/inline-error-message";
 import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
 import { SupportActionCard } from "@/components/support/support-action-card";
-import { getAvailableStock } from "@/lib/expert/utils";
+import { getErrorMessage } from "@/lib/api/api-error";
+import type { Order } from "@/lib/models/order.model";
+import type { Product } from "@/lib/models/product.model";
+import { listOrders } from "@/lib/services/order.service";
+import { listProducts } from "@/lib/services/product.service";
 
 export default function SupportPage() {
-  const { products, orders } = useExpertStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDashboard() {
+      try {
+        const [productData, orderData] = await Promise.all([
+          listProducts(),
+          listOrders(),
+        ]);
+        if (isMounted) {
+          setProducts(productData);
+          setOrders(orderData);
+        }
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const lowStockCount = products.filter(
     (product) =>
-      getAvailableStock(product) <=
+      product.availableStock <=
       Math.max(5, Math.floor(product.totalStock * 0.2)),
   ).length;
   const orderNeedsEditCount = orders.filter(
-    (order) => order.status === "pending" || order.status === "approved",
+    (order) => order.orderStatus === "pending" || order.orderStatus === "approved",
   ).length;
   const najaInventoryCount = products.filter((product) => product.najaInventoryQty > 0).length;
 
   return (
     <DashboardLayout role="support" title="داشبورد پشتیبانی">
+      {error ? <InlineErrorMessage message={error} /> : null}
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ManagerSummaryCard
           title="تعداد کالاها"

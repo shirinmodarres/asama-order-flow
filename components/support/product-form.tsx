@@ -12,9 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type {
-  UpdateProductInput,
-} from "@/lib/expert/types";
 
 interface BaseProps {
   onCancel: () => void;
@@ -29,6 +26,17 @@ export interface CreateProductFormInput {
   unit: string;
   unitPrice: number;
   totalStock: number;
+  description?: string;
+  status: "active" | "inactive";
+}
+
+export interface UpdateProductFormInput {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  unit: string;
+  unitPrice: number;
   description?: string;
   status: "active" | "inactive";
 }
@@ -50,7 +58,7 @@ interface EditModeProps extends BaseProps {
     description?: string;
     status: "active" | "inactive";
   };
-  onSubmit: (input: UpdateProductInput) => void;
+  onSubmit: (input: UpdateProductFormInput) => void;
 }
 
 type ProductFormProps = CreateModeProps | EditModeProps;

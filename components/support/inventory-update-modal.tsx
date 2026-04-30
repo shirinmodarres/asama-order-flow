@@ -13,15 +13,29 @@ import {
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Product, UpdateInventoryInput } from "@/lib/expert/types";
+
+interface InventoryProduct {
+  objectId?: string;
+  id: string;
+  name: string;
+}
+
+export interface InventoryUpdateFormInput {
+  productId: string;
+  inventoryScope?: "normal" | "naja";
+  changeType: "increase" | "decrease";
+  amount: number;
+  note: string;
+  createdBy: string;
+}
 
 interface InventoryUpdateModalProps {
   open: boolean;
-  product: Product | null;
+  product: InventoryProduct | null;
   initialChangeType?: "increase" | "decrease";
   inventoryScope?: "normal" | "naja";
   onClose: () => void;
-  onSubmit: (input: UpdateInventoryInput) => void;
+  onSubmit: (input: InventoryUpdateFormInput) => void;
 }
 
 export function InventoryUpdateModal({
@@ -54,7 +68,7 @@ function InventoryUpdateModalContent({
   inventoryScope = "normal",
   onClose,
   onSubmit,
-}: InventoryUpdateModalProps & { product: Product; open: boolean }) {
+}: InventoryUpdateModalProps & { product: InventoryProduct; open: boolean }) {
   const [changeType, setChangeType] = useState<"increase" | "decrease">(
     initialChangeType,
   );
