@@ -1,0 +1,51 @@
+export type OrderType = "normal" | "naja";
+
+export interface OrderItem {
+  objectId: string;
+  productId: string;
+  productSku: string;
+  productName: string;
+  brand: string;
+  quantity: number;
+  unitPrice: number;
+  productIdentifier: string | null;
+  trackingCode: string | null;
+}
+
+export interface Order {
+  objectId: string;
+  id: string;
+  code: string;
+  orderType: OrderType;
+  createdByName: string;
+  customerName: string | null;
+  customerNationalId: string | null;
+  customerPhone: string | null;
+  orderStatus: string;
+  warehouseStatus: string;
+  sourceLabel: string | null;
+  notes: string | null;
+  cancelReason: string | null;
+  returnReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItem[];
+}
+
+export interface OrderFilters {
+  status?: string;
+  orderType?: OrderType;
+}
+
+export interface CreateOrderPayload {
+  customerName: string;
+  createdByName?: string;
+  notes?: string;
+  items: Array<{
+    productObjectId?: string;
+    productId?: string;
+    quantity: number;
+  }>;
+}
+
+export type UpdatePendingOrderPayload = Partial<CreateOrderPayload>;
