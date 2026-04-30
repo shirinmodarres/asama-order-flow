@@ -29,9 +29,8 @@ export function Header({ title, role }: HeaderProps) {
     <header className="sticky top-4 z-20 rounded-[22px] border border-[#DDE5ED] bg-white/90 px-4 py-4 shadow-[0_24px_60px_rgba(15,23,42,0.08)] backdrop-blur md:px-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-4">
-          <AsamaLogo compact />
           <div className="min-w-0">
-            <h1 className="mt-3 truncate text-2xl font-black tracking-tight text-[#102034]">
+            <h1 className="mt-3 truncate text-2xl font-bold tracking-tight  text-[#102034]">
               {title}
             </h1>
             <p className="mt-1 text-sm leading-7 text-[#6B7280]">

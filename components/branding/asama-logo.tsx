@@ -16,9 +16,9 @@ function LogoContent({ compact = false }: { compact?: boolean }) {
           <Image
             src="/logo-fn.png"
             alt="لوگوی آساما"
-            width={94}
-            height={26}
-            className="h-auto w-[94px] object-contain"
+            width={124}
+            height={34}
+            className="h-auto w-[144px] object-contain"
             priority
           />
         </div>

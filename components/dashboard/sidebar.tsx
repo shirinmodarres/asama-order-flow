@@ -6,6 +6,7 @@ import type { SidebarItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AsamaLogo } from "../branding/asama-logo";
 
 interface SidebarProps {
   items: SidebarItem[];
@@ -44,6 +45,7 @@ export function Sidebar({ items }: SidebarProps) {
             </div>
           </div>
 */}
+          <AsamaLogo compact className="h-12 w-[320px] px-4" />
           <div className="mt-5">
             {/* <p className="mb-3 px-1 text-[11px] font-semibold tracking-[0.16em] text-[#6B7280]">
               دسترسی ها
