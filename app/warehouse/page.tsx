@@ -1,21 +1,45 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
 import { ActionLinkCard } from "@/components/shared/action-link-card";
+import { InlineErrorMessage } from "@/components/shared/inline-error-message";
+import { getErrorMessage } from "@/lib/api/api-error";
+import type { Order } from "@/lib/models/order.model";
+import { listOrders } from "@/lib/services/order.service";
 
 export default function WarehousePage() {
-  const { orders } = useExpertStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadOrders() {
+      try {
+        const data = await listOrders();
+        if (isMounted) setOrders(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      }
+    }
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const reviewingCount = orders.filter(
     (order) =>
-      order.status === "approved" && order.warehouseStatus === "reviewing",
+      order.orderStatus === "approved" && order.warehouseStatus === "reviewing",
   ).length;
   const najaPendingCount = orders.filter(
     (order) =>
-      order.orderSource === "naja" &&
-      order.status === "approved" &&
+      order.orderType === "naja" &&
+      order.orderStatus === "approved" &&
       order.warehouseStatus === "awaitingNajaDetails",
   ).length;
   const issuedCount = orders.filter(
@@ -27,6 +51,8 @@ export default function WarehousePage() {
 
   return (
     <DashboardLayout role="warehouse" title="داشبورد انبار">
+      {error ? <InlineErrorMessage message={error} /> : null}
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ManagerSummaryCard
           title="سفارش های در بررسی انبار"

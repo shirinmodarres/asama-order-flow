@@ -1,51 +1,62 @@
 "use client";
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { Input } from "@/components/ui/input";
-import { WarehouseStatusBadge } from "@/components/warehouse/warehouse-status-badge";
-import type { ExitSlip } from "@/lib/expert/types";
+import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDate, formatDateTime } from "@/lib/expert/utils";
+import type { ExitSlip } from "@/lib/models/warehouse.model";
+import { listExitSlips } from "@/lib/services/warehouse.service";
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ExitSlipRow {
   slip: ExitSlip;
-  orderCode: string;
-  warehouseStatus: "dispatchIssued" | "delivered";
 }
 
 export default function WarehouseExitSlipsPage() {
-  const { exitSlips, getOrderById } = useExpertStore();
+  const [exitSlips, setExitSlips] = useState<ExitSlip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadExitSlips() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await listExitSlips();
+        if (isMounted) setExitSlips(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadExitSlips();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const rows: ExitSlipRow[] = useMemo(() => {
     return exitSlips
-      .map((slip) => {
-        const order = getOrderById(slip.orderId);
-        if (!order) return null;
-
-        const warehouseStatus =
-          order.warehouseStatus === "delivered"
-            ? "delivered"
-            : "dispatchIssued";
-
-        return {
-          slip,
-          orderCode: order.code,
-          warehouseStatus,
-        } as ExitSlipRow;
-      })
-      .filter((row): row is ExitSlipRow => Boolean(row))
+      .map((slip) => ({ slip }))
       .filter((row) => {
         const query = search.toLowerCase();
         return (
-          row.slip.slipNumber.toLowerCase().includes(query) ||
-          row.orderCode.toLowerCase().includes(query)
+          row.slip.slipCode.toLowerCase().includes(query) ||
+          row.slip.orderCode.toLowerCase().includes(query)
         );
       })
       .sort(
@@ -53,7 +64,7 @@ export default function WarehouseExitSlipsPage() {
           Number(new Date(b.slip.createdAt)) -
           Number(new Date(a.slip.createdAt)),
       );
-  }, [exitSlips, getOrderById, search]);
+  }, [exitSlips, search]);
 
   const columns: DataTableColumn<ExitSlipRow>[] = [
     {
@@ -61,11 +72,11 @@ export default function WarehouseExitSlipsPage() {
       header: "شماره حواله",
       render: (row) => (
         <span className="font-semibold text-[#1F3A5F]">
-          {row.slip.slipNumber}
+          {row.slip.slipCode}
         </span>
       ),
     },
-    { key: "order", header: "سفارش مرتبط", render: (row) => row.orderCode },
+    { key: "order", header: "سفارش مرتبط", render: (row) => row.slip.orderCode || "-" },
     {
       key: "exit-date",
       header: "تاریخ خروج",
@@ -79,14 +90,14 @@ export default function WarehouseExitSlipsPage() {
     {
       key: "status",
       header: "وضعیت فعلی",
-      render: (row) => <WarehouseStatusBadge status={row.warehouseStatus} />,
+      render: (row) => (row.slip.deliveryConfirmed ? "تحویل شده" : "صادر شده"),
     },
     {
       key: "actions",
       header: "عملیات",
       render: (row) => (
         <Link
-          href={`/warehouse/exit-slips/${row.slip.id}`}
+          href={`/warehouse/exit-slips/${row.slip.objectId || row.slip.id}`}
           className="rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-xs text-[#334155]"
         >
           مشاهده جزئیات
@@ -109,11 +120,15 @@ export default function WarehouseExitSlipsPage() {
         </div>
       </section>
 
-      {rows.length > 0 ? (
+      {isLoading ? (
+        <LoadingState title="در حال دریافت حواله ها" />
+      ) : error ? (
+        <PageErrorMessage title="دریافت حواله ها انجام نشد" message={error} />
+      ) : rows.length > 0 ? (
         <DataTable
           columns={columns}
           rows={rows}
-          rowKey={(row) => row.slip.id}
+          rowKey={(row) => row.slip.objectId || row.slip.id}
         />
       ) : (
         <EmptyState
