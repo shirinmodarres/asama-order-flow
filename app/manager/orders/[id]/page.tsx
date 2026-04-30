@@ -1,161 +1,142 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
-import { ApprovalActionsCard } from "@/components/manager/approval-actions-card";
 import { ConfirmationModal } from "@/components/manager/confirmation-modal";
-import { ProcessStatusCard } from "@/components/manager/process-status-card";
-import { ProgressTimeline } from "@/components/manager/progress-timeline";
-import { ReserveInventoryNote } from "@/components/manager/reserve-inventory-note";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { OrderSourceBadge } from "@/components/shared/order-source-badge";
-import { OrderSummaryCard } from "@/components/shared/order-summary-card";
+import { InlineErrorMessage } from "@/components/shared/inline-error-message";
+import { LoadingState } from "@/components/shared/loading-state";
 import { SectionHeader } from "@/components/shared/section-header";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { getOrderLastStageLabel } from "@/lib/expert/mock-data";
+import { Button } from "@/components/ui/button";
+import { getErrorMessage } from "@/lib/api/api-error";
+import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
+import type { Order, OrderItem } from "@/lib/models/order.model";
 import {
-  formatCurrency,
-  formatDate,
-  formatNumber,
-  getAvailableStock,
-  getOrderItemCount,
-  getOrderLineTotal,
-  getOrderTotalQuantity,
-} from "@/lib/expert/utils";
+  approveOrder,
+  cancelOrder,
+  getOrder,
+} from "@/lib/services/order.service";
 
 type DecisionType = "approve" | "cancel" | null;
-
-interface InventoryRow {
-  id: string;
-  name: string;
-  brand: string;
-  unit: string;
-  unitPrice: number;
-  requested: number;
-  total: number;
-  reserved: number;
-  available: number;
-}
 
 export default function ManagerOrderReviewPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { getOrderById, getProductById, approveOrder, cancelOrder } =
-    useExpertStore();
-  const order = getOrderById(params.id);
-
+  const objectId = decodeURIComponent(params.id);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [decision, setDecision] = useState<DecisionType>(null);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error">("error");
 
-  const inventoryRows: InventoryRow[] = useMemo(() => {
-    if (!order) return [];
+  useEffect(() => {
+    let isMounted = true;
 
-    return order.items.map((item) => {
-      const product = getProductById(item.productId);
-      return {
-        id: item.productId,
-        name: product?.name ?? "کالای نامشخص",
-        brand: product?.brand ?? "-",
-        unit: product?.unit ?? "-",
-        unitPrice: product?.unitPrice ?? 0,
-        requested: item.quantity,
-        total: product?.totalStock ?? 0,
-        reserved: product?.reservedStock ?? 0,
-        available: product ? getAvailableStock(product) : 0,
-      };
-    });
-  }, [getProductById, order]);
+    async function loadOrder() {
+      setIsLoading(true);
+      setMessage("");
 
-  if (!order) {
+      try {
+        const data = await getOrder(objectId);
+        if (isMounted) setOrder(data);
+      } catch (loadError) {
+        if (isMounted) {
+          setMessageType("error");
+          setMessage(getErrorMessage(loadError));
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadOrder();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [objectId]);
+
+  if (isLoading) {
     return (
       <DashboardLayout role="manager" title="بررسی سفارش">
-        <EmptyState
-          title="سفارش یافت نشد"
-          description="شناسه سفارش معتبر نیست یا در داده های نمونه وجود ندارد."
-        />
+        <LoadingState title="در حال دریافت سفارش" />
       </DashboardLayout>
     );
   }
 
-  const isPending = order.status === "pending";
-  const canDecide = isPending && order.orderSource === "normal";
-  const totalAmount = inventoryRows.reduce(
-    (sum, row) => sum + getOrderLineTotal(row.requested, row.unitPrice),
+  if (!order) {
+    return (
+      <DashboardLayout role="manager" title="بررسی سفارش">
+        {message ? <InlineErrorMessage message={message} /> : null}
+        <EmptyState title="سفارش یافت نشد" description="شناسه سفارش معتبر نیست." />
+      </DashboardLayout>
+    );
+  }
+
+  const totalAmount = order.items.reduce(
+    (sum, item) => sum + item.quantity * item.unitPrice,
     0,
   );
-  const disableReason = order.orderSource === "naja"
-    ? "سفارش های ناجا فقط برای پایش مدیر فروش نمایش داده می شوند و قابل تایید یا لغو نیستند."
-    : isPending
-      ? ""
-      : "این سفارش قبلا تعیین تکلیف شده و دیگر قابل تصمیم گیری نیست.";
+  const canDecide = order.orderStatus === "pending" && order.orderType === "normal";
 
-  const columns: DataTableColumn<InventoryRow>[] = [
+  const columns: DataTableColumn<OrderItem>[] = [
     {
       key: "name",
       header: "نام کالا",
       render: (row) => (
-        <span className="font-medium text-[#1F3A5F]">{row.name}</span>
+        <span className="font-medium text-[#1F3A5F]">
+          {row.productName || row.productSku || "کالای نامشخص"}
+        </span>
       ),
     },
-    { key: "brand", header: "برند", render: (row) => row.brand },
-    { key: "unit", header: "واحد", render: (row) => row.unit },
+    { key: "brand", header: "برند", render: (row) => row.brand || "-" },
     {
       key: "unitPrice",
       header: "قیمت واحد",
       render: (row) => formatCurrency(row.unitPrice),
     },
     {
-      key: "requested",
+      key: "quantity",
       header: "تعداد درخواست",
-      render: (row) => formatNumber(row.requested),
-    },
-    {
-      key: "total",
-      header: "موجودی کل",
-      render: (row) => formatNumber(row.total),
-    },
-    {
-      key: "reserved",
-      header: "موجودی رزروشده",
-      render: (row) => formatNumber(row.reserved),
-    },
-    {
-      key: "available",
-      header: "موجودی قابل استفاده",
-      render: (row) => formatNumber(row.available),
+      render: (row) => formatNumber(row.quantity),
     },
   ];
 
-  const confirmDecision = () => {
+  const confirmDecision = async () => {
     if (!decision) return;
 
-    const result =
-      decision === "approve" ? approveOrder(order.id) : cancelOrder(order.id);
+    setIsSubmitting(true);
+    setMessage("");
 
-    if (!result.ok) {
-      setMessage(result.error ?? "انجام عملیات ممکن نبود.");
+    try {
+      const updated =
+        decision === "approve"
+          ? await approveOrder(order.objectId)
+          : await cancelOrder(order.objectId);
+      setOrder(updated);
+      setMessageType("success");
+      setMessage("عملیات با موفقیت انجام شد.");
       setDecision(null);
-      return;
+      setTimeout(() => router.push("/manager/order-tracking"), 700);
+    } catch (error) {
+      setMessageType("error");
+      setMessage(getErrorMessage(error));
+      setDecision(null);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setMessage(result.message ?? "عملیات با موفقیت انجام شد.");
-    setDecision(null);
-
-    setTimeout(() => {
-      router.push("/manager/order-tracking");
-    }, 700);
   };
 
   return (
     <DashboardLayout role="manager" title="بررسی سفارش">
       <SectionHeader
-        title={`بررسی ${order.code}`}
+        title={`بررسی ${order.code || order.id}`}
         description="ثبت تصمیم نهایی مدیر فروش برای شروع یا توقف فرآیند انبار"
         actions={
           <Link
@@ -167,10 +148,13 @@ export default function ManagerOrderReviewPage() {
         }
       />
 
-      {message ? (
+      {message && messageType === "success" ? (
         <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] p-3 text-sm text-[#1D4ED8]">
           {message}
         </div>
+      ) : null}
+      {message && messageType === "error" ? (
+        <InlineErrorMessage message={message} />
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -180,77 +164,56 @@ export default function ManagerOrderReviewPage() {
               مشخصات سفارش
             </h3>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-              <InfoItem label="کد سفارش" value={order.code} />
-              <InfoItem label="منبع سفارش" value={<OrderSourceBadge source={order.orderSource} />} />
-              <InfoItem label="مشتری" value={order.customerName} />
-              <InfoItem label="ثبت کننده" value={order.createdBy} />
-              {order.najaExpertName ? (
-                <InfoItem label="کارشناس ناجا" value={order.najaExpertName} />
-              ) : null}
-              {order.nationalId ? (
-                <InfoItem label="کد ملی" value={order.nationalId} />
-              ) : null}
-              {order.phoneNumber ? (
-                <InfoItem label="شماره موبایل" value={order.phoneNumber} />
-              ) : null}
-              {order.returnReason ? (
-                <InfoItem label="دلیل برگشت" value={order.returnReason} />
-              ) : null}
+              <InfoItem label="کد سفارش" value={order.code || "-"} />
+              <InfoItem label="منبع سفارش" value={order.orderType === "naja" ? "ناجا" : "عادی"} />
+              <InfoItem label="مشتری" value={order.customerName ?? "-"} />
+              <InfoItem label="ثبت کننده" value={order.createdByName || "-"} />
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
-              <InfoItem
-                label="وضعیت سفارش"
-                value={<StatusBadge type="order" status={order.status} />}
-              />
-              <InfoItem
-                label="وضعیت انبار"
-                value={
-                  <StatusBadge
-                    type="warehouse"
-                    status={order.warehouseStatus}
-                  />
-                }
-              />
-              <InfoItem
-                label="آخرین تغییر"
-                value={formatDate(order.updatedAt)}
-              />
+              <InfoItem label="وضعیت سفارش" value={order.orderStatus || "-"} />
+              <InfoItem label="وضعیت انبار" value={order.warehouseStatus || "-"} />
+              <InfoItem label="آخرین تغییر" value={formatDate(order.updatedAt)} />
             </dl>
           </div>
 
-          <ReserveInventoryNote />
-
-          <div>
-            <DataTable
-              columns={columns}
-              rows={inventoryRows}
-              rowKey={(row) => row.id}
-            />
-          </div>
-
-          <ProgressTimeline order={order} />
+          <DataTable
+            columns={columns}
+            rows={order.items}
+            rowKey={(row) => row.objectId || row.productId || row.productSku}
+          />
         </div>
 
         <div className="space-y-4">
-          <OrderSummaryCard
-            customerName={order.customerName}
-            itemCount={getOrderItemCount(order.items)}
-            totalQuantity={getOrderTotalQuantity(order.items)}
-            totalAmount={totalAmount}
-            status={order.status}
-            warehouseStatus={order.warehouseStatus}
-          />
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            <p className="text-sm text-[#6B7280]">مبلغ کل</p>
+            <p className="mt-2 text-lg font-semibold text-[#102034]">
+              {formatCurrency(totalAmount)}
+            </p>
+          </div>
 
-          <ProcessStatusCard
-            currentStage={getOrderLastStageLabel(order)}
-            lastUpdated={formatDate(order.updatedAt)}
-          />
-
-          <ApprovalActionsCard
-            disabled={!canDecide}
-            disableReason={disableReason}
-            onApprove={() => setDecision("approve")}
-            onCancel={() => setDecision("cancel")}
-          />
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            <p className="text-sm leading-7 text-[#6B7280]">
+              {canDecide
+                ? "این سفارش آماده تصمیم گیری است."
+                : "این سفارش در وضعیت فعلی قابل تایید یا لغو نیست."}
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Button
+                type="button"
+                disabled={!canDecide || isSubmitting}
+                onClick={() => setDecision("approve")}
+              >
+                تایید سفارش
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={!canDecide || isSubmitting}
+                onClick={() => setDecision("cancel")}
+              >
+                لغو سفارش
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -259,8 +222,8 @@ export default function ManagerOrderReviewPage() {
         title={decision === "approve" ? "تایید سفارش" : "لغو سفارش"}
         message={
           decision === "approve"
-            ? "با تایید، وضعیت سفارش به تایید شده و وضعیت انبار به در بررسی انبار تغییر می کند."
-            : "با لغو، وضعیت سفارش لغو شده و رزرو موجودی به انبار بازگردانده می شود."
+            ? "با تایید، سفارش وارد فرآیند انبار می شود."
+            : "با لغو، سفارش از فرآیند عملیاتی خارج می شود."
         }
         confirmText={decision === "approve" ? "تایید نهایی" : "لغو نهایی"}
         tone={decision === "approve" ? "success" : "danger"}

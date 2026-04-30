@@ -1,30 +1,54 @@
 "use client";
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { orderStatusLabel } from "@/lib/expert/mock-data";
-import type { ExpertOrder, OrderStatus } from "@/lib/expert/types";
+import { getErrorMessage } from "@/lib/api/api-error";
 import {
   formatDate,
   formatNumber,
-  getOrderItemCount,
 } from "@/lib/expert/utils";
+import type { Order } from "@/lib/models/order.model";
+import { listOrders } from "@/lib/services/order.service";
 import { ListFilter, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function ManagerPendingOrdersPage() {
-  const { orders } = useExpertStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "pending" | "all" | OrderStatus
-  >("pending");
+  const [statusFilter, setStatusFilter] = useState("pending");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadOrders() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await listOrders();
+        if (isMounted) setOrders(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredOrders = useMemo(() => {
     return [...orders]
@@ -34,15 +58,15 @@ export default function ManagerPendingOrdersPage() {
       .filter((order) => {
         const matchesSearch =
           order.code.toLowerCase().includes(search.toLowerCase()) ||
-          order.createdBy.toLowerCase().includes(search.toLowerCase()) ||
-          order.customerName.toLowerCase().includes(search.toLowerCase());
+          order.createdByName.toLowerCase().includes(search.toLowerCase()) ||
+          (order.customerName ?? "").toLowerCase().includes(search.toLowerCase());
         const matchesStatus =
-          statusFilter === "all" ? true : order.status === statusFilter;
+          statusFilter === "all" ? true : order.orderStatus === statusFilter;
         return matchesSearch && matchesStatus;
       });
   }, [orders, search, statusFilter]);
 
-  const columns: DataTableColumn<ExpertOrder>[] = [
+  const columns: DataTableColumn<Order>[] = [
     {
       key: "code",
       header: "کد سفارش",
@@ -50,8 +74,8 @@ export default function ManagerPendingOrdersPage() {
         <span className="font-semibold text-[#1F3A5F]">{row.code}</span>
       ),
     },
-    { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
-    { key: "customer", header: "مشتری", render: (row) => row.customerName },
+    { key: "creator", header: "ثبت کننده", render: (row) => row.createdByName },
+    { key: "customer", header: "مشتری", render: (row) => row.customerName ?? "-" },
     {
       key: "date",
       header: "تاریخ",
@@ -60,18 +84,18 @@ export default function ManagerPendingOrdersPage() {
     {
       key: "items",
       header: "تعداد آیتم",
-      render: (row) => formatNumber(getOrderItemCount(row.items)),
+      render: (row) => formatNumber(row.items.reduce((sum, item) => sum + item.quantity, 0)),
     },
     {
       key: "order-status",
       header: "وضعیت سفارش",
-      render: (row) => <StatusBadge type="order" status={row.status} />,
+      render: (row) => row.orderStatus || "-",
     },
     {
       key: "warehouse-status",
       header: "وضعیت انبار",
       render: (row) => (
-        <StatusBadge type="warehouse" status={row.warehouseStatus} />
+        row.warehouseStatus || "-"
       ),
     },
     {
@@ -79,7 +103,7 @@ export default function ManagerPendingOrdersPage() {
       header: "عملیات",
       render: (row) => (
         <Link
-          href={`/manager/orders/${row.id}`}
+          href={`/manager/orders/${row.objectId}`}
           className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs !text-white"
         >
           بررسی سفارش
@@ -105,16 +129,11 @@ export default function ManagerPendingOrdersPage() {
             <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
             <SearchableSelect
               value={statusFilter}
-              onValueChange={(value) =>
-                setStatusFilter(value as "pending" | "all" | OrderStatus)
-              }
+              onValueChange={setStatusFilter}
               options={[
                 { value: "pending", label: "در انتظار تایید" },
                 { value: "all", label: "همه وضعیت ها" },
-                ...Object.entries(orderStatusLabel).map(([value, label]) => ({
-                  value,
-                  label,
-                })),
+                ...Array.from(new Set(orders.map((order) => order.orderStatus).filter(Boolean))).map((value) => ({ value, label: value })),
               ]}
               placeholder="فیلتر وضعیت"
               searchPlaceholder="جستجو در وضعیت ها"
@@ -125,11 +144,15 @@ export default function ManagerPendingOrdersPage() {
         </div>
       </section>
 
-      {filteredOrders.length > 0 ? (
+      {isLoading ? (
+        <LoadingState title="در حال دریافت سفارش ها" />
+      ) : error ? (
+        <PageErrorMessage title="دریافت سفارش ها انجام نشد" message={error} />
+      ) : filteredOrders.length > 0 ? (
         <DataTable
           columns={columns}
           rows={filteredOrders}
-          rowKey={(row) => row.id}
+          rowKey={(row) => row.objectId || row.id}
         />
       ) : (
         <EmptyState

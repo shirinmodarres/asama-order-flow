@@ -2,18 +2,19 @@
 
 import { ListFilter, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { useExpertStore } from "@/components/expert/expert-store-provider";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { OrderSourceBadge } from "@/components/shared/order-source-badge";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import type { ExpertOrder } from "@/lib/expert/types";
+import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDate } from "@/lib/expert/utils";
+import type { Order } from "@/lib/models/order.model";
+import { listOrders } from "@/lib/services/order.service";
 
 type TrackingFilter =
   | "all"
@@ -27,9 +28,35 @@ type TrackingFilter =
   | "returnedAfterInvoice";
 
 export default function ManagerOrderTrackingPage() {
-  const { orders } = useExpertStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<TrackingFilter>("all");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadOrders() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await listOrders();
+        if (isMounted) setOrders(data);
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredOrders = useMemo(() => {
     return [...orders]
@@ -39,8 +66,8 @@ export default function ManagerOrderTrackingPage() {
       .filter((order) => {
         const matchesSearch =
           order.code.toLowerCase().includes(search.toLowerCase()) ||
-          order.createdBy.toLowerCase().includes(search.toLowerCase()) ||
-          order.customerName.toLowerCase().includes(search.toLowerCase());
+          order.createdByName.toLowerCase().includes(search.toLowerCase()) ||
+          (order.customerName ?? "").toLowerCase().includes(search.toLowerCase());
 
         if (!matchesSearch) return false;
         if (filter === "all") return true;
@@ -48,12 +75,12 @@ export default function ManagerOrderTrackingPage() {
           return order.warehouseStatus === "dispatchIssued";
         if (filter === "delivered")
           return order.warehouseStatus === "delivered";
-        if (filter === "invoiced") return order.status === "invoiced";
-        return order.status === filter;
+        if (filter === "invoiced") return order.orderStatus === "invoiced";
+        return order.orderStatus === filter;
       });
   }, [filter, orders, search]);
 
-  const columns: DataTableColumn<ExpertOrder>[] = [
+  const columns: DataTableColumn<Order>[] = [
     {
       key: "code",
       header: "کد سفارش",
@@ -64,20 +91,20 @@ export default function ManagerOrderTrackingPage() {
     {
       key: "source",
       header: "منبع",
-      render: (row) => <OrderSourceBadge source={row.orderSource} />,
+      render: (row) => (row.orderType === "naja" ? "ناجا" : "عادی"),
     },
-    { key: "creator", header: "ثبت کننده", render: (row) => row.createdBy },
-    { key: "customer", header: "مشتری", render: (row) => row.customerName },
+    { key: "creator", header: "ثبت کننده", render: (row) => row.createdByName },
+    { key: "customer", header: "مشتری", render: (row) => row.customerName ?? "-" },
     {
       key: "order-status",
       header: "وضعیت سفارش",
-      render: (row) => <StatusBadge type="order" status={row.status} />,
+      render: (row) => row.orderStatus || "-",
     },
     {
       key: "warehouse-status",
       header: "وضعیت انبار",
       render: (row) => (
-        <StatusBadge type="warehouse" status={row.warehouseStatus} />
+        row.warehouseStatus || "-"
       ),
     },
     {
@@ -90,7 +117,7 @@ export default function ManagerOrderTrackingPage() {
       header: "عملیات",
       render: (row) => (
         <Link
-          href={`/manager/orders/${row.id}`}
+          href={`/manager/orders/${row.objectId}`}
           className="rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-xs text-[#334155]"
         >
           مشاهده جزئیات
@@ -137,11 +164,15 @@ export default function ManagerOrderTrackingPage() {
         </div>
       </section>
 
-      {filteredOrders.length > 0 ? (
+      {isLoading ? (
+        <LoadingState title="در حال دریافت سفارش ها" />
+      ) : error ? (
+        <PageErrorMessage title="دریافت سفارش ها انجام نشد" message={error} />
+      ) : filteredOrders.length > 0 ? (
         <DataTable
           columns={columns}
           rows={filteredOrders}
-          rowKey={(row) => row.id}
+          rowKey={(row) => row.objectId || row.id}
         />
       ) : (
         <EmptyState
