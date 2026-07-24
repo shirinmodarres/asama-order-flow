@@ -1,5 +1,4 @@
 import { httpClient } from "@/lib/api/http-client";
-import { getStoredSessionToken } from "@/lib/services/auth.service";
 import { toRecord } from "@/lib/mappers/mapper-utils";
 import {
   mapSalesQuotationDto,
@@ -41,45 +40,6 @@ export async function getSalesQuotationPdfData(
     `/api/sales-quotations/${objectId}/pdf-data`,
   );
   return mapSalesQuotationDto(data);
-}
-
-export async function downloadSalesQuotationPdf(
-  objectId: string,
-): Promise<Blob> {
-  const configuredApiBaseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
-  const apiBaseUrl = configuredApiBaseUrl
-    ? configuredApiBaseUrl.replace(/\/$/, "")
-    : "http://localhost:4000";
-  const sessionToken = getStoredSessionToken();
-
-  const response = await fetch(
-    `${apiBaseUrl}/api/sales-quotations/${objectId}/pdf`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/pdf",
-        ...(sessionToken ? { "session-token": sessionToken } : {}),
-      },
-    },
-  );
-
-  if (!response.ok) {
-    const contentType = response.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
-      const payload = await response.json().catch(() => null);
-      const message =
-        typeof payload?.error?.message === "string"
-          ? payload.error.message
-          : "دانلود PDF انجام نشد.";
-      throw new Error(message);
-    }
-
-    const text = await response.text().catch(() => "");
-    throw new Error(text || "دانلود PDF انجام نشد.");
-  }
-
-  return response.blob();
 }
 
 export async function listSalesQuotationProductOptions(

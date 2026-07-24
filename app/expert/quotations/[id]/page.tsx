@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Download, PencilLine, Copy, Ban, CheckCircle2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
@@ -9,7 +9,6 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { SectionHeader } from "@/components/shared/section-header";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
@@ -21,6 +20,7 @@ import { formatFaDigits } from "@/lib/utils/number-format";
 
 export default function ExpertQuotationDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [quotation, setQuotation] = useState<SalesQuotation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,8 +52,6 @@ export default function ExpertQuotationDetailPage() {
       { key: "name", header: "کالا", render: (row) => row.productName || row.productSku || "-" },
       { key: "qty", header: "تعداد", render: (row) => formatNumber(row.quantity) },
       { key: "unitPrice", header: "قیمت واحد", render: (row) => formatCurrency(row.unitPrice) },
-      { key: "discount", header: "تخفیف", render: (row) => formatCurrency(row.discount) },
-      { key: "tax", header: "مالیات", render: (row) => formatCurrency(row.tax) },
       { key: "total", header: "مبلغ", render: (row) => formatCurrency(row.lineTotal) },
     ],
     [],
@@ -107,11 +105,29 @@ export default function ExpertQuotationDetailPage() {
                   <CheckCircle2 className="ml-2 size-4" />
                   نهایی‌سازی
                 </Button>
-                <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => handleAction(() => cancelSalesQuotation(quotation.objectId))}>
-                  <Ban className="ml-2 size-4" />
-                  لغو
-                </Button>
-                <Button type="button" disabled={isSubmitting} onClick={() => handleAction(() => duplicateSalesQuotation(quotation.objectId))}>
+                {quotation.status !== "cancelled" ? (
+                  <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => handleAction(() => cancelSalesQuotation(quotation.objectId))}>
+                    <Ban className="ml-2 size-4" />
+                    لغو
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={async () => {
+                    if (!quotation) return;
+                    setIsSubmitting(true);
+                    setActionError("");
+                    try {
+                      const duplicated = await duplicateSalesQuotation(quotation.objectId);
+                      router.push(`/expert/quotations/${duplicated.objectId}`);
+                    } catch (duplicateError) {
+                      setActionError(getErrorMessage(duplicateError));
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                >
                   <Copy className="ml-2 size-4" />
                   تکثیر
                 </Button>
@@ -135,7 +151,7 @@ export default function ExpertQuotationDetailPage() {
                 <dl className="mt-4 space-y-3 text-sm">
                   <InfoRow label="مشتری" value={quotation.customerName || "-"} />
                   <InfoRow label="لیست قیمت" value={quotation.priceListTitle || "-"} />
-                  <InfoRow label="وضعیت" value={<StatusBadge type="order" status={quotation.status} />} />
+                  <InfoRow label="وضعیت" value={<QuotationStatusPill status={quotation.status} />} />
                   <InfoRow label="تاریخ اعتبار" value={quotation.validUntil ? formatDate(quotation.validUntil) : "-"} />
                   <InfoRow label="جمع جزء" value={formatCurrency(quotation.subtotal)} />
                   <InfoRow label="درصد تخفیف کل" value={`${formatNumber(quotation.discountPercentage)}%`} />
@@ -166,4 +182,23 @@ function InfoRow({ label, value }: { label: string; value: ReactNode }) {
       <dd className="font-semibold text-[#102034]">{value}</dd>
     </div>
   );
+}
+
+function QuotationStatusPill({ status }: { status: string }) {
+  const meta = getQuotationStatusMeta(status);
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${meta.className}`}>
+      {meta.label}
+    </span>
+  );
+}
+
+function getQuotationStatusMeta(status: string) {
+  if (status === "finalized") {
+    return { label: "نهایی‌شده", className: "bg-emerald-50 text-emerald-700 border border-emerald-200" };
+  }
+  if (status === "cancelled") {
+    return { label: "لغو شده", className: "bg-rose-50 text-rose-700 border border-rose-200" };
+  }
+  return { label: "پیش‌نویس", className: "bg-slate-50 text-slate-700 border border-slate-200" };
 }

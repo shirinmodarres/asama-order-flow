@@ -106,19 +106,19 @@ export default function SalesQuotationPdfPage() {
         </Button>
       </div>
 
-      <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
+      <section className="pdf-page relative mx-auto min-h-[210mm] w-full max-w-[148mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
         <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
           <Image
             src="/1.jpg"
             alt="Asama Letterhead"
             fill
             priority
-            sizes="210mm"
+            sizes="148mm"
             className="object-cover"
           />
         </div>
 
-        <div className="print-content relative z-10 px-6 pb-6 pt-4">
+        <div className="print-content relative z-10 px-5 pb-5 pt-4">
           {isLoading ? (
             <p className="text-sm text-[#6B7280]">در حال دریافت پیش‌فاکتور...</p>
           ) : error ? (
@@ -126,10 +126,10 @@ export default function SalesQuotationPdfPage() {
           ) : !quotation ? (
             <p className="text-sm text-[#6B7280]">پیش‌فاکتور یافت نشد.</p>
           ) : (
-            <div className="space-y-4 text-[10px] leading-5">
-              <header className="relative min-h-24">
-                <div className="absolute right-0 top-0 border-r-2 border-[#7BC68A] bg-white/95 px-4 py-2 text-right text-[9px] leading-5 text-[#334155]">
-                  <InlineInfo
+            <div className="space-y-3 text-[10px] leading-5">
+              <header className="relative flex justify-between min-h-20">
+                <div className="absolute left-0 top-0  border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[9px] leading-5 text-[#334155]">
+                 <InlineInfo
                     label="شماره پیش‌فاکتور"
                     value={formatFaDigits(quotation.quotationNumber) || "-"}
                   />
@@ -144,7 +144,7 @@ export default function SalesQuotationPdfPage() {
                 </div>
               </header>
 
-              <div className="flex justify-center">
+             <div className="flex justify-center">
                 <div className="bg-white/95 px-6 py-1">
                   <h1 className="text-lg font-bold text-[#102034]">
                     پیش‌فاکتور فروش
@@ -163,39 +163,17 @@ export default function SalesQuotationPdfPage() {
                     value={
                       quotation.customer?.sepidarCustomerCode
                         ? formatFaDigits(quotation.customer.sepidarCustomerCode)
-                        : "-"
-                    }
-                  />
-                  <InlineInfo
-                    label="موبایل"
-                    value={
-                      quotation.customer?.mobile
-                        ? formatFaDigits(quotation.customer.mobile)
-                        : quotation.customerPhone
-                          ? formatFaDigits(quotation.customerPhone)
                           : "-"
                     }
-                  />
-                  <InlineInfo
-                    label="تلفن"
-                    value={quotation.customer?.phone ? formatFaDigits(quotation.customer.phone) : "-"}
                   />
                   <InlineInfo
                     label="کد ملی / اقتصادی"
                     value={quotation.customer?.nationalId || "-"}
                   />
                   <InlineInfo
-                    label="کارشناس فروش"
-                    value={quotation.expertName || "-"}
-                  />
-                  <InlineInfo
                     label="آدرس"
                     value={resolveQuotationAddress(quotation)}
                     className="col-span-2"
-                  />
-                  <InlineInfo
-                    label="لیست قیمت"
-                    value={quotation.priceListTitle || "-"}
                   />
                 </dl>
               </section>
@@ -240,10 +218,6 @@ export default function SalesQuotationPdfPage() {
                   raw
                 />
                 <Total label="مبلغ تخفیف" value={quotation.discountAmount} />
-                <Total
-                  label="مبلغ مشمول مالیات"
-                  value={Math.max(0, quotation.subtotal - quotation.discountAmount)}
-                />
                 <Total
                   label="مالیات (۱۰٪)"
                   value={quotation.taxAmount}
