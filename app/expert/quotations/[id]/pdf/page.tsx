@@ -167,10 +167,6 @@ export default function SalesQuotationPdfPage() {
                     }
                   />
                   <InlineInfo
-                    label="کد ملی / اقتصادی"
-                    value={quotation.customer?.nationalId || "-"}
-                  />
-                  <InlineInfo
                     label="آدرس"
                     value={resolveQuotationAddress(quotation)}
                     className="col-span-2"
@@ -210,13 +206,13 @@ export default function SalesQuotationPdfPage() {
                 </table>
               </section>
 
-              <section className="mr-auto w-full max-w-[420px] overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95 text-sm">
+              <section className="mr-auto w-full max-w-[320px] overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95 text-xs">
                 <Total label="جمع جزء" value={quotation.subtotal} />
-                <Total
+                {/* <Total
                   label="درصد تخفیف"
                   value={`${formatNumber(quotation.discountPercentage)}%`}
                   raw
-                />
+                /> */}
                 <Total label="مبلغ تخفیف" value={quotation.discountAmount} />
                 <Total
                   label="مالیات (۱۰٪)"
@@ -239,16 +235,6 @@ export default function SalesQuotationPdfPage() {
                 </p>
               </section>
 
-              <section className="print-section grid grid-cols-3 gap-2">
-                {["تنظیم کننده", "تأیید فروش", "مهر و امضاء مشتری"].map((label) => (
-                  <div
-                    key={label}
-                    className="flex min-h-16 items-start justify-center rounded-md border border-[#CBD5E1] bg-white/95 px-2 pt-2 text-[9px] font-semibold text-[#334155]"
-                  >
-                    {label}
-                  </div>
-                ))}
-              </section>
             </div>
           )}
         </div>
@@ -315,6 +301,12 @@ function resolveQuotationAddress(quotation: SalesQuotation): string {
     selected?.Address ||
     selected?.address ||
     selected?.fullAddress ||
+    customer.sepidarAddress?.Address ||
+    customer.sepidarAddress?.address ||
+    customer.addresses?.[0]?.Address ||
+    customer.addresses?.[0]?.address ||
+    customer.defaultAddress?.Address ||
+    customer.defaultAddress?.address ||
     customer.sepidarAddress?.Address ||
     customer.sepidarAddress?.address ||
     "-"
