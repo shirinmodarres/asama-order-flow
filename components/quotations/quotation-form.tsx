@@ -363,7 +363,7 @@ export function QuotationForm({
             />
             <FieldError message={customerError} />
           </label>
-          <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
             <span>لیست قیمت</span>
             <SearchableSelect
               value={selectedPriceListId || undefined}
@@ -403,21 +403,23 @@ export function QuotationForm({
               max={100}
               value={discountPercentage}
               onChange={(event) => {
-                const value = Math.min(100, Math.max(0, toNumber(event.target.value)));
+                const value = Math.min(100, Math.max(0, toNumber(normalizeDigits(event.target.value))));
                 setDiscountPercentage(value);
               }}
               placeholder="0"
+              inputMode="numeric"
             />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
             <span>درصد مالیات</span>
             <Input
-              type="number"
+              type="text"
+              inputMode="numeric"
               min={0}
               max={100}
               value={taxPercentage}
               onChange={(event) => {
-                const value = Math.min(100, Math.max(0, toNumber(event.target.value)));
+                const value = Math.min(100, Math.max(0, toNumber(normalizeDigits(event.target.value))));
                 setTaxPercentage(value);
               }}
               placeholder="10"

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { QuotationForm } from "@/components/quotations/quotation-form";
 import type { CreateSalesQuotationPayload } from "@/lib/models/sales-quotation.model";
+import { getStoredCurrentUser } from "@/lib/services/auth.service";
 import { createSalesQuotation } from "@/lib/services/sales-quotation.service";
 
 export default function NewExpertQuotationPage() {
@@ -17,6 +18,7 @@ export default function NewExpertQuotationPage() {
       const quotation = await createSalesQuotation({
         ...payload,
         status: payload.status || "draft",
+        expertObjectId: getStoredCurrentUser()?.objectId || undefined,
       });
       router.push(`/expert/quotations/${quotation.objectId}`);
     } finally {

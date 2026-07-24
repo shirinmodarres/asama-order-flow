@@ -98,6 +98,7 @@ export interface SalesQuotationProductOption {
 export interface CreateSalesQuotationPayload {
   customerObjectId: string;
   priceListObjectId: string;
+  expertObjectId?: string;
   notes?: string;
   validUntil?: string | null;
   discountPercentage?: number;
