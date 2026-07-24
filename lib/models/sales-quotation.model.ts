@@ -38,7 +38,11 @@ export interface SalesQuotation {
   expertName: string | null;
   status: SalesQuotationStatus;
   subtotal: number;
+  discountPercentage: number;
+  discountAmount: number;
   discount: number;
+  taxPercentage: number;
+  taxAmount: number;
   tax: number;
   total: number;
   notes: string | null;
@@ -96,14 +100,12 @@ export interface CreateSalesQuotationPayload {
   priceListObjectId: string;
   notes?: string;
   validUntil?: string | null;
-  discount?: number;
-  tax?: number;
+  discountPercentage?: number;
+  taxPercentage?: number;
   status?: SalesQuotationStatus;
   items: Array<{
     productObjectId: string;
     quantity: number;
-    discount?: number;
-    tax?: number;
   }>;
 }
 

@@ -25,6 +25,7 @@ import { listQuotationProductsForAssignment } from "@/lib/services/product.servi
 import { formatFaDigits, normalizeDigits, toNumber } from "@/lib/utils/number-format";
 import { JalaliDateInput } from "@/components/shared/jalali-date-input";
 import { SELECT_REQUIRED_MESSAGE, POSITIVE_NUMBER_MESSAGE } from "@/lib/utils/form-validation";
+import { jalaliToIso, todayJalaliParts } from "@/lib/utils/jalali-date";
 
 interface QuotationFormProps {
   mode: "create" | "edit";
@@ -40,8 +41,6 @@ interface DraftRow {
   rowId: string;
   productId: string;
   quantity: number;
-  discount: number;
-  tax: number;
 }
 
 interface PriceListOption {
@@ -71,7 +70,10 @@ export function QuotationForm({
     initialQuotation?.priceListObjectId || "",
   );
   const [selectedValidUntil, setSelectedValidUntil] = useState(
-    initialQuotation?.validUntil?.slice(0, 10) || "",
+    initialQuotation?.validUntil?.slice(0, 10) || (() => {
+      const [year, month, day] = todayJalaliParts();
+      return jalaliToIso(year, month, day);
+    })(),
   );
   const [notes, setNotes] = useState(initialQuotation?.notes || "");
   const [rows, setRows] = useState<DraftRow[]>(
@@ -80,8 +82,6 @@ export function QuotationForm({
           rowId: `initial-${index}-${item.productObjectId}`,
           productId: item.productObjectId,
           quantity: item.quantity,
-          discount: item.discount || 0,
-          tax: item.tax || 0,
         }))
       : [createEmptyRow(0)],
   );
@@ -89,6 +89,12 @@ export function QuotationForm({
   const [rowErrors, setRowErrors] = useState<
     Record<string, { productId?: string; quantity?: string }>
   >({});
+  const [discountPercentage, setDiscountPercentage] = useState(
+    initialQuotation?.discountPercentage ?? 0,
+  );
+  const [taxPercentage, setTaxPercentage] = useState(
+    initialQuotation?.taxPercentage ?? 10,
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -228,7 +234,7 @@ export function QuotationForm({
           const product = productsById[row.productId];
           const unitPrice = product?.unitPrice ?? 0;
           const lineSubtotal = row.quantity * unitPrice;
-          const lineTotal = Math.max(0, lineSubtotal - row.discount + row.tax);
+          const lineTotal = Math.max(0, lineSubtotal);
           return {
             ...row,
             unitPrice,
@@ -242,9 +248,10 @@ export function QuotationForm({
   );
 
   const subtotal = resolvedRows.reduce((sum, row) => sum + row.lineTotal, 0);
-  const discount = resolvedRows.reduce((sum, row) => sum + row.discount, 0);
-  const tax = resolvedRows.reduce((sum, row) => sum + row.tax, 0);
-  const total = Math.max(0, subtotal - discount + tax);
+  const discountAmount = subtotal * (discountPercentage / 100);
+  const taxableAmount = Math.max(0, subtotal - discountAmount);
+  const taxAmount = taxableAmount * (taxPercentage / 100);
+  const total = taxableAmount + taxAmount;
   const itemCount = resolvedRows.length;
   const totalQuantity = resolvedRows.reduce((sum, row) => sum + row.quantity, 0);
 
@@ -313,14 +320,12 @@ export function QuotationForm({
       priceListObjectId: selectedPriceListId,
       notes: notes.trim(),
       validUntil: selectedValidUntil || null,
-      discount,
-      tax,
+      discountPercentage,
+      taxPercentage,
       status,
       items: resolvedRows.map((row) => ({
         productObjectId: row.productId,
         quantity: row.quantity,
-        discount: row.discount,
-        tax: row.tax,
       })),
     });
   };
@@ -333,7 +338,7 @@ export function QuotationForm({
     <section className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <Card className="p-5">
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+          <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
             <span>مشتری</span>
             <SearchableSelect
               value={selectedCustomerId || undefined}
@@ -358,7 +363,7 @@ export function QuotationForm({
             />
             <FieldError message={customerError} />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+          <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
             <span>لیست قیمت</span>
             <SearchableSelect
               value={selectedPriceListId || undefined}
@@ -370,7 +375,7 @@ export function QuotationForm({
               disabled={!selectedCustomerId || priceListOptions.length === 0}
             />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+          <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
             <span>اعتبار تا تاریخ</span>
             <JalaliDateInput
               value={selectedValidUntil}
@@ -378,13 +383,44 @@ export function QuotationForm({
               placeholder="انتخاب تاریخ اعتبار"
             />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-[#334155] md:col-span-2">
+          <label className="grid gap-1.5 text-sm font-medium text-[#334155] md:col-span-2">
             <span>توضیحات</span>
             <Textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               rows={3}
               placeholder="یادداشت‌های پیش فاکتور"
+            />
+          </label>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
+            <span>درصد تخفیف کل</span>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={discountPercentage}
+              onChange={(event) => {
+                const value = Math.min(100, Math.max(0, toNumber(event.target.value)));
+                setDiscountPercentage(value);
+              }}
+              placeholder="0"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
+            <span>درصد مالیات</span>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={taxPercentage}
+              onChange={(event) => {
+                const value = Math.min(100, Math.max(0, toNumber(event.target.value)));
+                setTaxPercentage(value);
+              }}
+              placeholder="10"
             />
           </label>
         </div>
@@ -403,11 +439,11 @@ export function QuotationForm({
             {rows.map((row) => {
               const product = productsById[row.productId];
               const unitPrice = product?.unitPrice ?? 0;
-              const lineTotal = Math.max(0, row.quantity * unitPrice - row.discount + row.tax);
+              const lineTotal = Math.max(0, row.quantity * unitPrice);
               return (
                 <div
                   key={row.rowId}
-                  className="grid gap-3 rounded-2xl border border-[#E5E7EB] bg-[#FBFCFD] p-4 xl:grid-cols-[2fr_120px_120px_120px_120px_auto]"
+                  className="grid gap-3 rounded-2xl border border-[#E5E7EB] bg-[#FBFCFD] p-4"
                 >
                   <div>
                     <SearchableSelect
@@ -421,47 +457,30 @@ export function QuotationForm({
                     />
                     <FieldError message={rowErrors[row.rowId]?.productId} />
                   </div>
-                  <div>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={row.quantity}
-                      onChange={(event) => updateRow(row.rowId, { quantity: toNumber(event.target.value) })}
-                      placeholder="تعداد"
-                    />
-                    <FieldError message={rowErrors[row.rowId]?.quantity} />
-                  </div>
-                  <Input value={formatCurrency(unitPrice)} readOnly disabled />
-                  <Input
-                    type="number"
-                    min={0}
-                    value={row.discount}
-                    onChange={(event) => updateRow(row.rowId, { discount: toNumber(event.target.value) })}
-                    placeholder="تخفیف"
-                  />
-                  <Input
-                    type="number"
-                    min={0}
-                    value={row.tax}
-                    onChange={(event) => updateRow(row.rowId, { tax: toNumber(event.target.value) })}
-                    placeholder="مالیات"
-                  />
-                  <div className="flex items-center justify-between gap-2 xl:justify-end">
-                    <div className="text-sm text-[#334155]">
-                      <div>{product?.name || "کالای انتخاب‌شده"}</div>
-                      <div className="text-xs text-[#64748B]">
-                        {product?.brandName || product?.brand || "-"} - جمع: {formatCurrency(lineTotal)}
-                      </div>
+                  <div className="grid gap-3 sm:grid-cols-[120px_140px_140px_auto] xl:grid-cols-[120px_140px_140px_auto]">
+                    <div>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={row.quantity}
+                        onChange={(event) => updateRow(row.rowId, { quantity: toNumber(event.target.value) })}
+                        placeholder="تعداد"
+                      />
+                      <FieldError message={rowErrors[row.rowId]?.quantity} />
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeRow(row.rowId)}
-                      disabled={rows.length === 1}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    <Input value={formatCurrency(unitPrice)} readOnly disabled />
+                    <Input value={formatCurrency(lineTotal)} readOnly disabled />
+                    <div className="flex items-center justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeRow(row.rowId)}
+                        disabled={rows.length === 1}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
@@ -479,8 +498,10 @@ export function QuotationForm({
             <SummaryRow label="تعداد آیتم" value={formatNumber(itemCount)} />
             <SummaryRow label="جمع تعداد" value={formatNumber(totalQuantity)} />
             <SummaryRow label="جمع جزء" value={formatCurrency(subtotal)} />
-            <SummaryRow label="تخفیف" value={formatCurrency(discount)} />
-            <SummaryRow label="مالیات" value={formatCurrency(tax)} />
+            <SummaryRow label="درصد تخفیف کل" value={`${formatNumber(discountPercentage)}%`} />
+            <SummaryRow label="مبلغ تخفیف" value={formatCurrency(discountAmount)} />
+            <SummaryRow label="مبلغ مشمول مالیات" value={formatCurrency(taxableAmount)} />
+            <SummaryRow label="مالیات ۱۰٪" value={formatCurrency(taxAmount)} />
             <SummaryRow label="جمع کل" value={formatCurrency(total)} />
           </dl>
         </Card>
@@ -508,19 +529,15 @@ function createEmptyRow(index: number): DraftRow {
     rowId: `row-${Date.now()}-${index}`,
     productId: "",
     quantity: 1,
-    discount: 0,
-    tax: 0,
   };
 }
 
 function mapQuotationItems(items: SalesQuotationItem[]): DraftRow[] {
   return items.length
-    ? items.map((item, index) => ({
+      ? items.map((item, index) => ({
         rowId: `quotation-${index}-${item.productObjectId}`,
         productId: item.productObjectId,
         quantity: item.quantity,
-        discount: item.discount || 0,
-        tax: item.tax || 0,
       }))
     : [createEmptyRow(0)];
 }
