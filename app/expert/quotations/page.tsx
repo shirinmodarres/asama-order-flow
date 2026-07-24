@@ -121,7 +121,7 @@ export default function ExpertQuotationsPage() {
         actions={
           <Link
             href="/expert/quotations/new"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm font-medium text-white"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm font-medium !text-white"
           >
             <PlusCircle className="size-4" />
             <span>پیش فاکتور جدید</span>

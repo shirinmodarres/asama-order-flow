@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Download, PencilLine, Copy, Ban, CheckCircle2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
@@ -16,15 +16,15 @@ import { DataTable, type DataTableColumn } from "@/components/shared/data-table"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
 import { getErrorMessage } from "@/lib/api/api-error";
 import type { SalesQuotation, SalesQuotationItem } from "@/lib/models/sales-quotation.model";
-import { cancelSalesQuotation, duplicateSalesQuotation, finalizeSalesQuotation, getSalesQuotation } from "@/lib/services/sales-quotation.service";
+import { cancelSalesQuotation, downloadSalesQuotationPdf, duplicateSalesQuotation, finalizeSalesQuotation, getSalesQuotation } from "@/lib/services/sales-quotation.service";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
 export default function ExpertQuotationDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const [quotation, setQuotation] = useState<SalesQuotation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
 
@@ -74,6 +74,22 @@ export default function ExpertQuotationDetailPage() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!quotation) return;
+    setIsDownloading(true);
+    setActionError("");
+    try {
+      const blob = await downloadSalesQuotationPdf(quotation.objectId);
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (downloadError) {
+      setActionError(getErrorMessage(downloadError));
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <DashboardLayout role="expert" title="جزئیات پیش فاکتور">
       {isLoading ? (
@@ -89,13 +105,15 @@ export default function ExpertQuotationDetailPage() {
             description="پیش فاکتور مستقل از سفارش و بدون تأثیر روی موجودی"
             actions={
               <div className="flex flex-wrap items-center gap-2">
-                <a
-                  href={quotation.pdfUrl || `/api/sales-quotations/${quotation.objectId}/pdf`}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm font-medium text-white"
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={isDownloading}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-2 text-sm font-medium !text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   <Download className="size-4" />
-                  دانلود PDF
-                </a>
+                  {isDownloading ? "در حال دانلود..." : "دانلود PDF"}
+                </button>
                 {quotation.status === "draft" ? (
                   <Link href={`/expert/quotations/${quotation.objectId}/edit`} className="inline-flex items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-4 py-2 text-sm font-medium text-[#1F3A5F]">
                     <PencilLine className="size-4" />
