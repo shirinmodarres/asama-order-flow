@@ -61,6 +61,7 @@ export type StockTransferStatus =
 export interface StockTransferItem {
   productObjectId: string;
   sepidarItemId: number | null;
+  productCode?: string | null;
   productName: string | null;
   productNameSnapshot: string | null;
   quantity: number;
@@ -79,6 +80,7 @@ export interface StockTransferRequest {
   destinationStockTitle: string | null;
   productObjectId: string | null;
   sepidarItemId: number | null;
+  productCode?: string | null;
   productName: string | null;
   quantity: number;
   items: StockTransferItem[];

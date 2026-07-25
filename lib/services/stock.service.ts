@@ -64,6 +64,15 @@ export async function listManagerStockTransfers(filters?: {
   return listTransfersFromPath("/api/manager/stock-transfers", filters);
 }
 
+export async function getManagerStockTransfer(
+  objectId: string,
+): Promise<StockTransferRequest> {
+  const data = await httpClient.get<unknown>(
+    `/api/manager/stock-transfers/${objectId}`,
+  );
+  return mapStockTransferRequestDto(data);
+}
+
 export async function listWarehouseStockTransfers(filters?: {
   status?: string;
 }): Promise<StockTransferRequest[]> {

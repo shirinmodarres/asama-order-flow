@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
@@ -176,6 +177,11 @@ export default function ManagerStockTransfersPage() {
       header: "عملیات",
       render: (row) => (
         <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" asChild>
+            <Link href={`/manager/stock-transfers/${row.objectId}`}>
+              جزئیات
+            </Link>
+          </Button>
           <Button
             type="button"
             size="sm"

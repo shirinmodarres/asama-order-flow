@@ -8,48 +8,50 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
 
     steps:
       - name: Deploy frontend
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          port: ${{ secrets.SERVER_PORT }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.ACTIONS_SSH_KEY }}
-          script: |
-            set -e
+        shell: bash
+        run: |
+          set -e
 
-            if [ "${{ github.ref_name }}" = "develop" ]; then
-              APP_DIR="/home/shmodares/apps/asama-dev/frontend"
-              BRANCH="develop"
-              ENV_FILE="/home/shmodares/env/asama-dev.env"
-              PM2_NAME="asama-dev-frontend"
-              FRONTEND_PORT="3000"
-            else
-              APP_DIR="/home/shmodares/apps/asama-prod/frontend"
-              BRANCH="main"
-              ENV_FILE="/home/shmodares/env/asama-prod.env"
-              PM2_NAME="asama-prod-frontend"
-              FRONTEND_PORT="3001"
-            fi
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            APP_DIR="/home/shmodares/apps/asama-dev/frontend"
+            BRANCH="develop"
+            ENV_FILE="/home/shmodares/env/asama-dev.env"
+            PM2_NAME="asama-dev-frontend"
+            FRONTEND_PORT="3000"
+          else
+            APP_DIR="/home/shmodares/apps/asama-prod/frontend"
+            BRANCH="main"
+            ENV_FILE="/home/shmodares/env/asama-prod.env"
+            PM2_NAME="asama-prod-frontend"
+            FRONTEND_PORT="3001"
+          fi
 
-            cd "$APP_DIR"
+          echo "Deploying $BRANCH to $APP_DIR"
 
-            git fetch origin
-            git reset --hard "origin/$BRANCH"
+          cd "$APP_DIR"
 
-            npm install
+          git fetch origin
+          git reset --hard "origin/$BRANCH"
 
-            set -a
-            source "$ENV_FILE"
-            set +a
+          npm install
 
-            rm -rf .next
-            NEXT_PUBLIC_API_URL="$FRONTEND_PUBLIC_URL" npm run build
+          set -a
+          source "$ENV_FILE"
+          set +a
 
-            pm2 restart "$PM2_NAME" --update-env || \
-            NEXT_PUBLIC_API_URL="$FRONTEND_PUBLIC_URL" pm2 start npm --name "$PM2_NAME" -- start -- -p "$FRONTEND_PORT"
+          rm -rf .next
 
-            pm2 save
+          NEXT_PUBLIC_API_URL="$FRONTEND_PUBLIC_URL" npm run build
+
+          pm2 restart "$PM2_NAME" --update-env || \
+          NEXT_PUBLIC_API_URL="$FRONTEND_PUBLIC_URL" \
+          pm2 start npm --name "$PM2_NAME" -- start -- -p "$FRONTEND_PORT"
+
+          pm2 save

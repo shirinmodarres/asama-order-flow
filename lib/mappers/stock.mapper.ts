@@ -139,6 +139,7 @@ export function mapStockTransferRequestDto(dto: unknown): StockTransferRequest {
         item.sepidarItemId === undefined || item.sepidarItemId === null
           ? null
           : toNumberValue(item.sepidarItemId),
+      productCode: toNullableString(item.productCode ?? item.productSku),
       productName: toNullableString(item.productName ?? item.productNameSnapshot),
       productNameSnapshot: toNullableString(
         item.productNameSnapshot ?? item.productName,
@@ -176,6 +177,7 @@ export function mapStockTransferRequestDto(dto: unknown): StockTransferRequest {
       record.sepidarItemId === undefined || record.sepidarItemId === null
         ? null
         : toNumberValue(record.sepidarItemId),
+    productCode: toNullableString(record.productCode ?? record.productSku),
     productName: toNullableString(record.productName),
     quantity:
       record.quantity === undefined
