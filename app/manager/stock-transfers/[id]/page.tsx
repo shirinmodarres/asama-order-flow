@@ -180,22 +180,15 @@ export default function ManagerStockTransferDetailPage() {
                     <Th>کد کالا</Th>
                     <Th>نام کالا</Th>
                     <Th>تعداد</Th>
-                    <Th>شناسه/جزئیات</Th>
                   </tr>
                 </thead>
                 <tbody>
                   {itemRows.map((item, index) => (
                     <tr key={`${item.productObjectId}-${index}`} className="border-t border-[#E5E7EB]">
                       <Td>{formatNumber(index + 1)}</Td>
-                      <Td>{item.sepidarItemId ? formatNumber(item.sepidarItemId) : item.productObjectId || "-"}</Td>
+                      <Td>{item.productCode || item.productName || "-"}</Td>
                       <Td>{item.productName || "-"}</Td>
                       <Td>{formatNumber(item.quantity)}</Td>
-                      <Td>
-                        <div className="space-y-1 text-xs text-[#475569]">
-                          <div>شناسه کالا: {item.productObjectId || "-"}</div>
-                          <div>شناسه‌های اسکن‌شده: {item.scannedUnitObjectIds.length ? item.scannedUnitObjectIds.join("، ") : "-"}</div>
-                        </div>
-                      </Td>
                     </tr>
                   ))}
                 </tbody>
