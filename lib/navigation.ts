@@ -74,6 +74,12 @@ export const sidebarByRole: Record<PanelRoleKey, SidebarItem[]> = {
       description: "روند انجام سفارش",
     },
     {
+      label: "لیست قیمت‌ها",
+      href: "/manager/pricing/price-lists",
+      icon: "layers",
+      description: "لیست‌های قیمت فعال",
+    },
+    {
       label: "موجودی فروش و انبار",
       href: "/manager/inventory",
       icon: "boxes",
