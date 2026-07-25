@@ -84,6 +84,7 @@ export default function WarehouseInboundReceiptEditPage() {
         ]);
         if (!isMounted) return;
         setReceipt(data);
+        setError("");
         setProducts(productData.filter((product) => product.isSyncedFromSepidar));
         setSelectedProductId(data.productObjectId);
         setNotes(data.notes || "");
@@ -416,6 +417,7 @@ export default function WarehouseInboundReceiptEditPage() {
       setProducts(
         refreshedProducts.filter((product) => product.isSyncedFromSepidar),
       );
+      setError("");
       setMessage("رسید ورود با موفقیت ویرایش شد.");
       router.refresh();
       router.push(`/warehouse/inbound/receipts/${updated.objectId || updated.id}`);

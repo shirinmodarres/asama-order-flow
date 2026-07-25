@@ -106,14 +106,14 @@ export default function SalesQuotationPdfPage() {
         </Button>
       </div>
 
-      <section className="pdf-page relative mx-auto min-h-[210mm] w-full max-w-[148mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
+      <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
         <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
           <Image
-            src="/1.jpg"
+            src="/A4 - 2.jpg"
             alt="Asama Letterhead"
             fill
             priority
-            sizes="148mm"
+            sizes="210mm"
             className="object-cover"
           />
         </div>
@@ -206,7 +206,7 @@ export default function SalesQuotationPdfPage() {
                 </table>
               </section>
 
-              <section className="mr-auto w-full max-w-[320px] overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95 text-xs">
+              <section className="mr-auto w-full max-w-[260px] overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95 text-[11px]">
                 <Total label="جمع جزء" value={quotation.subtotal} />
                 {/* <Total
                   label="درصد تخفیف"
