@@ -80,6 +80,7 @@ export interface StockTransferRequest {
   destinationStockTitle: string | null;
   productObjectId: string | null;
   sepidarItemId: number | null;
+  productCode?: string | null;
   productName: string | null;
   quantity: number;
   items: StockTransferItem[];
