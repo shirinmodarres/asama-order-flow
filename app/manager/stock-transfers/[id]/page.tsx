@@ -177,7 +177,6 @@ export default function ManagerStockTransferDetailPage() {
                 <thead className="bg-[#F8FAFC] text-[#334155]">
                   <tr>
                     <Th>ردیف</Th>
-                    <Th>کد کالا</Th>
                     <Th>نام کالا</Th>
                     <Th>تعداد</Th>
                   </tr>
@@ -186,7 +185,6 @@ export default function ManagerStockTransferDetailPage() {
                   {itemRows.map((item, index) => (
                     <tr key={`${item.productObjectId}-${index}`} className="border-t border-[#E5E7EB]">
                       <Td>{formatNumber(index + 1)}</Td>
-                      <Td>{item.productCode || item.productName || "-"}</Td>
                       <Td>{item.productName || "-"}</Td>
                       <Td>{formatNumber(item.quantity)}</Td>
                     </tr>
