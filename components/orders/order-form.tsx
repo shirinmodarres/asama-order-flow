@@ -683,10 +683,14 @@ export function OrderForm({
     mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
     orderSalesTypeFallback ||
     null;
-  const currentSaleTypeTitle =
-    selectedSalesType?.title ??
+  const orderSalesTypeTitle =
     initialOrder?.salesTypeTitle ??
     initialOrder?.saleType?.title ??
+    initialOrder?.priceListTitle ??
+    null;
+  const currentSaleTypeTitle =
+    selectedSalesType?.title ??
+    orderSalesTypeTitle ??
     orderSalesTypeFallback?.title ??
     null;
   const selectedSalesTypeOption = selectedSalesType
@@ -698,9 +702,18 @@ export function OrderForm({
           selectedSalesType.internalCode,
           selectedSalesType.sepidarCode,
         ]
-          .filter(Boolean)
-          .join(" "),
+        .filter(Boolean)
+        .join(" "),
       }
+    : orderSalesTypeTitle
+      ? {
+          value:
+            selectedSalesTypeId ||
+            getOrderSalesTypeOptionKey(initialOrder) ||
+            `order-sales-type-${initialOrder?.objectId || "fallback"}`,
+          label: orderSalesTypeTitle,
+          searchText: orderSalesTypeTitle,
+        }
     : currentSaleTypeTitle
       ? {
           value:
@@ -711,6 +724,39 @@ export function OrderForm({
           searchText: currentSaleTypeTitle,
         }
       : null;
+
+  useEffect(() => {
+    if (!initialOrder) return;
+
+    const matchedSalesType =
+      mergedSalesTypes.find(
+        (item) =>
+          item.objectId === initialOrder.salesTypeObjectId ||
+          item.objectId === initialOrder.saleTypeObjectId ||
+          item.objectId === initialOrder.salesType?.objectId ||
+          item.objectId === initialOrder.saleType?.objectId ||
+          item.title === orderSalesTypeTitle,
+      ) || null;
+
+    if (matchedSalesType && matchedSalesType.objectId !== selectedSalesTypeId) {
+      setSelectedSalesTypeId(matchedSalesType.objectId);
+      return;
+    }
+
+    if (
+      !matchedSalesType &&
+      !selectedSalesTypeId &&
+      orderSalesTypeFallback?.objectId
+    ) {
+      setSelectedSalesTypeId(orderSalesTypeFallback.objectId);
+    }
+  }, [
+    initialOrder,
+    mergedSalesTypes,
+    orderSalesTypeFallback?.objectId,
+    orderSalesTypeTitle,
+    selectedSalesTypeId,
+  ]);
   const currentStockTitles = selectedCustomer
     ? getAllowedStockTitles(selectedCustomer)
     : initialOrder?.stockTitle
