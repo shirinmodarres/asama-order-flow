@@ -691,7 +691,7 @@ function getPaymentMethodTitle(customer: Customer | null | undefined): string | 
 
 function productIdentityLabel(product: Product): string {
   return [
-    product.sepidarCode || product.sku || product.objectId,
+    product.sepidarCode || product.sku || product.productObjectId || product.name,
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",

@@ -75,6 +75,21 @@ interface SalesTypeOption {
   sepidarCode: number | null;
 }
 
+function buildOrderSalesTypeFallback(order?: Order | null): SalesTypeOption | null {
+  if (!order) return null;
+  const objectId = order.salesTypeObjectId || order.saleTypeObjectId || "";
+  const title = order.salesTypeTitle || order.saleTypeTitle || "";
+  const internalCode = order.salesTypeInternalCode ?? null;
+  const sepidarCode = order.salesTypeSepidarCode ?? order.saleType?.sepidarSaleTypeId ?? null;
+  if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
+  return {
+    objectId,
+    title,
+    internalCode,
+    sepidarCode,
+  };
+}
+
 const EMPTY_PRODUCTS: Product[] = [];
 const EMPTY_CUSTOMERS: Customer[] = [];
 
@@ -203,6 +218,10 @@ export function OrderForm({
   const [rowErrors, setRowErrors] = useState<
     Record<string, { productId?: string; quantity?: string }>
   >({});
+  const orderSalesTypeFallback = useMemo(
+    () => buildOrderSalesTypeFallback(initialOrder),
+    [initialOrder],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -622,6 +641,23 @@ export function OrderForm({
   const selectedAddress = addresses.find(
     (address) => getCustomerAddressKey(address) === selectedAddressId,
   );
+  const mergedSalesTypes = useMemo(() => {
+    const map = new Map<string, SalesTypeOption>();
+    salesTypes.forEach((salesType) => {
+      map.set(salesType.objectId, salesType);
+    });
+    if (
+      orderSalesTypeFallback &&
+      !map.has(orderSalesTypeFallback.objectId) &&
+      (orderSalesTypeFallback.objectId ||
+        orderSalesTypeFallback.title ||
+        orderSalesTypeFallback.internalCode !== null ||
+        orderSalesTypeFallback.sepidarCode !== null)
+    ) {
+      map.set(orderSalesTypeFallback.objectId || `order-sales-type-${initialOrder?.objectId || "fallback"}`, orderSalesTypeFallback);
+    }
+    return Array.from(map.values());
+  }, [initialOrder?.objectId, orderSalesTypeFallback, salesTypes]);
   const priceListOptions = useMemo(
     () => getCustomerPriceListOptions(selectedCustomer, initialOrder),
     [initialOrder, selectedCustomer],
@@ -634,7 +670,10 @@ export function OrderForm({
   const requiresPriceListSelection =
     sepidarProductsOnly && Boolean(selectedCustomerId) && hasGeneratedPriceList;
   const isNajaOrder = initialOrder?.orderType === "naja";
-  const selectedSalesType = salesTypes.find((item) => item.objectId === selectedSalesTypeId) || null;
+  const selectedSalesType =
+    mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
+    orderSalesTypeFallback ||
+    null;
   const currentSaleTypeTitle =
     selectedPriceListOption
       ? priceListLabel(selectedPriceListOption)
@@ -1432,7 +1471,7 @@ export function OrderForm({
                 salesTypeObjectId: "",
               }));
             }}
-            options={salesTypes.map((salesType) => ({
+            options={mergedSalesTypes.map((salesType) => ({
               value: salesType.objectId,
               label: salesType.title,
               searchText: [salesType.title, salesType.internalCode, salesType.sepidarCode]
@@ -1479,7 +1518,7 @@ export function OrderForm({
           {items.map((item, index) => {
             const product = productsById[item.productId];
             const productCode = product
-              ? product.sepidarCode || product.sku || product.objectId
+              ? product.sepidarCode || product.sku || product.productObjectId || product.name
               : "";
             const helperText = product
               ? [
@@ -1935,7 +1974,7 @@ function createProductFromOrderItem(item: OrderItem): Product {
 
 function productIdentityLabel(product: Product): string {
   return [
-    product.sepidarCode || product.sku || product.objectId,
+    product.sepidarCode || product.sku || product.productObjectId || product.name,
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",
