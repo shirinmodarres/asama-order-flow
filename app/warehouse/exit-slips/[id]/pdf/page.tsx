@@ -31,10 +31,15 @@ export default function ExitSlipPdfPage() {
         const result = await getExitSlipPdfData(params.id);
         if (isMounted) {
           setData(result);
-          if (
-            new URLSearchParams(window.location.search).get("print") === "1"
-          ) {
-            window.setTimeout(() => window.print(), 250);
+          if (new URLSearchParams(window.location.search).get("print") === "1") {
+            window.setTimeout(async () => {
+              try {
+                await document.fonts?.ready;
+              } catch {
+                // Ignore font-loading issues and still print.
+              }
+              if (isMounted) window.print();
+            }, 250);
           }
         }
       } catch (loadError) {
@@ -118,7 +123,7 @@ export default function ExitSlipPdfPage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 8mm;
           }
           html,
           body {
@@ -139,7 +144,7 @@ export default function ExitSlipPdfPage() {
             overflow: visible !important;
           }
           .print-content {
-            padding: 10mm 12mm 10mm !important;
+            padding: 0 !important;
             overflow: visible !important;
           }
           .print-section,
@@ -162,6 +167,22 @@ export default function ExitSlipPdfPage() {
           .items-table thead {
             display: table-header-group;
           }
+          .print-root {
+            font-size: 10.5px !important;
+            line-height: 1.8 !important;
+          }
+          .print-root .customer-info,
+          .print-root .recipient-info {
+            font-size: 9.5px !important;
+          }
+          .print-root .summary-table,
+          .print-root .detail-table {
+            font-size: 9px !important;
+          }
+          .print-root .serial-cell,
+          .print-root .tracking-cell {
+            font-size: 8.5px !important;
+          }
         }
       `}</style>
 
@@ -183,7 +204,7 @@ export default function ExitSlipPdfPage() {
           />
         </div>
 
-        <div className="print-content relative z-10 px-5 pb-5 pt-4">
+        <div className="print-content print-root relative z-10 px-5 pb-5 pt-4">
           {isLoading ? (
             <p className="text-sm text-[#6B7280]">
               در حال دریافت اطلاعات حواله...
@@ -221,7 +242,7 @@ export default function ExitSlipPdfPage() {
                 </div>
               </div>
 
-              <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+              <section className="print-section customer-info rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
                 <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
                   اطلاعات مرکز / مشتری سپیدار
                 </h2>
@@ -255,7 +276,7 @@ export default function ExitSlipPdfPage() {
               </section>
 
               {hasRecipientName ? (
-                <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+                <section className="print-section recipient-info rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
                   <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
                     اطلاعات تحویل‌گیرنده ناجا
                   </h2>
@@ -325,7 +346,7 @@ export default function ExitSlipPdfPage() {
                 <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
                   خلاصه کالاها
                 </h2>
-                <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[8px] leading-4">
+                <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
                   <thead>
                     <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
                       <TableHeader className="w-6">ردیف</TableHeader>
@@ -352,7 +373,7 @@ export default function ExitSlipPdfPage() {
                 <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
                   جزئیات اقلام
                 </h2>
-                <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[8px] leading-4">
+                <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
                   <thead>
                     <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
                       <TableHeader className="w-6">ردیف</TableHeader>
@@ -376,12 +397,12 @@ export default function ExitSlipPdfPage() {
                             ? formatFaDigits(row.productSku)
                             : "-"}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="serial-cell">
                           {row.serialNumber
                             ? formatFaDigits(row.serialNumber)
                             : "-"}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="tracking-cell">
                           {row.trackingCode
                             ? formatFaDigits(row.trackingCode)
                             : "-"}
@@ -458,9 +479,15 @@ function TableHeader({
   );
 }
 
-function TableCell({ children }: { children: React.ReactNode }) {
+function TableCell({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <td className="break-words border-l border-[#E2E8F0] px-1 py-1 align-top last:border-l-0">
+    <td className={`break-words border-l border-[#E2E8F0] px-1 py-1 align-top last:border-l-0 ${className}`}>
       {children}
     </td>
   );
