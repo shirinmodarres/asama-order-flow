@@ -80,7 +80,7 @@ function getOrderSalesTypeOptionKey(order?: Order | null): string {
   const objectId = order.salesTypeObjectId || order.saleTypeObjectId || "";
   if (objectId) return objectId;
   const hasSnapshot =
-    Boolean(order.salesTypeTitle || order.saleTypeTitle) ||
+    Boolean(order.salesTypeTitle || order.saleType?.title) ||
     order.salesTypeInternalCode !== null ||
     order.salesTypeSepidarCode !== null ||
     order.saleType?.sepidarSaleTypeId !== null;
@@ -91,7 +91,7 @@ function getOrderSalesTypeOptionKey(order?: Order | null): string {
 function buildOrderSalesTypeFallback(order?: Order | null): SalesTypeOption | null {
   if (!order) return null;
   const objectId = getOrderSalesTypeOptionKey(order);
-  const title = order.salesTypeTitle || order.saleTypeTitle || "";
+  const title = order.salesTypeTitle || order.saleType?.title || "";
   const internalCode = order.salesTypeInternalCode ?? null;
   const sepidarCode = order.salesTypeSepidarCode ?? order.saleType?.sepidarSaleTypeId ?? null;
   if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
@@ -686,7 +686,7 @@ export function OrderForm({
   const currentSaleTypeTitle =
     selectedSalesType?.title ??
     initialOrder?.salesTypeTitle ??
-    initialOrder?.saleTypeTitle ??
+    initialOrder?.saleType?.title ??
     selectedCustomer?.saleType?.title ??
     null;
   const currentStockTitles = selectedCustomer
@@ -1265,7 +1265,7 @@ export function OrderForm({
               اطلاعات فعلی سفارش
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
-              {currentSaleTypeTitle ? <span>روش پرداخت: {currentSaleTypeTitle}</span> : null}
+      {currentSaleTypeTitle ? <span>روش پرداخت: {currentSaleTypeTitle}</span> : null}
               <span>انبار خروج: {initialOrder.stockTitle || "-"}</span>
               <span>وضعیت سفارش: {initialOrder.orderStatusLabel || "-"}</span>
               <span>
