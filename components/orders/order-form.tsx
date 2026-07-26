@@ -682,6 +682,13 @@ export function OrderForm({
   };
 
   const handleSubmit = async () => {
+    console.log("[ORDER_SUBMIT_CLICKED]", {
+      mode,
+      selectedCustomerId: selectedCustomerId || null,
+      selectedPriceListId: selectedPriceListId || null,
+      selectedSalesTypeId: selectedSalesTypeId || null,
+      itemCount: normalizedItems.length,
+    });
     setError("");
     setFieldErrors({});
     setRowErrors({});
@@ -858,7 +865,8 @@ export function OrderForm({
       }
     }
 
-    if (selectedCustomerId && !selectedAddressId) {
+    let effectiveSelectedAddress: CustomerAddress | null = selectedAddress ?? null;
+    if (selectedCustomerId && !effectiveSelectedAddress) {
       if (process.env.NODE_ENV === "development") {
         console.error("[CUSTOMER_DELIVERY_ADDRESS_DEBUG]", {
           selectedCustomer: selectedCustomer ?? null,
@@ -876,39 +884,49 @@ export function OrderForm({
         setFieldErrors({ selectedAddressId: "لطفاً آدرس تحویل را انتخاب کنید." });
         return;
       }
-      setSelectedAddressId(
-        String(
-          resolvedMainAddress?.customerAddressId ??
-            resolvedMainAddress?.sepidarAddressId ??
-            "",
-        ),
-      );
-      return;
+      const resolvedAddressId = String(
+        resolvedMainAddress?.customerAddressId ??
+          resolvedMainAddress?.sepidarAddressId ??
+          "",
+      ).trim();
+      if (!resolvedAddressId) {
+        setFieldErrors({ selectedAddressId: "آدرس تحویل موجود نیست" });
+        return;
+      }
+      setSelectedAddressId(resolvedAddressId);
+      effectiveSelectedAddress = resolvedMainAddress;
     }
 
     try {
+      const finalCustomerAddressId =
+        effectiveSelectedAddress?.customerAddressId ??
+        effectiveSelectedAddress?.sepidarAddressId ??
+        undefined;
+      console.log("[ORDER_SUBMIT_REQUEST]", {
+        mode,
+        customerObjectId: selectedCustomerId || null,
+        priceListId: selectedPriceListId || selectedCustomer?.priceListId || null,
+        salesTypeObjectId: selectedSalesType?.objectId || null,
+        selectedCustomerAddressId: finalCustomerAddressId ?? null,
+        itemCount: normalizedItems.length,
+      });
       await onSubmit({
         customerName: selectedCustomerId ? undefined : customerName.trim(),
         customerObjectId: selectedCustomerId || undefined,
-        customerAddressId:
-          selectedAddress?.customerAddressId ??
-          selectedAddress?.sepidarAddressId ??
-          undefined,
+        customerAddressId: finalCustomerAddressId,
         selectedCustomerAddressId:
-          selectedAddress?.customerAddressId ??
-          selectedAddress?.sepidarAddressId ??
-          undefined,
-        customerAddressTitle: selectedAddress?.title ?? resolvedMainAddress?.title ?? null,
+          finalCustomerAddressId,
+        customerAddressTitle: effectiveSelectedAddress?.title ?? resolvedMainAddress?.title ?? null,
         customerAddressText:
-          selectedAddress?.Address ?? selectedAddress?.address ?? selectedAddress?.fullAddress ?? resolvedMainAddress?.Address ?? resolvedMainAddress?.address ?? resolvedMainAddress?.fullAddress ?? null,
+          effectiveSelectedAddress?.Address ?? effectiveSelectedAddress?.address ?? effectiveSelectedAddress?.fullAddress ?? resolvedMainAddress?.Address ?? resolvedMainAddress?.address ?? resolvedMainAddress?.fullAddress ?? null,
         customerAddressZipCode:
-          selectedAddress?.ZipCode ?? selectedAddress?.zipCode ?? selectedAddress?.postalCode ?? resolvedMainAddress?.ZipCode ?? resolvedMainAddress?.zipCode ?? resolvedMainAddress?.postalCode ?? null,
+          effectiveSelectedAddress?.ZipCode ?? effectiveSelectedAddress?.zipCode ?? effectiveSelectedAddress?.postalCode ?? resolvedMainAddress?.ZipCode ?? resolvedMainAddress?.zipCode ?? resolvedMainAddress?.postalCode ?? null,
         customerAddressCityRef:
-          selectedAddress?.cityRef ?? resolvedMainAddress?.cityRef ?? null,
+          effectiveSelectedAddress?.cityRef ?? resolvedMainAddress?.cityRef ?? null,
         customerAddressPathRef:
-          selectedAddress?.pathRef ?? resolvedMainAddress?.pathRef ?? null,
+          effectiveSelectedAddress?.pathRef ?? resolvedMainAddress?.pathRef ?? null,
         customerAddressIsMain:
-          selectedAddress?.isMain ?? resolvedMainAddress?.isMain ?? false,
+          effectiveSelectedAddress?.isMain ?? resolvedMainAddress?.isMain ?? false,
         ...(initialOrder?.orderType === "naja"
           ? {
               recipientFirstName: recipientFirstName.trim(),
@@ -945,6 +963,11 @@ export function OrderForm({
             : {}),
         })),
       });
+      console.log("[ORDER_SUBMIT_SUCCESS]", {
+        mode,
+        selectedCustomerId: selectedCustomerId || null,
+        selectedPriceListId: selectedPriceListId || null,
+      });
       if (process.env.NODE_ENV === "development") {
         console.log("[CUSTOMER_DELIVERY_ADDRESS_DEBUG]", {
           selectedCustomer: selectedCustomer ?? null,
@@ -969,6 +992,10 @@ export function OrderForm({
         });
       }
     } catch (submitError) {
+      console.error("[ORDER_SUBMIT_FAILED]", {
+        mode,
+        error: submitError,
+      });
       setError(getErrorMessage(submitError));
     }
   };
