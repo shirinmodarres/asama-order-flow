@@ -728,7 +728,7 @@ export function OrderForm({
 
     if (!selectedSalesTypeId) {
       setFieldErrors({
-        salesTypeObjectId: "لطفاً نوع فروش را انتخاب کنید.",
+        salesTypeObjectId: "لطفاً روش پرداخت را انتخاب کنید.",
       });
       return;
     }
@@ -740,14 +740,14 @@ export function OrderForm({
       !selectedSalesType?.sepidarCode
     ) {
       setFieldErrors({
-        selectedCustomerId: "برای این مشتری لیست قیمت مشخص نشده است.",
+        selectedCustomerId: "برای این مشتری روش پرداخت مشخص نشده است.",
       });
       return;
     }
 
     if (requiresPriceListSelection && !selectedPriceListId) {
       setFieldErrors({
-        selectedPriceListId: "لطفاً لیست قیمت را انتخاب کنید.",
+        selectedPriceListId: "لطفاً روش پرداخت را انتخاب کنید.",
       });
       return;
     }
@@ -767,8 +767,8 @@ export function OrderForm({
         (productsById[item.productId]?.unitPrice ?? 0) <= 0
       ) {
         errors.productId = productsById[item.productId]?.priceListConflict
-          ? "این کالا در چند لیست قیمت انتخابی وجود دارد."
-          : "قیمت کالا برای این لیست قیمت ثبت نشده است.";
+          ? "این کالا در چند روش پرداخت انتخابی وجود دارد."
+          : "قیمت کالا برای این روش پرداخت ثبت نشده است.";
       }
       if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
         errors.quantity = POSITIVE_NUMBER_MESSAGE;
@@ -1134,7 +1134,7 @@ export function OrderForm({
               )}
               {assignedCustomersOnly ? (
                 <span>
-                  لیست قیمت: {currentSaleTypeTitle || "-"}
+                  {currentSaleTypeTitle ? `روش پرداخت: ${currentSaleTypeTitle}` : null}
                 </span>
               ) : null}
             </div>
@@ -1216,7 +1216,7 @@ export function OrderForm({
               اطلاعات فعلی سفارش
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <span>لیست قیمت: {currentSaleTypeTitle || "-"}</span>
+              {currentSaleTypeTitle ? <span>روش پرداخت: {currentSaleTypeTitle}</span> : null}
               <span>انبار خروج: {initialOrder.stockTitle || "-"}</span>
               <span>وضعیت سفارش: {initialOrder.orderStatusLabel || "-"}</span>
               <span>
@@ -1394,7 +1394,7 @@ export function OrderForm({
         ) : null}
 
         <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">
-          <span>نوع فروش</span>
+          <span>روش پرداخت</span>
           <SearchableSelect
             value={selectedSalesTypeId || undefined}
             onValueChange={(value) => {
@@ -1411,9 +1411,9 @@ export function OrderForm({
                 .filter(Boolean)
                 .join(" "),
             }))}
-            placeholder="انتخاب نوع فروش"
-            searchPlaceholder="جستجو در نوع فروش"
-            emptyMessage="نوع فروشی پیدا نشد"
+            placeholder="انتخاب روش پرداخت"
+            searchPlaceholder="جستجو در روش پرداخت"
+            emptyMessage="روش پرداختی پیدا نشد"
             invalid={Boolean(fieldErrors.salesTypeObjectId)}
           />
           <FieldError message={fieldErrors.salesTypeObjectId} />
@@ -1421,7 +1421,7 @@ export function OrderForm({
 
         {requiresPriceListSelection ? (
           <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">
-            <span>لیست قیمت</span>
+            <span>روش پرداخت</span>
             <SearchableSelect
               value={selectedPriceListId || undefined}
               onValueChange={(value) => {
@@ -1438,9 +1438,9 @@ export function OrderForm({
                 value: priceList.objectId,
                 label: priceListLabel(priceList),
               }))}
-              placeholder="انتخاب لیست قیمت"
-              searchPlaceholder="جستجو در لیست قیمت"
-              emptyMessage="لیست قیمتی پیدا نشد"
+              placeholder="انتخاب روش پرداخت"
+              searchPlaceholder="جستجو در روش پرداخت"
+              emptyMessage="روش پرداختی پیدا نشد"
               invalid={Boolean(fieldErrors.selectedPriceListId)}
             />
             <FieldError message={fieldErrors.selectedPriceListId} />
@@ -1510,7 +1510,7 @@ export function OrderForm({
                         sepidarProductsOnly && !selectedCustomerId
                           ? "ابتدا مشتری را انتخاب کنید."
                           : requiresPriceListSelection && !selectedPriceListId
-                            ? "ابتدا لیست قیمت را انتخاب کنید."
+                            ? "ابتدا روش پرداخت را انتخاب کنید."
                           : "انتخاب کالا"
                       }
                       searchPlaceholder="جستجو در کالاها"
@@ -1561,8 +1561,8 @@ export function OrderForm({
                       }
                     />
                     <ReadonlyValueInput
-                      label="لیست قیمت"
-                      value={product?.priceListTitle || product?.priceListId || "-"}
+                      label="روش پرداخت"
+                      value={product?.priceListTitle || product?.priceListId || ""}
                     />
                   </div>
                   <FieldError
@@ -1911,7 +1911,7 @@ function productIdentityLabel(product: Product): string {
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",
-    product.priceListConflict ? "تداخل لیست قیمت" : "",
+    product.priceListConflict ? "تداخل روش پرداخت" : "",
   ]
     .filter(Boolean)
     .join(" - ");

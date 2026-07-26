@@ -133,7 +133,7 @@ export default function NajaDashboardPage() {
                       </p>
                       {order.saleTypeTitle ? (
                         <p className="mt-1 text-xs text-[#7C8A9C]">
-                          لیست قیمت: {order.priceListTitle || order.saleTypeTitle || "-"}
+                          {(order.priceListTitle || order.saleTypeTitle) ? `روش پرداخت: ${order.priceListTitle || order.saleTypeTitle}` : null}
                         </p>
                       ) : null}
                     </div>

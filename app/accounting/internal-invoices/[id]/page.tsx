@@ -223,7 +223,7 @@ export default function InternalInvoiceDetailPage() {
                 value={invoice.customerAddress || "-"}
               />
               <Info label="انبار خروج" value={invoice.stockTitle || "-"} />
-              <Info label="لیست قیمت" value={invoice.priceListTitle || invoice.saleTypeTitle || "-"} />
+              {(invoice.priceListTitle || invoice.saleTypeTitle) ? <Info label="روش پرداخت" value={invoice.priceListTitle || invoice.saleTypeTitle || ""} /> : null}
               <Info
                 label="تاریخ فاکتور"
                 value={formatDateTime(invoice.invoiceDate || invoice.createdAt)}

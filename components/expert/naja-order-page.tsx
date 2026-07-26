@@ -199,7 +199,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
         label: [
           customer.sepidarCustomerCode || customer.id,
           customer.fullName,
-          customer.saleType?.title ? `لیست قیمت: ${customer.saleType.title}` : "",
+          customer.saleType?.title ? `روش پرداخت: ${customer.saleType.title}` : "",
         ]
           .filter(Boolean)
           .join(" - "),
@@ -257,8 +257,8 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
     }
     if (selectedProduct && selectedProduct.unitPrice <= 0) {
       nextErrors.productId = selectedProduct.priceListConflict
-        ? "این کالا در چند لیست قیمت انتخابی وجود دارد."
-        : "قیمت کالا برای این لیست قیمت ثبت نشده است.";
+        ? "این کالا در چند روش پرداخت انتخابی وجود دارد."
+        : "قیمت کالا برای این روش پرداخت ثبت نشده است.";
     }
     if (!createdByName.trim()) {
       nextErrors.createdByName = "این فیلد الزامی است.";
@@ -373,7 +373,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
                       : "-"}
                   </span>
                   <span>
-                    لیست قیمت: {selectedCustomer.priceListTitle || selectedCustomer.saleType?.title || "-"}
+                    {selectedCustomer.priceListTitle || selectedCustomer.saleType?.title ? `روش پرداخت: ${selectedCustomer.priceListTitle || selectedCustomer.saleType?.title}` : null}
                   </span>
                   <span className="sm:col-span-3">
                     آدرس مرکز:{" "}
@@ -459,7 +459,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
                     }
                   />
                   <ReadonlyValueInput
-                    label="لیست قیمت"
+                    label="روش پرداخت"
                     value={selectedProduct?.priceListTitle || selectedProduct?.priceListId || "-"}
                   />
                 </div>
@@ -677,7 +677,7 @@ function productIdentityLabel(product: Product): string {
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",
-    product.priceListConflict ? "تداخل لیست قیمت" : "",
+    product.priceListConflict ? "تداخل روش پرداخت" : "",
   ]
     .filter(Boolean)
     .join(" - ");
