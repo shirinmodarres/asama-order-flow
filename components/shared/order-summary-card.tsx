@@ -50,10 +50,10 @@ export function OrderSummaryCard({
         <SummaryRow label="جمع تعداد" value={formatNumber(totalQuantity)} />
         <SummaryRow label="مبلغ تقریبی" value={formatCurrency(totalAmount)} />
         <PaymentMethodRow value={saleTypeTitle} />
-        <SummaryRow
+        {/* <SummaryRow
           label="انبارهای مجاز"
           value={stockTitles.length ? stockTitles.join("، ") : "-"}
-        />
+        /> */}
         <SummaryRow label="وضعیت سفارش" value={getOrderStatusLabel(status)} />
         <SummaryRow
           label="وضعیت انبار"

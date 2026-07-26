@@ -211,7 +211,7 @@ export default function ExitSlipDetailsPage() {
               />
             </dl>
           </section>
-          {isNajaOrder ? (
+          {hasRecipientInfo(slip, resolvedRecipient) ? (
             <section className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
               <h3 className="text-base font-semibold text-[#1F3A5F]">
                 اطلاعات تحویل‌گیرنده ناجا
@@ -247,7 +247,8 @@ export default function ExitSlipDetailsPage() {
                 />
               </dl>
             </section>
-          ) : (
+          ) : null}
+          {!isNajaOrder && hasRecipientInfo(slip, resolvedRecipient) ? (
             <section className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
               <h3 className="text-base font-semibold text-[#1F3A5F]">
                 اطلاعات گیرنده و تحویل
@@ -277,7 +278,7 @@ export default function ExitSlipDetailsPage() {
                 </div>
               </dl>
             </section>
-          )}
+          ) : null}
           {slip.items.length > 0 ? (
             <ExitSlipProductGroups items={slip.items} />
           ) : null}
@@ -305,5 +306,17 @@ function InfoItem({
         {value}
       </dd>
     </div>
+  );
+}
+
+function hasRecipientInfo(
+  slip: { receiverFullName?: string | null; receiverPhone?: string | null },
+  recipient: { fullName?: string | null; mobile?: string | null } | null,
+): boolean {
+  return Boolean(
+    recipient?.fullName ||
+      recipient?.mobile ||
+      slip.receiverFullName ||
+      slip.receiverPhone,
   );
 }

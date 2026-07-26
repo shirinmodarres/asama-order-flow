@@ -93,6 +93,7 @@ export interface OrderFormSubmitPayload {
   recipientFirstName?: string;
   recipientLastName?: string;
   recipientNationalId?: string;
+  recipientMobile?: string;
   najaOrderNumber?: string;
   najaPurchaseDate?: string | null;
   notes?: string;
@@ -167,6 +168,9 @@ export function OrderForm({
   );
   const [recipientNationalId, setRecipientNationalId] = useState(
     initialOrder?.recipientNationalId ?? "",
+  );
+  const [recipientMobile, setRecipientMobile] = useState(
+    initialOrder?.recipientMobile ?? "",
   );
   const [najaOrderNumber, setNajaOrderNumber] = useState(
     initialOrder?.najaOrderNumber ?? initialOrder?.externalOrderNumber ?? "",
@@ -927,13 +931,14 @@ export function OrderForm({
           effectiveSelectedAddress?.pathRef ?? resolvedMainAddress?.pathRef ?? null,
         customerAddressIsMain:
           effectiveSelectedAddress?.isMain ?? resolvedMainAddress?.isMain ?? false,
+        recipientFirstName: recipientFirstName.trim(),
+        recipientLastName: recipientLastName.trim(),
+        recipientNationalId: normalizeDigits(
+          recipientNationalId.trim(),
+        ),
+        recipientMobile: normalizeDigits(recipientMobile.trim()),
         ...(initialOrder?.orderType === "naja"
           ? {
-              recipientFirstName: recipientFirstName.trim(),
-              recipientLastName: recipientLastName.trim(),
-              recipientNationalId: normalizeDigits(
-                recipientNationalId.trim(),
-              ),
               najaOrderNumber: normalizeDigits(najaOrderNumber.trim()),
               najaPurchaseDate: najaPurchaseDate || null,
             }
@@ -1226,105 +1231,128 @@ export function OrderForm({
           </div>
         ) : null}
 
-        {isNajaOrder ? (
-          <div className="mt-5 rounded-xl border border-[#E7EDF3] bg-[#FBFCFD] p-4">
-            <div>
-              <h3 className="text-base font-semibold text-[#102034]">
-                مصرف‌کننده نهایی
-              </h3>
-              <p className="mt-1 text-sm leading-7 text-[#6B7280]">
-                این شخص خریدار نهایی از مرکز ناجا است و با مرکز انتخاب‌شده تفاوت دارد.
-              </p>
-            </div>
+        <div className="mt-5 rounded-xl border border-[#E7EDF3] bg-[#FBFCFD] p-4">
+          <div>
+            <h3 className="text-base font-semibold text-[#102034]">
+              {isNajaOrder ? "مصرف‌کننده نهایی" : "اطلاعات تحویل‌گیرنده"}
+            </h3>
+            <p className="mt-1 text-sm leading-7 text-[#6B7280]">
+              {isNajaOrder
+                ? "این شخص خریدار نهایی از مرکز ناجا است و با مرکز انتخاب‌شده تفاوت دارد."
+                : "در صورت نیاز، اطلاعات تحویل‌گیرنده را برای سفارش ثبت کنید."}
+            </p>
+          </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 text-sm font-medium text-[#334155]">
-                <span>نام</span>
-                <Input
-                  value={recipientFirstName}
-                  onChange={(event) => {
-                    setRecipientFirstName(event.target.value);
-                    setFieldErrors((current) => ({
-                      ...current,
-                      recipientFirstName: "",
-                    }));
-                  }}
-                  aria-invalid={Boolean(fieldErrors.recipientFirstName)}
-                />
-                <FieldError message={fieldErrors.recipientFirstName} />
-              </label>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>نام</span>
+              <Input
+                value={recipientFirstName}
+                onChange={(event) => {
+                  setRecipientFirstName(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    recipientFirstName: "",
+                  }));
+                }}
+                aria-invalid={Boolean(fieldErrors.recipientFirstName)}
+              />
+              <FieldError message={fieldErrors.recipientFirstName} />
+            </label>
 
-              <label className="grid gap-2 text-sm font-medium text-[#334155]">
-                <span>نام خانوادگی</span>
-                <Input
-                  value={recipientLastName}
-                  onChange={(event) => {
-                    setRecipientLastName(event.target.value);
-                    setFieldErrors((current) => ({
-                      ...current,
-                      recipientLastName: "",
-                    }));
-                  }}
-                  aria-invalid={Boolean(fieldErrors.recipientLastName)}
-                />
-                <FieldError message={fieldErrors.recipientLastName} />
-              </label>
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>نام خانوادگی</span>
+              <Input
+                value={recipientLastName}
+                onChange={(event) => {
+                  setRecipientLastName(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    recipientLastName: "",
+                  }));
+                }}
+                aria-invalid={Boolean(fieldErrors.recipientLastName)}
+              />
+              <FieldError message={fieldErrors.recipientLastName} />
+            </label>
 
-              <label className="grid gap-2 text-sm font-medium text-[#334155]">
-                <span>کد ملی</span>
-                <Input
-                  inputMode="numeric"
-                  value={recipientNationalId}
-                  onChange={(event) => {
-                    setRecipientNationalId(event.target.value);
-                    setFieldErrors((current) => ({
-                      ...current,
-                      recipientNationalId: "",
-                    }));
-                  }}
-                  aria-invalid={Boolean(fieldErrors.recipientNationalId)}
-                />
-                <FieldError message={fieldErrors.recipientNationalId} />
-              </label>
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>کد ملی</span>
+              <Input
+                inputMode="numeric"
+                value={recipientNationalId}
+                onChange={(event) => {
+                  setRecipientNationalId(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    recipientNationalId: "",
+                  }));
+                }}
+                aria-invalid={Boolean(fieldErrors.recipientNationalId)}
+              />
+              <FieldError message={fieldErrors.recipientNationalId} />
+            </label>
 
-              <div className="mt-2 border-t border-[#E5E7EB] pt-4 md:col-span-2">
-                <h3 className="text-base font-semibold text-[#102034]">
-                  اطلاعات سفارش
-                </h3>
-              </div>
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>موبایل تحویل‌گیرنده</span>
+              <Input
+                inputMode="numeric"
+                value={recipientMobile}
+                onChange={(event) => {
+                  setRecipientMobile(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    recipientMobile: "",
+                  }));
+                }}
+                aria-invalid={Boolean(fieldErrors.recipientMobile)}
+              />
+              <FieldError message={fieldErrors.recipientMobile} />
+            </label>
 
-              <label className="grid gap-2 text-sm font-medium text-[#334155] md:col-span-2">
-                <span>شماره سفارش ناجا</span>
-                <Input
-                  inputMode="numeric"
-                  value={najaOrderNumber}
-                  onChange={(event) => {
-                    setNajaOrderNumber(event.target.value);
-                    setFieldErrors((current) => ({
-                      ...current,
-                      najaOrderNumber: "",
-                    }));
-                  }}
-                  aria-invalid={Boolean(fieldErrors.najaOrderNumber)}
-                />
-                <FieldError message={fieldErrors.najaOrderNumber} />
-              </label>
+            {isNajaOrder ? (
+              <>
+                <div className="mt-2 border-t border-[#E5E7EB] pt-4 md:col-span-2">
+                  <h3 className="text-base font-semibold text-[#102034]">
+                    اطلاعات سفارش
+                  </h3>
+                </div>
 
-              <div className="md:col-span-2">
-                <JalaliDateInput
-                  label="تاریخ سفارش"
-                  value={najaPurchaseDate}
-                  onChange={setNajaPurchaseDate}
-                  placeholder="انتخاب تاریخ سفارش"
-                />
-              </div>
-            </div>
+                <label className="grid gap-2 text-sm font-medium text-[#334155] md:col-span-2">
+                  <span>شماره سفارش ناجا</span>
+                  <Input
+                    inputMode="numeric"
+                    value={najaOrderNumber}
+                    onChange={(event) => {
+                      setNajaOrderNumber(event.target.value);
+                      setFieldErrors((current) => ({
+                        ...current,
+                        najaOrderNumber: "",
+                      }));
+                    }}
+                    aria-invalid={Boolean(fieldErrors.najaOrderNumber)}
+                  />
+                  <FieldError message={fieldErrors.najaOrderNumber} />
+                </label>
 
+                <div className="md:col-span-2">
+                  <JalaliDateInput
+                    label="تاریخ سفارش"
+                    value={najaPurchaseDate}
+                    onChange={setNajaPurchaseDate}
+                    placeholder="انتخاب تاریخ سفارش"
+                  />
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {isNajaOrder ? (
             <div className="mt-4 rounded-xl border border-[#E5E7EB] bg-white p-3 text-xs leading-6 text-[#64748B]">
               <p>آدرس مرکز ناجا: {initialOrder?.customerAddress || "-"}</p>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
 
         <div className="mt-6 flex items-start justify-between gap-4">
           <div>

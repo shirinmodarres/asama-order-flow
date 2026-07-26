@@ -322,6 +322,12 @@ export function mapOrderDto(dto: unknown): Order {
         : toNumberValue(record.reviewRemainingMs),
     sourceLabel: toNullableString(record.sourceLabel),
     notes: toNullableString(record.notes),
+    editedByUserId: toNullableString(record.editedByUserId),
+    editedByName: toNullableString(record.editedByName),
+    editedAt: toNullableString(record.editedAt),
+    changedFields: toArray(record.changedFields)
+      .map(toStringValue)
+      .filter(Boolean),
     cancelReasonCode,
     cancelReasonLabel:
       toNullableString(record.cancelReasonLabel) ||

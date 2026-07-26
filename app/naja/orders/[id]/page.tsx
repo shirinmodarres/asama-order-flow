@@ -200,30 +200,34 @@ export default function NajaOrderDetailsPage() {
                 label="آدرس مشتری"
                 value={order.deliveryFullAddress || "-"}
               />
-              <InfoItem
-                label="نام و نام خانوادگی تحویل‌گیرنده"
-                value={
-                  [order.recipientFirstName, order.recipientLastName]
-                    .filter(Boolean)
-                    .join(" ") || "-"
-                }
-              />
-              <InfoItem
-                label="کد ملی تحویل‌گیرنده"
-                value={
-                  order.recipientNationalId
-                    ? formatFaDigits(order.recipientNationalId)
-                    : "-"
-                }
-              />
-              <InfoItem
-                label="شماره موبایل تحویل‌گیرنده"
-                value={
-                  order.recipientMobile
-                    ? formatFaDigits(order.recipientMobile)
-                    : "-"
-                }
-              />
+              {hasRecipientInfo(order) ? (
+                <>
+                  <InfoItem
+                    label="نام و نام خانوادگی تحویل‌گیرنده"
+                    value={
+                      [order.recipientFirstName, order.recipientLastName]
+                        .filter(Boolean)
+                        .join(" ") || "-"
+                    }
+                  />
+                  <InfoItem
+                    label="کد ملی تحویل‌گیرنده"
+                    value={
+                      order.recipientNationalId
+                        ? formatFaDigits(order.recipientNationalId)
+                        : "-"
+                    }
+                  />
+                  <InfoItem
+                    label="شماره موبایل تحویل‌گیرنده"
+                    value={
+                      order.recipientMobile
+                        ? formatFaDigits(order.recipientMobile)
+                        : "-"
+                    }
+                  />
+                </>
+              ) : null}
               <InfoItem
                 label="شماره سفارش"
                 value={
@@ -324,4 +328,13 @@ function getQuotationStatusLabel(order: Order): string {
   }
 
   return "ثبت نشده";
+}
+
+function hasRecipientInfo(order: Order): boolean {
+  return Boolean(
+    order.recipientFirstName ||
+      order.recipientLastName ||
+      order.recipientNationalId ||
+      order.recipientMobile,
+  );
 }

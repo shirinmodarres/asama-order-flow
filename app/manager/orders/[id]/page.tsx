@@ -467,30 +467,34 @@ export default function ManagerOrderReviewPage() {
                       این سفارش با روش پرداخت <strong>{order.priceListTitle}</strong> ثبت شده است.
                     </div>
                   ) : null}
-                  <InfoItem
-                    label="نام و نام خانوادگی تحویل‌گیرنده"
-                    value={
-                      [order.recipientFirstName, order.recipientLastName]
-                        .filter(Boolean)
-                        .join(" ") || "-"
-                    }
-                  />
-                  <InfoItem
-                    label="کد ملی تحویل‌گیرنده"
-                    value={
-                      order.recipientNationalId
-                        ? formatFaDigits(order.recipientNationalId)
-                        : "-"
-                    }
-                  />
-                  <InfoItem
-                    label="شماره موبایل تحویل‌گیرنده"
-                    value={
-                      order.recipientMobile
-                        ? formatFaDigits(order.recipientMobile)
-                        : "-"
-                    }
-                  />
+                  {hasRecipientInfo(order) ? (
+                    <>
+                      <InfoItem
+                        label="نام و نام خانوادگی تحویل‌گیرنده"
+                        value={
+                          [order.recipientFirstName, order.recipientLastName]
+                            .filter(Boolean)
+                            .join(" ") || "-"
+                        }
+                      />
+                      <InfoItem
+                        label="کد ملی تحویل‌گیرنده"
+                        value={
+                          order.recipientNationalId
+                            ? formatFaDigits(order.recipientNationalId)
+                            : "-"
+                        }
+                      />
+                      <InfoItem
+                        label="شماره موبایل تحویل‌گیرنده"
+                        value={
+                          order.recipientMobile
+                            ? formatFaDigits(order.recipientMobile)
+                            : "-"
+                        }
+                      />
+                    </>
+                  ) : null}
                   <InfoItem
                     label="شماره سفارش"
                     value={
@@ -1067,6 +1071,15 @@ function formatReviewRemaining(order: Order): string | null {
   return order.reviewExpiresAt
     ? `مهلت بررسی تا: ${formatDate(order.reviewExpiresAt)}`
     : null;
+}
+
+function hasRecipientInfo(order: Order): boolean {
+  return Boolean(
+    order.recipientFirstName ||
+      order.recipientLastName ||
+      order.recipientNationalId ||
+      order.recipientMobile,
+  );
 }
 
 function getQuotationStatusBadge(order: Order): ReactNode {

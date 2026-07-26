@@ -10,6 +10,10 @@ interface CustomerInfoCardProps {
     | "customerName"
     | "customerPhone"
     | "customerNationalId"
+    | "recipientFirstName"
+    | "recipientLastName"
+    | "recipientNationalId"
+    | "recipientMobile"
     | "deliveryAddressTitle"
     | "deliveryProvince"
     | "deliveryCity"
@@ -29,7 +33,13 @@ export function CustomerInfoCard({ order, hideDeliveryInfo = false }: CustomerIn
       order.customerPhone ||
       order.customerNationalId ||
       (!hideDeliveryInfo &&
-        (order.deliveryFullAddress || order.receiverFullName || order.receiverPhone)),
+        (order.deliveryFullAddress ||
+          order.receiverFullName ||
+          order.receiverPhone ||
+          order.recipientFirstName ||
+          order.recipientLastName ||
+          order.recipientNationalId ||
+          order.recipientMobile)),
   );
 
   return (
@@ -55,8 +65,35 @@ export function CustomerInfoCard({ order, hideDeliveryInfo = false }: CustomerIn
                 value={formatDeliveryAddress(order)}
                 className="sm:col-span-2"
               />
-              <InfoItem label="گیرنده بار" value={order.receiverFullName || "-"} />
-              <InfoItem label="موبایل گیرنده" value={order.receiverPhone ? formatFaDigits(order.receiverPhone) : "-"} />
+              {order.recipientFirstName ||
+              order.recipientLastName ||
+              order.recipientNationalId ||
+              order.recipientMobile ||
+              order.receiverFullName ||
+              order.receiverPhone ? (
+                <>
+                  <InfoItem
+                    label="گیرنده بار"
+                    value={
+                      [order.recipientFirstName, order.recipientLastName]
+                        .filter(Boolean)
+                        .join(" ") ||
+                      order.receiverFullName ||
+                      "-"
+                    }
+                  />
+                  <InfoItem
+                    label="موبایل گیرنده"
+                    value={
+                      order.recipientMobile
+                        ? formatFaDigits(order.recipientMobile)
+                        : order.receiverPhone
+                          ? formatFaDigits(order.receiverPhone)
+                          : "-"
+                    }
+                  />
+                </>
+              ) : null}
             </>
           ) : null}
         </dl>
