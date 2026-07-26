@@ -15,6 +15,20 @@ export function mapSalesQuotationDto(dto: unknown): SalesQuotation {
     quotationNumber: toStringValue(record.quotationNumber),
     expertObjectId: toNullableString(record.expertObjectId),
     customerObjectId: toNullableString(record.customerObjectId),
+    salesTypeObjectId: toNullableString(record.salesTypeObjectId || record.saleTypeObjectId),
+    salesTypeTitle: toNullableString(record.salesTypeTitle || record.saleTypeTitle),
+    salesTypeInternalCode:
+      record.salesTypeInternalCode === undefined || record.salesTypeInternalCode === null
+        ? (record.saleTypeCode === undefined || record.saleTypeCode === null
+          ? null
+          : toNumberValue(record.saleTypeCode))
+        : toNumberValue(record.salesTypeInternalCode),
+    salesTypeSepidarCode:
+      record.salesTypeSepidarCode === undefined || record.salesTypeSepidarCode === null
+        ? (record.sepidarSaleTypeId === undefined || record.sepidarSaleTypeId === null
+          ? null
+          : toNumberValue(record.sepidarSaleTypeId))
+        : toNumberValue(record.salesTypeSepidarCode),
     priceListObjectId: toNullableString(record.priceListObjectId || record.priceListId),
     priceListId: toNullableString(record.priceListId || record.priceListObjectId),
     priceListTitle: toNullableString(record.priceListTitle),
@@ -24,6 +38,22 @@ export function mapSalesQuotationDto(dto: unknown): SalesQuotation {
     customerPhone: toNullableString(record.customerPhone),
     customer,
     expertName: toNullableString(record.expertName),
+    salesType: record.salesType || record.salesTypeObjectId || record.salesTypeTitle ? {
+      objectId: toNullableString(record.salesTypeObjectId || record.saleTypeObjectId),
+      title: toNullableString(record.salesTypeTitle || record.saleTypeTitle),
+      internalCode:
+        record.salesTypeInternalCode === undefined || record.salesTypeInternalCode === null
+          ? (record.saleTypeCode === undefined || record.saleTypeCode === null
+            ? null
+            : toNumberValue(record.saleTypeCode))
+          : toNumberValue(record.salesTypeInternalCode),
+      sepidarCode:
+        record.salesTypeSepidarCode === undefined || record.salesTypeSepidarCode === null
+          ? (record.sepidarSaleTypeId === undefined || record.sepidarSaleTypeId === null
+            ? null
+            : toNumberValue(record.sepidarSaleTypeId))
+          : toNumberValue(record.salesTypeSepidarCode),
+    } : null,
     status: normalizeStatus(record.status),
     subtotal: toNumberValue(record.subtotal),
     discountPercentage: toNumberValue(record.discountPercentage),

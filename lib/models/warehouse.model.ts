@@ -212,6 +212,7 @@ export interface ExitSlip {
 export interface ExitSlipPdfData {
   companyName: string;
   slipCode: string;
+  receiptCode: string | null;
   orderCode: string;
   issueDate: string | null;
   customer: {

@@ -469,6 +469,7 @@ export function mapExitSlipPdfDataDto(dto: unknown): ExitSlipPdfData {
   return {
     companyName: toStringValue(record.companyName) || "آساما",
     slipCode: normalizeDigits(toStringValue(record.slipCode)),
+    receiptCode: toNullableString(record.receiptCode),
     orderCode: normalizeDigits(toStringValue(record.orderCode)),
     issueDate: toNullableString(record.issueDate),
     customer: {

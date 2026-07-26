@@ -109,7 +109,7 @@ export default function SalesQuotationPdfPage() {
       <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
         <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
           <Image
-            src="/A4 - 2.jpg"
+            src="/A4 - 2.svg"
             alt="Asama Letterhead"
             fill
             priority
@@ -228,7 +228,7 @@ export default function SalesQuotationPdfPage() {
                 <p className="whitespace-pre-wrap text-[9px] leading-5 text-[#334155]">
                   {quotation.notes || "-"}
                 </p>
-                <p className="mt-2 text-[9px] leading-5 text-[#334155]">
+                <p className="mt-2 text-[9px] leading-5 text-[#334155] font-bold">
                   این پیش‌فاکتور تا تاریخ{" "}
                   {quotation.validUntil ? formatQuotationDate(quotation.validUntil) : "-"}{" "}
                   معتبر بوده و پس از آن نیازمند استعلام مجدد قیمت می‌باشد.

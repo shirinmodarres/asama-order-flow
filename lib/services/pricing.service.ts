@@ -98,6 +98,11 @@ export async function listGeneratedPriceLists(params?: {
   return mapList(data, mapPriceListDto);
 }
 
+export async function listActivePriceLists(): Promise<PriceList[]> {
+  const data = await httpClient.get<unknown>("/api/pricing/active-price-lists");
+  return mapList(data, mapPriceListDto);
+}
+
 export async function getGeneratedPriceList(objectId: string): Promise<PriceList> {
   const data = await httpClient.get<unknown>(
     `/api/pricing/generated-price-lists/${objectId}`,

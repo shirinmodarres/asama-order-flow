@@ -30,6 +30,16 @@ export interface Order {
   orderType: OrderType;
   createdByName?: string | null;
   expertUserId?: string | null;
+  salesTypeObjectId: string | null;
+  salesTypeTitle: string | null;
+  salesTypeInternalCode: number | null;
+  salesTypeSepidarCode: number | null;
+  salesType: {
+    objectId: string | null;
+    title: string | null;
+    internalCode: number | null;
+    sepidarCode: number | null;
+  } | null;
   customerName: string | null;
   customer: Customer | null;
   customerObjectId: string | null;
@@ -140,6 +150,7 @@ export interface CreateOrderPayload {
   customerName?: string;
   createdByName?: string;
   expertUserId?: string;
+  salesTypeObjectId?: string;
   customerObjectId?: string;
   customerAddressObjectId?: string;
   saleTypeObjectId?: string;
