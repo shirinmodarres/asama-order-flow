@@ -122,15 +122,16 @@ export default function ExitSlipPdfPage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 10mm 12mm;
+            margin: 16mm 18mm;
           }
           html,
           body {
-            width: 210mm;
+            width: 100%;
             min-height: 297mm;
             margin: 0 !important;
             background: white !important;
             overflow: visible !important;
+            box-sizing: border-box !important;
           }
           .no-print {
             display: none !important;
@@ -138,7 +139,8 @@ export default function ExitSlipPdfPage() {
           .pdf-page {
             box-shadow: none !important;
             border: 0 !important;
-            width: 100% !important;
+            width: auto !important;
+            margin: 0 !important;
             min-height: 297mm !important;
             border-radius: 0 !important;
             overflow: visible !important;
@@ -166,6 +168,7 @@ export default function ExitSlipPdfPage() {
             width: 100% !important;
             table-layout: fixed !important;
             box-sizing: border-box !important;
+            margin-inline: 0 !important;
           }
           .print-root {
             font-size: 11px !important;
