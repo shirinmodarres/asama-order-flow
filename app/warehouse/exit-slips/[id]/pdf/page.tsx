@@ -8,7 +8,10 @@ import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDateTime, formatNumber } from "@/lib/expert/utils";
 import type { ExitSlipPdfData } from "@/lib/models/warehouse.model";
 import { getExitSlipPdfData } from "@/lib/services/warehouse.service";
-import { resolveExitSlipPdfCustomer, resolveExitSlipPdfRecipient } from "@/lib/utils/exit-slip-customer";
+import {
+  resolveExitSlipPdfCustomer,
+  resolveExitSlipPdfRecipient,
+} from "@/lib/utils/exit-slip-customer";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
 function hasText(value: string | null | undefined): boolean {
@@ -35,8 +38,22 @@ export default function ExitSlipPdfPage() {
             window.setTimeout(async () => {
               try {
                 await document.fonts?.ready;
+                await Promise.all(
+                  Array.from(document.images).map((image) =>
+                    image.complete
+                      ? Promise.resolve()
+                      : new Promise<void>((resolve) => {
+                          image.addEventListener("load", () => resolve(), {
+                            once: true,
+                          });
+                          image.addEventListener("error", () => resolve(), {
+                            once: true,
+                          });
+                        }),
+                  ),
+                );
               } catch {
-                // Ignore font-loading issues and still print.
+                // Ignore font or image wait issues and still print.
               }
               if (isMounted) window.print();
             }, 250);
@@ -84,35 +101,17 @@ export default function ExitSlipPdfPage() {
         ];
       }
 
-        return item.units.map((unit, index) => ({
-          key:
-            unit.unitObjectId ||
-            `${item.productObjectId || item.productSku}-${index}`,
-          productName: item.productName,
-          productSku: item.productSku,
-          productIdentifier: unit.productIdentifier,
-          serialNumber: unit.serialNumber,
-          trackingCode: unit.trackingCode,
-        }));
+      return item.units.map((unit, index) => ({
+        key:
+          unit.unitObjectId ||
+          `${item.productObjectId || item.productSku}-${index}`,
+        productName: item.productName,
+        productSku: item.productSku,
+        productIdentifier: unit.productIdentifier,
+        serialNumber: unit.serialNumber,
+        trackingCode: unit.trackingCode,
+      }));
     }) ?? [];
-
-  useEffect(() => {
-    if (
-      process.env.NODE_ENV !== "development" ||
-      !data ||
-      !resolvedCustomer ||
-      !resolvedRecipient
-    ) {
-      return;
-    }
-
-    console.log("[EXIT_SLIP_CUSTOMER_DATA]", {
-      exitSlip: data,
-      order: data.order,
-      resolvedCustomer,
-      resolvedRecipient,
-    });
-  }, [data, resolvedCustomer, resolvedRecipient]);
 
   return (
     <main
@@ -123,7 +122,7 @@ export default function ExitSlipPdfPage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 8mm;
+            margin: 10mm 12mm;
           }
           html,
           body {
@@ -131,6 +130,7 @@ export default function ExitSlipPdfPage() {
             min-height: 297mm;
             margin: 0 !important;
             background: white !important;
+            overflow: visible !important;
           }
           .no-print {
             display: none !important;
@@ -138,10 +138,17 @@ export default function ExitSlipPdfPage() {
           .pdf-page {
             box-shadow: none !important;
             border: 0 !important;
-            width: 210mm !important;
+            width: 100% !important;
             min-height: 297mm !important;
             border-radius: 0 !important;
             overflow: visible !important;
+            box-sizing: border-box !important;
+            break-after: page;
+            page-break-after: always;
+          }
+          .pdf-page:last-child {
+            break-after: auto;
+            page-break-after: auto;
           }
           .print-content {
             padding: 0 !important;
@@ -152,32 +159,25 @@ export default function ExitSlipPdfPage() {
             break-inside: avoid;
             page-break-inside: avoid;
           }
-          .detail-page {
-            break-before: page;
-            page-break-before: always;
-          }
-          .print-section {
-            overflow: visible !important;
-          }
-          .summary-table tbody tr,
-          .detail-table tbody tr {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
           .items-table thead {
             display: table-header-group;
           }
+          .items-table {
+            width: 100% !important;
+            table-layout: fixed !important;
+            box-sizing: border-box !important;
+          }
           .print-root {
-            font-size: 10.5px !important;
-            line-height: 1.8 !important;
+            font-size: 11px !important;
+            line-height: 1.9 !important;
           }
           .print-root .customer-info,
           .print-root .recipient-info {
-            font-size: 9.5px !important;
+            font-size: 10px !important;
           }
           .print-root .summary-table,
           .print-root .detail-table {
-            font-size: 9px !important;
+            font-size: 9.5px !important;
           }
           .print-root .serial-cell,
           .print-root .tracking-cell {
@@ -192,257 +192,288 @@ export default function ExitSlipPdfPage() {
         </Button>
       </div>
 
-      <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-visible rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
-        <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
-          <Image
-            src="/A4 - 2.svg"
-            alt="Asama Letterhead"
-            fill
-            priority
-            sizes="148mm"
-            className="object-cover"
-          />
-        </div>
-
-        <div className="print-content print-root relative z-10 px-5 pb-5 pt-4">
-          {isLoading ? (
-            <p className="text-sm text-[#6B7280]">
-              در حال دریافت اطلاعات حواله...
-            </p>
-          ) : error ? (
-            <p className="text-sm text-[#B91C1C]">{error}</p>
-          ) : !data ? (
-            <p className="text-sm text-[#6B7280]">اطلاعات حواله یافت نشد.</p>
-          ) : (
+      {isLoading ? (
+        <p className="text-sm text-[#6B7280]">در حال دریافت اطلاعات حواله...</p>
+      ) : error ? (
+        <p className="text-sm text-[#B91C1C]">{error}</p>
+      ) : !data ? (
+        <p className="text-sm text-[#6B7280]">اطلاعات حواله یافت نشد.</p>
+      ) : (
+        <div className="space-y-4">
+          <PdfPage>
             <div className="space-y-3 text-[10px] leading-5">
-              <header className="relative flex justify-between min-h-20">
-                <div className="absolute left-0 top-0 border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[8.5px] leading-5 text-[#334155]">
-                  <InlineInfo
-                    label="کد حواله"
-                    value={formatFaDigits(data.slipCode) || "-"}
-                  />
-                  <InlineInfo
-                    label="کد سفارش"
-                    value={formatFaDigits(data.orderCode) || "-"}
-                  />
-                  <InlineInfo
-                    label="تاریخ صدور"
-                    value={
-                      data.issueDate ? formatDateTime(data.issueDate) : "-"
-                    }
-                  />
-                </div>
-              </header>
-
-              <div className="flex justify-center">
-                <div className="bg-white/95 px-6 py-1">
-                  <h1 className="text-lg font-bold text-[#102034]">
-                    حواله خروج کالا
-                  </h1>
-                </div>
-              </div>
-
-              <section className="print-section customer-info rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-                <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
-                  اطلاعات مرکز / مشتری سپیدار
-                </h2>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
-                  <InlineInfo
-                    label="نام مشتری/مرکز"
-                    value={resolvedCustomer?.name || "-"}
-                  />
-                  <InlineInfo
-                    label="کد مشتری سپیدار"
-                    value={
-                      resolvedCustomer?.sepidarCustomerCode
-                        ? formatFaDigits(resolvedCustomer.sepidarCustomerCode)
-                        : "-"
-                    }
-                  />
-                  <InlineInfo
-                    label="موبایل/تلفن"
-                    value={
-                      resolvedCustomer?.phone
-                        ? formatFaDigits(resolvedCustomer.phone)
-                        : "-"
-                    }
-                  />
-                  <InlineInfo
-                    label="آدرس"
-                    value={resolvedCustomer?.address || "-"}
-                    className="col-span-2"
-                  />
-                </dl>
-              </section>
-
+              <HeaderBlock data={data} />
+              <TitleBlock />
+              <CustomerBlock customer={resolvedCustomer} />
               {hasRecipientName ? (
-                <section className="print-section recipient-info rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-                  <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
-                    اطلاعات تحویل‌گیرنده ناجا
-                  </h2>
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
-                    <InlineInfo
-                      label="نام و نام خانوادگی"
-                      value={resolvedRecipient?.fullName || "-"}
-                    />
-                    <InlineInfo
-                      label="کد ملی"
-                      value={
-                        resolvedRecipient?.nationalId
-                          ? formatFaDigits(resolvedRecipient.nationalId)
-                          : "-"
-                      }
-                    />
-                    <InlineInfo
-                      label="موبایل"
-                      value={
-                        resolvedRecipient?.mobile
-                          ? formatFaDigits(resolvedRecipient.mobile)
-                          : "-"
-                      }
-                    />
-                    <InlineInfo
-                      label="شماره سفارش ناجا"
-                      value={
-                        resolvedRecipient?.najaOrderNumber
-                          ? formatFaDigits(resolvedRecipient.najaOrderNumber)
-                          : "-"
-                      }
-                    />
-                  </dl>
-                </section>
+                <RecipientBlock recipient={resolvedRecipient} />
               ) : hasText(data.receiver.fullName) ? (
-                <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-                  <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
-                    اطلاعات تحویل
-                  </h2>
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
-                    <InlineInfo
-                      label="گیرنده بار"
-                      value={data.receiver.fullName || "-"}
-                    />
-                    <InlineInfo
-                      label="موبایل گیرنده"
-                      value={
-                        data.receiver.phone
-                          ? formatFaDigits(data.receiver.phone)
-                          : "-"
-                      }
-                    />
-                    <InlineInfo
-                      label="آدرس تحویل"
-                      value={
-                        data.deliveryAddress.formatted ||
-                        data.deliveryAddress.fullAddress ||
-                        "-"
-                      }
-                      className="col-span-2"
-                    />
-                  </dl>
-                </section>
+                <DeliveryBlock data={data} />
               ) : null}
-
-              <section className="print-section rounded-md border border-[#94A3B8] bg-white/95">
-                <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
-                  خلاصه کالاها
-                </h2>
-                <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
-                  <thead>
-                    <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
-                      <TableHeader className="w-6">ردیف</TableHeader>
-                      <TableHeader>نام کالا</TableHeader>
-                      <TableHeader className="w-16">تعداد</TableHeader>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {summaryRows.map((row, index) => (
-                      <tr
-                        key={row.key}
-                        className="print-table-row border-t border-[#CBD5E1]"
-                      >
-                        <TableCell>{formatNumber(index + 1)}</TableCell>
-                        <TableCell>{row.productName || "-"}</TableCell>
-                        <TableCell>{formatNumber(row.quantity)}</TableCell>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-
-              <section className="detail-page print-section rounded-md border border-[#94A3B8] bg-white/95">
-                <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
-                  جزئیات اقلام
-                </h2>
-                <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
-                  <thead>
-                    <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
-                      <TableHeader className="w-6">ردیف</TableHeader>
-                      <TableHeader className="w-[28%]">نام کالا</TableHeader>
-                      <TableHeader className="w-[16%]">کد کالا</TableHeader>
-                      <TableHeader className="w-[22%]">سریال</TableHeader>
-                      <TableHeader className="w-[22%]">کد رهگیری</TableHeader>
-                      <TableHeader className="w-[12%]">شناسه</TableHeader>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detailRows.map((row, index) => (
-                      <tr
-                        key={row.key}
-                        className="print-table-row border-t border-[#CBD5E1]"
-                      >
-                        <TableCell>{formatNumber(index + 1)}</TableCell>
-                        <TableCell>{row.productName || "-"}</TableCell>
-                        <TableCell>
-                          {row.productSku
-                            ? formatFaDigits(row.productSku)
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="serial-cell">
-                          {row.serialNumber
-                            ? formatFaDigits(row.serialNumber)
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="tracking-cell">
-                          {row.trackingCode
-                            ? formatFaDigits(row.trackingCode)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {row.productIdentifier
-                            ? formatFaDigits(row.productIdentifier)
-                            : "-"}
-                        </TableCell>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-
+              <SummaryTable rows={summaryRows} />
               {hasText(data.deliveryCode) || hasText(data.notes) ? (
-                <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
-                    {hasText(data.deliveryCode) ? (
-                      <InlineInfo
-                        label="کد تأیید دریافت"
-                        value={formatFaDigits(data.deliveryCode || "")}
-                      />
-                    ) : null}
-                    {hasText(data.notes) ? (
-                      <InlineInfo label="توضیحات" value={data.notes || ""} />
-                    ) : null}
-                  </dl>
-                </section>
+                <NotesBlock deliveryCode={data.deliveryCode} notes={data.notes} />
               ) : null}
+            </div>
+          </PdfPage>
 
+          <PdfPage forcePageBreak>
+            <div className="space-y-3 text-[10px] leading-5">
+              <HeaderBlock data={data} />
+              <TitleBlock />
+              <DetailTable rows={detailRows} />
               <footer className="grid grid-cols-2 gap-8 pt-7">
                 <Signature label="امضای انباردار" />
                 <Signature label="امضای تحویل‌گیرنده" />
               </footer>
             </div>
-          )}
+          </PdfPage>
         </div>
-      </section>
+      )}
     </main>
+  );
+}
+
+function PdfPage({
+  children,
+  forcePageBreak = false,
+}: {
+  children: React.ReactNode;
+  forcePageBreak?: boolean;
+}) {
+  return (
+    <section
+      className={`pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-visible rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${
+        forcePageBreak ? "detail-page" : ""
+      }`}
+    >
+      <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
+        <Image
+          src="/A4 - 2.svg"
+          alt="Asama Letterhead"
+          fill
+          priority
+          sizes="210mm"
+          className="object-cover"
+        />
+      </div>
+      <div className="print-content print-root relative z-10 px-5 pb-5 pt-4">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function HeaderBlock({ data }: { data: ExitSlipPdfData }) {
+  return (
+    <header className="relative flex justify-between min-h-20">
+      <div className="absolute left-0 top-0 border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[9px] leading-5 text-[#334155]">
+        <InlineInfo label="کد حواله" value={formatFaDigits(data.slipCode) || "-"} />
+        <InlineInfo label="کد سفارش" value={formatFaDigits(data.orderCode) || "-"} />
+        <InlineInfo
+          label="تاریخ صدور"
+          value={data.issueDate ? formatDateTime(data.issueDate) : "-"}
+        />
+      </div>
+    </header>
+  );
+}
+
+function TitleBlock() {
+  return (
+    <div className="flex justify-center">
+      <div className="bg-white/95 px-6 py-1">
+        <h1 className="text-lg font-bold text-[#102034]">حواله خروج کالا</h1>
+      </div>
+    </div>
+  );
+}
+
+function CustomerBlock({
+  customer,
+}: {
+  customer: ReturnType<typeof resolveExitSlipPdfCustomer> | null;
+}) {
+  return (
+    <section className="print-section customer-info rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
+        اطلاعات مرکز / مشتری سپیدار
+      </h2>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+        <InlineInfo label="نام مشتری/مرکز" value={customer?.name || "-"} />
+        <InlineInfo
+          label="کد دریافت"
+          value={customer?.sepidarCustomerCode ? formatFaDigits(customer.sepidarCustomerCode) : "-"}
+        />
+        <InlineInfo
+          label="موبایل/تلفن"
+          value={customer?.phone ? formatFaDigits(customer.phone) : "-"}
+        />
+        <InlineInfo
+          label="آدرس"
+          value={customer?.address || "-"}
+          className="col-span-2"
+        />
+      </dl>
+    </section>
+  );
+}
+
+function RecipientBlock({
+  recipient,
+}: {
+  recipient: ReturnType<typeof resolveExitSlipPdfRecipient> | null;
+}) {
+  return (
+    <section className="print-section recipient-info rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
+        اطلاعات تحویل‌گیرنده ناجا
+      </h2>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+        <InlineInfo label="نام و نام خانوادگی" value={recipient?.fullName || "-"} />
+        <InlineInfo
+          label="کد ملی"
+          value={recipient?.nationalId ? formatFaDigits(recipient.nationalId) : "-"}
+        />
+        <InlineInfo
+          label="موبایل"
+          value={recipient?.mobile ? formatFaDigits(recipient.mobile) : "-"}
+        />
+        <InlineInfo
+          label="شماره سفارش ناجا"
+          value={
+            recipient?.najaOrderNumber ? formatFaDigits(recipient.najaOrderNumber) : "-"
+          }
+        />
+      </dl>
+    </section>
+  );
+}
+
+function DeliveryBlock({ data }: { data: ExitSlipPdfData }) {
+  return (
+    <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
+        اطلاعات تحویل
+      </h2>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+        <InlineInfo label="گیرنده بار" value={data.receiver.fullName || "-"} />
+        <InlineInfo
+          label="موبایل گیرنده"
+          value={data.receiver.phone ? formatFaDigits(data.receiver.phone) : "-"}
+        />
+        <InlineInfo
+          label="آدرس تحویل"
+          value={data.deliveryAddress.formatted || data.deliveryAddress.fullAddress || "-"}
+          className="col-span-2"
+        />
+      </dl>
+    </section>
+  );
+}
+
+function SummaryTable({
+  rows,
+}: {
+  rows: Array<{ key: string; productName: string; quantity: number }>;
+}) {
+  return (
+    <section className="print-section rounded-md border border-[#94A3B8] bg-white/95">
+      <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
+        خلاصه کالاها
+      </h2>
+      <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
+        <thead>
+          <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
+            <TableHeader className="w-6">ردیف</TableHeader>
+            <TableHeader>نام کالا</TableHeader>
+            <TableHeader className="w-16">تعداد</TableHeader>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.key} className="print-table-row border-t border-[#CBD5E1]">
+              <TableCell>{formatNumber(index + 1)}</TableCell>
+              <TableCell>{row.productName || "-"}</TableCell>
+              <TableCell>{formatNumber(row.quantity)}</TableCell>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+function DetailTable({
+  rows,
+}: {
+  rows: Array<{
+    key: string;
+    productName: string;
+    productSku: string;
+    productIdentifier: string;
+    serialNumber: string;
+    trackingCode: string;
+  }>;
+}) {
+  return (
+    <section className="print-section rounded-md border border-[#94A3B8] bg-white/95">
+      <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
+        جزئیات اقلام
+      </h2>
+      <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
+        <thead>
+          <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
+            <TableHeader className="w-6">ردیف</TableHeader>
+            <TableHeader className="w-[28%]">نام کالا</TableHeader>
+            <TableHeader className="w-[16%]">کد کالا</TableHeader>
+            <TableHeader className="w-[22%]">سریال</TableHeader>
+            <TableHeader className="w-[22%]">کد رهگیری</TableHeader>
+            <TableHeader className="w-[12%]">شناسه</TableHeader>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.key} className="print-table-row border-t border-[#CBD5E1]">
+              <TableCell>{formatNumber(index + 1)}</TableCell>
+              <TableCell>{row.productName || "-"}</TableCell>
+              <TableCell>{row.productSku ? formatFaDigits(row.productSku) : "-"}</TableCell>
+              <TableCell className="serial-cell">
+                {row.serialNumber ? formatFaDigits(row.serialNumber) : "-"}
+              </TableCell>
+              <TableCell className="tracking-cell">
+                {row.trackingCode ? formatFaDigits(row.trackingCode) : "-"}
+              </TableCell>
+              <TableCell>
+                {row.productIdentifier ? formatFaDigits(row.productIdentifier) : "-"}
+              </TableCell>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+function NotesBlock({
+  deliveryCode,
+  notes,
+}: {
+  deliveryCode: string | null;
+  notes: string | null;
+}) {
+  return (
+    <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+        {hasText(deliveryCode) ? (
+          <InlineInfo
+            label="کد تأیید دریافت"
+            value={formatFaDigits(deliveryCode || "")}
+          />
+        ) : null}
+        {hasText(notes) ? <InlineInfo label="توضیحات" value={notes || ""} /> : null}
+      </dl>
+    </section>
   );
 }
 
@@ -487,7 +518,9 @@ function TableCell({
   className?: string;
 }) {
   return (
-    <td className={`break-words border-l border-[#E2E8F0] px-1 py-1 align-top last:border-l-0 ${className}`}>
+    <td
+      className={`break-words border-l border-[#E2E8F0] px-1 py-1 align-top last:border-l-0 ${className}`}
+    >
       {children}
     </td>
   );
