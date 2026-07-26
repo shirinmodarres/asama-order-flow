@@ -362,7 +362,10 @@ export default function WarehouseInboundReceiptEditPage() {
 
     const normalizedUnits = units.map((unit) => ({
       objectId: unit.objectId,
-      productObjectId: unit.productObjectId,
+      productObjectId:
+        productCanBeEdited && groupedUnits.length === 1
+          ? selectedProductId
+          : unit.productObjectId,
       productIdentifier: normalizeDigits(unit.productIdentifier.trim()),
       serialNumber: normalizeDigits(unit.serialNumber.trim()),
       trackingCode: normalizeDigits(unit.trackingCode.trim()),
@@ -513,6 +516,14 @@ export default function WarehouseInboundReceiptEditPage() {
                     value={selectedProductId || undefined}
                     onValueChange={(value) => {
                       setSelectedProductId(value);
+                      if (productCanBeEdited && groupedUnits.length === 1) {
+                        setUnits((current) =>
+                          current.map((unit) => ({
+                            ...unit,
+                            productObjectId: value,
+                          })),
+                        );
+                      }
                       setFieldErrors((current) => ({
                         ...current,
                         selectedProductId: "",
