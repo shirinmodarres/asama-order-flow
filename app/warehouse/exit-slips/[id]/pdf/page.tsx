@@ -273,7 +273,7 @@ function PdfPage({
 function HeaderBlock({ data }: { data: ExitSlipPdfData }) {
   return (
     <header className="relative flex justify-between min-h-20">
-        <div className="absolute left-0 top-0  border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[9px] leading-5 text-[#334155]">
+        <div className="absolute left-0 top-0  border-r-2 border-[#7BC68A] bg-white/95 text-[10px] leading-6 text-[#334155]">
         <InlineInfo label="کد حواله" value={formatFaDigits(data.slipCode) || "-"} />
         <InlineInfo label="کد سفارش" value={formatFaDigits(data.orderCode) || "-"} />
         <InlineInfo

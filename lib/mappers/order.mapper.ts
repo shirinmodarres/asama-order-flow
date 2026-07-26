@@ -69,6 +69,26 @@ export function mapOrderDto(dto: unknown): Order {
     customerObjectId: toNullableString(
       record.customerObjectId ?? customerRecord.objectId,
     ),
+    salesTypeObjectId: toNullableString(
+      record.salesTypeObjectId ?? saleTypeRecord.objectId ?? record.saleTypeObjectId,
+    ),
+    salesTypeTitle: toNullableString(
+      record.salesTypeTitle ?? record.saleTypeTitle ?? saleTypeRecord.title,
+    ),
+    salesTypeInternalCode:
+      record.salesTypeInternalCode === undefined ||
+      record.salesTypeInternalCode === null
+        ? record.saleTypeCode === undefined || record.saleTypeCode === null
+          ? null
+          : toNumberValue(record.saleTypeCode)
+        : toNumberValue(record.salesTypeInternalCode),
+    salesTypeSepidarCode:
+      record.salesTypeSepidarCode === undefined ||
+      record.salesTypeSepidarCode === null
+        ? record.sepidarSaleTypeId === undefined || record.sepidarSaleTypeId === null
+          ? null
+          : toNumberValue(record.sepidarSaleTypeId)
+        : toNumberValue(record.salesTypeSepidarCode),
     sepidarCustomerId:
       record.sepidarCustomerId === undefined || record.sepidarCustomerId === null
         ? null
@@ -105,27 +125,57 @@ export function mapOrderDto(dto: unknown): Order {
         ? null
         : toBooleanValue(record.customerAddressIsMain),
     saleTypeObjectId: toNullableString(
-      record.saleTypeObjectId ?? saleTypeRecord.objectId,
+      record.saleTypeObjectId ?? record.salesTypeObjectId ?? saleTypeRecord.objectId,
     ),
     sepidarSaleTypeId:
       record.sepidarSaleTypeId === undefined || record.sepidarSaleTypeId === null
-        ? null
+        ? (record.salesTypeSepidarCode === undefined || record.salesTypeSepidarCode === null
+          ? null
+          : toNumberValue(record.salesTypeSepidarCode))
         : toNumberValue(record.sepidarSaleTypeId),
-    saleTypeTitle: toNullableString(record.saleTypeTitle ?? saleTypeRecord.title),
+    saleTypeTitle: toNullableString(
+      record.saleTypeTitle ?? record.salesTypeTitle ?? saleTypeRecord.title,
+    ),
+    salesType: record.salesType || record.salesTypeObjectId || record.salesTypeTitle
+      ? {
+          objectId: toNullableString(
+            record.salesTypeObjectId ?? record.saleTypeObjectId ?? saleTypeRecord.objectId,
+          ),
+          title: toNullableString(
+            record.salesTypeTitle ?? record.saleTypeTitle ?? saleTypeRecord.title,
+          ),
+          internalCode:
+            record.salesTypeInternalCode === undefined ||
+            record.salesTypeInternalCode === null
+              ? (record.saleTypeCode === undefined || record.saleTypeCode === null
+                ? null
+                : toNumberValue(record.saleTypeCode))
+              : toNumberValue(record.salesTypeInternalCode),
+          sepidarCode:
+            record.salesTypeSepidarCode === undefined ||
+            record.salesTypeSepidarCode === null
+              ? (record.sepidarSaleTypeId === undefined || record.sepidarSaleTypeId === null
+                ? null
+                : toNumberValue(record.sepidarSaleTypeId))
+              : toNumberValue(record.salesTypeSepidarCode),
+        }
+      : null,
     saleType:
-      record.saleType || record.sepidarSaleTypeId !== undefined || record.saleTypeTitle
-        ? {
+      record.saleType || record.sepidarSaleTypeId !== undefined || record.saleTypeTitle || record.salesTypeTitle
+      ? {
             objectId: toNullableString(
-              record.saleTypeObjectId ?? saleTypeRecord.objectId,
+              record.saleTypeObjectId ?? record.salesTypeObjectId ?? saleTypeRecord.objectId,
             ),
             sepidarSaleTypeId:
               record.sepidarSaleTypeId === undefined ||
               record.sepidarSaleTypeId === null
-                ? null
+                ? (record.salesTypeSepidarCode === undefined || record.salesTypeSepidarCode === null
+                  ? null
+                  : toNumberValue(record.salesTypeSepidarCode))
                 : toNumberValue(record.sepidarSaleTypeId),
-            title: toNullableString(record.saleTypeTitle ?? saleTypeRecord.title),
+            title: toNullableString(record.saleTypeTitle ?? record.salesTypeTitle ?? saleTypeRecord.title),
           }
-        : null,
+      : null,
     priceListId: toNullableString(record.priceListId),
     priceListTitle: toNullableString(record.priceListTitle),
     priceListType: toNullableString(record.priceListType),

@@ -27,6 +27,16 @@ export interface SalesQuotation {
   quotationNumber: string;
   expertObjectId: string | null;
   customerObjectId: string | null;
+  salesTypeObjectId: string | null;
+  salesTypeTitle: string | null;
+  salesTypeInternalCode: number | null;
+  salesTypeSepidarCode: number | null;
+  salesType: {
+    objectId: string | null;
+    title: string | null;
+    internalCode: number | null;
+    sepidarCode: number | null;
+  } | null;
   priceListObjectId: string | null;
   priceListId: string | null;
   priceListTitle: string | null;
@@ -98,6 +108,7 @@ export interface SalesQuotationProductOption {
 export interface CreateSalesQuotationPayload {
   customerObjectId: string;
   priceListObjectId: string;
+  salesTypeObjectId: string;
   expertObjectId?: string;
   notes?: string;
   validUntil?: string | null;

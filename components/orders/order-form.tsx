@@ -25,6 +25,7 @@ import type { Order, OrderItem } from "@/lib/models/order.model";
 import type { Product } from "@/lib/models/product.model";
 import { listCustomerAddresses, listCustomers } from "@/lib/services/customer.service";
 import { getStoredCurrentUser } from "@/lib/services/auth.service";
+import { listActiveSalesTypes } from "@/lib/services/sales-type.service";
 import {
   getAssignedCustomerForExpert,
   listAssignedCustomersForExpert,
@@ -67,6 +68,13 @@ interface OrderPriceListOption {
   isActive?: boolean;
 }
 
+interface SalesTypeOption {
+  objectId: string;
+  title: string;
+  internalCode: number | null;
+  sepidarCode: number | null;
+}
+
 const EMPTY_PRODUCTS: Product[] = [];
 const EMPTY_CUSTOMERS: Customer[] = [];
 
@@ -97,6 +105,7 @@ export interface OrderFormSubmitPayload {
     priceListItemId?: string | null;
     pricingSource?: string | null;
   }>;
+  salesTypeObjectId?: string;
   saleTypeObjectId?: string;
   sepidarSaleTypeId?: number;
   priceListId?: string;
@@ -172,6 +181,12 @@ export function OrderForm({
   const [selectedPriceListId, setSelectedPriceListId] = useState(
     initialOrder?.priceListId ?? "",
   );
+  const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
+  const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
+    initialOrder?.salesTypeObjectId ||
+      initialOrder?.saleTypeObjectId ||
+      "",
+  );
   const [selectedAddressId, setSelectedAddressId] = useState(
     initialOrder?.selectedCustomerAddressId
       ? String(initialOrder.selectedCustomerAddressId)
@@ -184,6 +199,31 @@ export function OrderForm({
   const [rowErrors, setRowErrors] = useState<
     Record<string, { productId?: string; quantity?: string }>
   >({});
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadSalesTypes() {
+      try {
+        const data = await listActiveSalesTypes();
+        if (!mounted) return;
+        setSalesTypes(data);
+        if (!selectedSalesTypeId) {
+          const initialId =
+            initialOrder?.salesTypeObjectId ||
+            initialOrder?.saleTypeObjectId ||
+            "";
+          if (initialId) setSelectedSalesTypeId(initialId);
+        }
+      } catch {
+        if (!mounted) return;
+        setSalesTypes([]);
+      }
+    }
+    loadSalesTypes();
+    return () => {
+      mounted = false;
+    };
+  }, [initialOrder, selectedSalesTypeId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -368,7 +408,11 @@ export function OrderForm({
         ? selectedAssignment
         : customers.find((entry) => entry.objectId === selectedCustomerId);
       const saleTypeId =
-        customer?.saleType?.sepidarSaleTypeId ?? initialOrder?.sepidarSaleTypeId;
+        selectedSalesType?.sepidarCode ??
+        selectedCustomer?.saleType?.sepidarSaleTypeId ??
+        initialOrder?.salesTypeSepidarCode ??
+        customer?.saleType?.sepidarSaleTypeId ??
+        initialOrder?.sepidarSaleTypeId;
       const priceListOptions = getCustomerPriceListOptions(
         customer,
         initialOrder,
@@ -586,12 +630,16 @@ export function OrderForm({
   const requiresPriceListSelection =
     sepidarProductsOnly && Boolean(selectedCustomerId) && hasGeneratedPriceList;
   const isNajaOrder = initialOrder?.orderType === "naja";
+  const selectedSalesType = salesTypes.find((item) => item.objectId === selectedSalesTypeId) || null;
   const currentSaleTypeTitle =
     selectedPriceListOption
       ? priceListLabel(selectedPriceListOption)
       : selectedCustomer?.priceListTitle ??
         initialOrder?.priceListTitle ??
+        selectedSalesType?.title ??
         selectedCustomer?.saleType?.title ??
+        selectedCustomer?.saleType?.title ??
+        initialOrder?.salesTypeTitle ??
         initialOrder?.saleTypeTitle;
   const currentStockTitles = selectedCustomer
     ? getAllowedStockTitles(selectedCustomer)
@@ -671,11 +719,18 @@ export function OrderForm({
       return;
     }
 
+    if (!selectedSalesTypeId) {
+      setFieldErrors({
+        salesTypeObjectId: "لطفاً نوع فروش را انتخاب کنید.",
+      });
+      return;
+    }
+
     if (
       sepidarProductsOnly &&
       selectedCustomer &&
       !hasGeneratedPriceList &&
-      !selectedCustomer.saleType?.sepidarSaleTypeId
+      !selectedSalesType?.sepidarCode
     ) {
       setFieldErrors({
         selectedCustomerId: "برای این مشتری لیست قیمت مشخص نشده است.",
@@ -865,9 +920,9 @@ export function OrderForm({
               najaPurchaseDate: najaPurchaseDate || null,
             }
           : {}),
-        saleTypeObjectId: selectedCustomer?.saleType?.objectId || undefined,
-        sepidarSaleTypeId:
-          selectedCustomer?.saleType?.sepidarSaleTypeId ?? undefined,
+        salesTypeObjectId: selectedSalesType?.objectId || undefined,
+        saleTypeObjectId: selectedSalesType?.objectId || undefined,
+        sepidarSaleTypeId: selectedSalesType?.sepidarCode ?? undefined,
         priceListId:
           selectedPriceListId || selectedCustomer?.priceListId || undefined,
         notes: notes.trim(),
@@ -1301,13 +1356,41 @@ export function OrderForm({
         !productsError &&
         sepidarProductsOnly &&
         (!requiresPriceListSelection || Boolean(selectedPriceListId)) &&
-        (selectedCustomer?.saleType?.sepidarSaleTypeId ||
+        (selectedSalesType?.sepidarCode ||
+          selectedCustomer?.saleType?.sepidarSaleTypeId ||
+          selectedCustomer?.saleType?.sepidarSaleTypeId ||
           hasGeneratedPriceList) &&
         products.length === 0 ? (
           <p className="mt-5 rounded-xl border border-[#F3D9A4] bg-[#FFF8E6] p-3 text-sm text-[#8A5A00]">
             در انبارهای مجاز این کارشناس کالایی با موجودی قابل فروش پیدا نشد.
           </p>
         ) : null}
+
+        <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">
+          <span>نوع فروش</span>
+          <SearchableSelect
+            value={selectedSalesTypeId || undefined}
+            onValueChange={(value) => {
+              setSelectedSalesTypeId(value);
+              setFieldErrors((current) => ({
+                ...current,
+                salesTypeObjectId: "",
+              }));
+            }}
+            options={salesTypes.map((salesType) => ({
+              value: salesType.objectId,
+              label: salesType.title,
+              searchText: [salesType.title, salesType.internalCode, salesType.sepidarCode]
+                .filter(Boolean)
+                .join(" "),
+            }))}
+            placeholder="انتخاب نوع فروش"
+            searchPlaceholder="جستجو در نوع فروش"
+            emptyMessage="نوع فروشی پیدا نشد"
+            invalid={Boolean(fieldErrors.salesTypeObjectId)}
+          />
+          <FieldError message={fieldErrors.salesTypeObjectId} />
+        </label>
 
         {requiresPriceListSelection ? (
           <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">

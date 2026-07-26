@@ -22,6 +22,7 @@ import type {
 import { getStoredCurrentUser } from "@/lib/services/auth.service";
 import { listAssignedCustomersForExpert } from "@/lib/services/expert-customer.service";
 import { listQuotationProductsForAssignment } from "@/lib/services/product.service";
+import { listActiveSalesTypes } from "@/lib/services/sales-type.service";
 import { formatFaDigits, normalizeDigits, toNumber } from "@/lib/utils/number-format";
 import { JalaliDateInput } from "@/components/shared/jalali-date-input";
 import { SELECT_REQUIRED_MESSAGE, POSITIVE_NUMBER_MESSAGE } from "@/lib/utils/form-validation";
@@ -48,6 +49,11 @@ interface PriceListOption {
   label: string;
 }
 
+interface SalesTypeOption {
+  objectId: string;
+  title: string;
+}
+
 export function QuotationForm({
   mode,
   initialQuotation,
@@ -68,6 +74,10 @@ export function QuotationForm({
   );
   const [selectedPriceListId, setSelectedPriceListId] = useState(
     initialQuotation?.priceListObjectId || "",
+  );
+  const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
+  const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
+    initialQuotation?.salesTypeObjectId || "",
   );
   const [selectedValidUntil, setSelectedValidUntil] = useState(
     initialQuotation?.validUntil?.slice(0, 10) || (() => {
@@ -98,6 +108,21 @@ export function QuotationForm({
 
   useEffect(() => {
     let mounted = true;
+    async function loadSalesTypes() {
+      try {
+        const data = await listActiveSalesTypes();
+        if (!mounted) return;
+        setSalesTypes(data.map((salesType) => ({
+          objectId: salesType.objectId,
+          title: salesType.title,
+        })));
+        if (!selectedSalesTypeId && initialQuotation?.salesTypeObjectId) {
+          setSelectedSalesTypeId(initialQuotation.salesTypeObjectId);
+        }
+      } catch {
+        if (mounted) setSalesTypes([]);
+      }
+    }
     async function loadCustomers() {
       setIsLoadingCustomers(true);
       setCustomerError("");
@@ -114,11 +139,12 @@ export function QuotationForm({
         if (mounted) setIsLoadingCustomers(false);
       }
     }
+    loadSalesTypes();
     loadCustomers();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [initialQuotation?.salesTypeObjectId, selectedSalesTypeId]);
 
   const selectedCustomer = useMemo(
     () => customers.find((customer) => customer.objectId === selectedCustomerId) ?? null,
@@ -285,6 +311,10 @@ export function QuotationForm({
       setError("لطفاً مشتری را انتخاب کنید.");
       return;
     }
+    if (!selectedSalesTypeId) {
+      setError("لطفاً نوع فروش را انتخاب کنید.");
+      return;
+    }
     if (!selectedPriceListId) {
       setError("لطفاً لیست قیمت را انتخاب کنید.");
       return;
@@ -317,6 +347,7 @@ export function QuotationForm({
 
     await onSubmit({
       customerObjectId: selectedCustomerId,
+      salesTypeObjectId: selectedSalesTypeId,
       priceListObjectId: selectedPriceListId,
       notes: notes.trim(),
       validUntil: selectedValidUntil || null,
@@ -362,6 +393,21 @@ export function QuotationForm({
               emptyMessage={assignedCustomersOnly ? "مشتری پیدا نشد" : "مشتری یافت نشد"}
             />
             <FieldError message={customerError} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
+            <span>نوع فروش</span>
+            <SearchableSelect
+              value={selectedSalesTypeId || undefined}
+              onValueChange={setSelectedSalesTypeId}
+              options={salesTypes.map((salesType) => ({
+                value: salesType.objectId,
+                label: salesType.title,
+                searchText: salesType.title,
+              }))}
+              placeholder="انتخاب نوع فروش"
+              searchPlaceholder="جستجو در نوع فروش"
+              emptyMessage="نوع فروشی پیدا نشد"
+            />
           </label>
           <label className="grid gap-2 text-sm font-medium text-[#334155]">
             <span>لیست قیمت</span>

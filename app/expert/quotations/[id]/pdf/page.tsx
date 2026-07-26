@@ -228,7 +228,7 @@ export default function SalesQuotationPdfPage() {
                 <p className="whitespace-pre-wrap text-[9px] leading-5 text-[#334155]">
                   {quotation.notes || "-"}
                 </p>
-                <p className="mt-2 text-[9px] leading-5 text-[#334155]">
+                <p className="mt-2 text-[9px] leading-5 text-[#334155] font-bold">
                   این پیش‌فاکتور تا تاریخ{" "}
                   {quotation.validUntil ? formatQuotationDate(quotation.validUntil) : "-"}{" "}
                   معتبر بوده و پس از آن نیازمند استعلام مجدد قیمت می‌باشد.
