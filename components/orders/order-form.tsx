@@ -684,11 +684,12 @@ export function OrderForm({
     orderSalesTypeFallback ||
     null;
   const currentSaleTypeTitle =
-    selectedSalesType?.title ??
-    initialOrder?.salesTypeTitle ??
-    initialOrder?.saleType?.title ??
-    selectedCustomer?.saleType?.title ??
-    null;
+    mode === "edit"
+      ? initialOrder?.salesTypeTitle ?? initialOrder?.saleType?.title ?? null
+      : selectedSalesType?.title ??
+        initialOrder?.salesTypeTitle ??
+        initialOrder?.saleType?.title ??
+        null;
   const currentStockTitles = selectedCustomer
     ? getAllowedStockTitles(selectedCustomer)
     : initialOrder?.stockTitle
