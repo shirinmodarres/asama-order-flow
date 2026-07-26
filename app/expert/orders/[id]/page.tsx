@@ -11,6 +11,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
+import { PaymentMethodRow } from "@/components/shared/payment-method-row";
 import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -72,6 +73,11 @@ export default function ExpertOrderDetailsPage() {
     (sum, row) => sum + row.quantity * row.unitPrice,
     0,
   );
+  const paymentMethodTitle =
+    order?.salesTypeTitle ||
+    order?.saleTypeTitle ||
+    order?.saleType?.title ||
+    null;
 
   const handleResolveReview = async () => {
     if (!order) return;
@@ -183,6 +189,10 @@ export default function ExpertOrderDetailsPage() {
                     value={formatFaDigits(order.code)}
                   />
                   <InfoItem label="مشتری" value={order.customerName || "-"} />
+                  <InfoItem
+                    label="روش پرداخت"
+                    value={paymentMethodTitle || "-"}
+                  />
                   <InfoItem label="ثبت کننده" value={order.createdByName} />
                   <InfoItem
                     label="تاریخ ثبت"
@@ -263,6 +273,7 @@ export default function ExpertOrderDetailsPage() {
               totalAmount={totalAmount}
               status={order.orderStatus}
               warehouseStatus={order.warehouseStatus}
+              saleTypeTitle={paymentMethodTitle}
             />
           </section>
         </>

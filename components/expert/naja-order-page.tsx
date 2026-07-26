@@ -9,6 +9,7 @@ import { JalaliDateInput } from "@/components/shared/jalali-date-input";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
 import { LoadingState } from "@/components/shared/loading-state";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
+import { PaymentMethodRow } from "@/components/shared/payment-method-row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -96,6 +97,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const selectedProduct =
     products.find((product) => product.objectId === productId) ?? null;
   const totalAmount = selectedProduct ? selectedProduct.unitPrice * quantity : 0;
+  const paymentMethodTitle = getPaymentMethodTitle(selectedCustomer);
 
   useEffect(() => {
     let isMounted = true;
@@ -372,9 +374,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
                       ? formatFaDigits(selectedCustomer.sepidarCustomerCode)
                       : "-"}
                   </span>
-                  <span>
-                    {selectedCustomer.priceListTitle || selectedCustomer.saleType?.title ? `روش پرداخت: ${selectedCustomer.priceListTitle || selectedCustomer.saleType?.title}` : null}
-                  </span>
+                  <PaymentMethodRow value={paymentMethodTitle} />
                   <span className="sm:col-span-3">
                     آدرس مرکز:{" "}
                     {selectedCustomer.sepidarAddress?.Address ||
@@ -460,7 +460,12 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
                   />
                   <ReadonlyValueInput
                     label="روش پرداخت"
-                    value={selectedProduct?.priceListTitle || selectedProduct?.priceListId || "-"}
+                    value={
+                      selectedProduct?.priceListTitle ||
+                      paymentMethodTitle ||
+                      selectedProduct?.priceListId ||
+                      "-"
+                    }
                   />
                 </div>
               </div>
@@ -638,7 +643,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
           totalAmount={totalAmount}
           status="pending_approval"
           warehouseStatus="reserved"
-          saleTypeTitle={selectedCustomer?.saleType?.title}
+          saleTypeTitle={paymentMethodTitle}
           stockTitles={
             selectedCustomer ? getAllowedStockTitles(selectedCustomer) : []
           }
@@ -669,6 +674,19 @@ function getAllowedStockTitles(customer: Customer): string[] {
     );
   }
   return customer.allowedStockTitles;
+}
+
+function getPaymentMethodTitle(customer: Customer | null | undefined): string | null {
+  if (!customer) return null;
+  return (
+    customer.priceListTitle ||
+    customer.saleType?.title ||
+    (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
+    (customer as Customer & { saleTypeTitle?: string | null }).saleTypeTitle ||
+    customer.priceLists?.[0]?.name ||
+    customer.priceLists?.[0]?.title ||
+    null
+  );
 }
 
 function productIdentityLabel(product: Product): string {
