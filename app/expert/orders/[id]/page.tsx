@@ -74,10 +74,7 @@ export default function ExpertOrderDetailsPage() {
     0,
   );
   const paymentMethodTitle =
-    order?.salesTypeTitle ||
-    order?.saleTypeTitle ||
-    order?.saleType?.title ||
-    null;
+    order?.salesTypeTitle ?? order?.saleType?.title ?? null;
 
   const handleResolveReview = async () => {
     if (!order) return;

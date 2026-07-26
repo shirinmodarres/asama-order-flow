@@ -684,12 +684,33 @@ export function OrderForm({
     orderSalesTypeFallback ||
     null;
   const currentSaleTypeTitle =
-    mode === "edit"
-      ? initialOrder?.salesTypeTitle ?? initialOrder?.saleType?.title ?? null
-      : selectedSalesType?.title ??
-        initialOrder?.salesTypeTitle ??
-        initialOrder?.saleType?.title ??
-        null;
+    selectedSalesType?.title ??
+    initialOrder?.salesTypeTitle ??
+    initialOrder?.saleType?.title ??
+    orderSalesTypeFallback?.title ??
+    null;
+  const selectedSalesTypeOption = selectedSalesType
+    ? {
+        value: selectedSalesType.objectId,
+        label: selectedSalesType.title,
+        searchText: [
+          selectedSalesType.title,
+          selectedSalesType.internalCode,
+          selectedSalesType.sepidarCode,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      }
+    : currentSaleTypeTitle
+      ? {
+          value:
+            selectedSalesTypeId ||
+            getOrderSalesTypeOptionKey(initialOrder) ||
+            `order-sales-type-${initialOrder?.objectId || "fallback"}`,
+          label: currentSaleTypeTitle,
+          searchText: currentSaleTypeTitle,
+        }
+      : null;
   const currentStockTitles = selectedCustomer
     ? getAllowedStockTitles(selectedCustomer)
     : initialOrder?.stockTitle
@@ -1470,6 +1491,7 @@ export function OrderForm({
           <span>روش پرداخت</span>
           <SearchableSelect
             value={selectedSalesTypeId || undefined}
+            selectedOption={selectedSalesTypeOption}
             onValueChange={(value) => {
               setSelectedSalesTypeId(value);
               setFieldErrors((current) => ({
@@ -1634,8 +1656,13 @@ export function OrderForm({
                       }
                     />
                     <ReadonlyValueInput
-                      label="روش پرداخت"
-                      value={product?.priceListTitle || product?.priceListId || ""}
+                      label="لیست قیمت"
+                      value={
+                        selectedPriceListOption?.title ||
+                        product?.priceListTitle ||
+                        product?.priceListId ||
+                        ""
+                      }
                     />
                   </div>
                   <FieldError

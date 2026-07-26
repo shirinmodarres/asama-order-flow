@@ -192,7 +192,7 @@ export default function NajaOrderDetailsPage() {
               />
               <InfoItem
                 label="روش پرداخت"
-                value={order.priceListTitle || order.saleTypeTitle || order.saleType?.title || ""}
+                value={order.salesTypeTitle || order.saleType?.title || ""}
               />
               <InfoItem label="کد ملی" value={order.customerNationalId ? formatFaDigits(order.customerNationalId) : "-"} />
               <InfoItem label="موبایل مشتری" value={order.customerPhone ? formatFaDigits(order.customerPhone) : "-"} />
@@ -288,7 +288,7 @@ export default function NajaOrderDetailsPage() {
             totalAmount={totalAmount}
             status={order.orderStatus as never}
             warehouseStatus={order.warehouseStatus as never}
-            saleTypeTitle={order.priceListTitle || order.saleTypeTitle || order.saleType?.title || null}
+            saleTypeTitle={order.salesTypeTitle || order.saleType?.title || null}
             stockTitles={
               order.selectedStockTitles.length
                 ? order.selectedStockTitles

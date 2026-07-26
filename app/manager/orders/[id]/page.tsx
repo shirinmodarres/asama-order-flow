@@ -460,11 +460,11 @@ export default function ManagerOrderReviewPage() {
                   />
                   <InfoItem
                     label="روش پرداخت"
-                    value={order.priceListTitle || order.saleTypeTitle || order.saleType?.title || ""}
+                    value={order.salesTypeTitle || order.saleType?.title || ""}
                   />
-                  {order.priceListTitle ? (
+                  {order.salesTypeTitle || order.saleType?.title ? (
                     <div className="sm:col-span-2 rounded-xl border border-[#D7E5F0] bg-[#F8FBFF] px-4 py-3 text-sm leading-7 text-[#1F3A5F]">
-                      این سفارش با روش پرداخت <strong>{order.priceListTitle}</strong> ثبت شده است.
+                      این سفارش با روش پرداخت <strong>{order.salesTypeTitle || order.saleType?.title}</strong> ثبت شده است.
                     </div>
                   ) : null}
                   {hasRecipientInfo(order) ? (
