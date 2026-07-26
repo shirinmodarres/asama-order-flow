@@ -122,7 +122,7 @@ export default function ExitSlipPdfPage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 16mm 18mm;
+            margin: 0;
           }
           html,
           body {
@@ -139,12 +139,14 @@ export default function ExitSlipPdfPage() {
           .pdf-page {
             box-shadow: none !important;
             border: 0 !important;
-            width: auto !important;
+            width: 210mm !important;
             margin: 0 !important;
             min-height: 297mm !important;
             border-radius: 0 !important;
             overflow: visible !important;
             box-sizing: border-box !important;
+          }
+          .page-break-after {
             break-after: page;
             page-break-after: always;
           }
@@ -153,8 +155,9 @@ export default function ExitSlipPdfPage() {
             page-break-after: auto;
           }
           .print-content {
-            padding: 0 !important;
+            padding: 18mm 20mm 16mm 20mm !important;
             overflow: visible !important;
+            box-sizing: border-box !important;
           }
           .print-section,
           .print-table-row {
@@ -203,7 +206,7 @@ export default function ExitSlipPdfPage() {
         <p className="text-sm text-[#6B7280]">اطلاعات حواله یافت نشد.</p>
       ) : (
         <div className="space-y-4">
-          <PdfPage>
+          <PdfPage pageBreakAfter>
             <div className="space-y-3 text-[10px] leading-5">
               <HeaderBlock data={data} />
               <TitleBlock />
@@ -220,7 +223,7 @@ export default function ExitSlipPdfPage() {
             </div>
           </PdfPage>
 
-          <PdfPage forcePageBreak>
+          <PdfPage>
             <div className="space-y-3 text-[10px] leading-5">
               <HeaderBlock data={data} />
               <TitleBlock />
@@ -239,15 +242,15 @@ export default function ExitSlipPdfPage() {
 
 function PdfPage({
   children,
-  forcePageBreak = false,
+  pageBreakAfter = false,
 }: {
   children: React.ReactNode;
-  forcePageBreak?: boolean;
+  pageBreakAfter?: boolean;
 }) {
   return (
     <section
       className={`pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-visible rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${
-        forcePageBreak ? "detail-page" : ""
+        pageBreakAfter ? "page-break-after" : ""
       }`}
     >
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
@@ -260,7 +263,7 @@ function PdfPage({
           className="object-cover"
         />
       </div>
-      <div className="print-content print-root relative z-10 px-5 pb-5 pt-4">
+      <div className="print-content print-root relative z-10">
         {children}
       </div>
     </section>
@@ -270,7 +273,7 @@ function PdfPage({
 function HeaderBlock({ data }: { data: ExitSlipPdfData }) {
   return (
     <header className="relative flex justify-between min-h-20">
-      <div className="absolute left-0 top-0 border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[9px] leading-5 text-[#334155]">
+        <div className="absolute left-0 top-0  border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[9px] leading-5 text-[#334155]">
         <InlineInfo label="کد حواله" value={formatFaDigits(data.slipCode) || "-"} />
         <InlineInfo label="کد سفارش" value={formatFaDigits(data.orderCode) || "-"} />
         <InlineInfo
