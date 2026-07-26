@@ -109,7 +109,7 @@ export default function SalesQuotationPdfPage() {
       <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
         <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
           <Image
-            src="/A4 - 2.jpg"
+            src="/A4 - 2.svg"
             alt="Asama Letterhead"
             fill
             priority

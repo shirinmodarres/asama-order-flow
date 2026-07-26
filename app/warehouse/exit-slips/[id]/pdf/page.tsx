@@ -117,13 +117,13 @@ export default function ExitSlipPdfPage() {
       <style jsx global>{`
         @media print {
           @page {
-            size: A5 portrait;
+            size: A4 portrait;
             margin: 0;
           }
           html,
           body {
-            width: 148mm;
-            min-height: 210mm;
+            width: 210mm;
+            min-height: 297mm;
             margin: 0 !important;
             background: white !important;
           }
@@ -133,20 +133,31 @@ export default function ExitSlipPdfPage() {
           .pdf-page {
             box-shadow: none !important;
             border: 0 !important;
-            width: 148mm !important;
-            min-height: 210mm !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
             border-radius: 0 !important;
+            overflow: visible !important;
           }
           .print-content {
-            padding: 8mm 8mm 7mm !important;
+            padding: 10mm 12mm 10mm !important;
+            overflow: visible !important;
           }
           .print-section,
           .print-table-row {
             break-inside: avoid;
+            page-break-inside: avoid;
           }
           .detail-page {
             break-before: page;
             page-break-before: always;
+          }
+          .print-section {
+            overflow: visible !important;
+          }
+          .summary-table tbody tr,
+          .detail-table tbody tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
           .items-table thead {
             display: table-header-group;
@@ -154,16 +165,16 @@ export default function ExitSlipPdfPage() {
         }
       `}</style>
 
-      <div className="no-print mx-auto mb-4 flex max-w-[148mm] justify-end">
+      <div className="no-print mx-auto mb-4 flex max-w-[210mm] justify-end">
         <Button type="button" onClick={() => window.print()}>
           چاپ / ذخیره PDF
         </Button>
       </div>
 
-      <section className="pdf-page relative mx-auto min-h-[210mm] w-full max-w-[148mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
+      <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-visible rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
         <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
           <Image
-            src="/1.jpg"
+            src="/A4 - 2.svg"
             alt="Asama Letterhead"
             fill
             priority
@@ -188,10 +199,6 @@ export default function ExitSlipPdfPage() {
                   <InlineInfo
                     label="کد حواله"
                     value={formatFaDigits(data.slipCode) || "-"}
-                  />
-                  <InlineInfo
-                    label="شماره رسید"
-                    value={data.receiptCode ? formatFaDigits(data.receiptCode) : "-"}
                   />
                   <InlineInfo
                     label="کد سفارش"
@@ -314,11 +321,11 @@ export default function ExitSlipPdfPage() {
                 </section>
               ) : null}
 
-              <section className="print-section overflow-hidden rounded-md border border-[#94A3B8] bg-white/95">
+              <section className="print-section rounded-md border border-[#94A3B8] bg-white/95">
                 <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
                   خلاصه کالاها
                 </h2>
-                <table className="items-table w-full table-fixed border-collapse text-right text-[8px] leading-4">
+                <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[8px] leading-4">
                   <thead>
                     <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
                       <TableHeader className="w-6">ردیف</TableHeader>
@@ -341,11 +348,11 @@ export default function ExitSlipPdfPage() {
                 </table>
               </section>
 
-              <section className="detail-page print-section overflow-hidden rounded-md border border-[#94A3B8] bg-white/95">
+              <section className="detail-page print-section rounded-md border border-[#94A3B8] bg-white/95">
                 <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
                   جزئیات اقلام
                 </h2>
-                <table className="items-table w-full table-fixed border-collapse text-right text-[8px] leading-4">
+                <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[8px] leading-4">
                   <thead>
                     <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
                       <TableHeader className="w-6">ردیف</TableHeader>
