@@ -75,9 +75,22 @@ interface SalesTypeOption {
   sepidarCode: number | null;
 }
 
+function getOrderSalesTypeOptionKey(order?: Order | null): string {
+  if (!order) return "";
+  const objectId = order.salesTypeObjectId || order.saleTypeObjectId || "";
+  if (objectId) return objectId;
+  const hasSnapshot =
+    Boolean(order.salesTypeTitle || order.saleTypeTitle) ||
+    order.salesTypeInternalCode !== null ||
+    order.salesTypeSepidarCode !== null ||
+    order.saleType?.sepidarSaleTypeId !== null;
+  if (!hasSnapshot) return "";
+  return `order-sales-type-${order.objectId || "fallback"}`;
+}
+
 function buildOrderSalesTypeFallback(order?: Order | null): SalesTypeOption | null {
   if (!order) return null;
-  const objectId = order.salesTypeObjectId || order.saleTypeObjectId || "";
+  const objectId = getOrderSalesTypeOptionKey(order);
   const title = order.salesTypeTitle || order.saleTypeTitle || "";
   const internalCode = order.salesTypeInternalCode ?? null;
   const sepidarCode = order.salesTypeSepidarCode ?? order.saleType?.sepidarSaleTypeId ?? null;
@@ -202,9 +215,7 @@ export function OrderForm({
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    initialOrder?.salesTypeObjectId ||
-      initialOrder?.saleTypeObjectId ||
-      "",
+    getOrderSalesTypeOptionKey(initialOrder),
   );
   const [selectedAddressId, setSelectedAddressId] = useState(
     initialOrder?.selectedCustomerAddressId
@@ -232,9 +243,7 @@ export function OrderForm({
         setSalesTypes(data);
         if (!selectedSalesTypeId) {
           const initialId =
-            initialOrder?.salesTypeObjectId ||
-            initialOrder?.saleTypeObjectId ||
-            "";
+            getOrderSalesTypeOptionKey(initialOrder);
           if (initialId) setSelectedSalesTypeId(initialId);
         }
       } catch {
