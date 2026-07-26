@@ -684,15 +684,11 @@ export function OrderForm({
     orderSalesTypeFallback ||
     null;
   const currentSaleTypeTitle =
-    selectedPriceListOption
-      ? priceListLabel(selectedPriceListOption)
-      : selectedCustomer?.priceListTitle ??
-        initialOrder?.priceListTitle ??
-        selectedSalesType?.title ??
-        selectedCustomer?.saleType?.title ??
-        selectedCustomer?.saleType?.title ??
-        initialOrder?.salesTypeTitle ??
-        initialOrder?.saleTypeTitle;
+    selectedSalesType?.title ??
+    initialOrder?.salesTypeTitle ??
+    initialOrder?.saleTypeTitle ??
+    selectedCustomer?.saleType?.title ??
+    null;
   const currentStockTitles = selectedCustomer
     ? getAllowedStockTitles(selectedCustomer)
     : initialOrder?.stockTitle
@@ -1495,9 +1491,9 @@ export function OrderForm({
           <FieldError message={fieldErrors.salesTypeObjectId} />
         </label>
 
-        {requiresPriceListSelection ? (
+        {mode !== "edit" && requiresPriceListSelection ? (
           <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">
-            <span>روش پرداخت</span>
+            <span>لیست قیمت</span>
             <SearchableSelect
               value={selectedPriceListId || undefined}
               onValueChange={(value) => {
@@ -1514,9 +1510,9 @@ export function OrderForm({
                 value: priceList.objectId,
                 label: priceListLabel(priceList),
               }))}
-              placeholder="انتخاب روش پرداخت"
-              searchPlaceholder="جستجو در روش پرداخت"
-              emptyMessage="روش پرداختی پیدا نشد"
+              placeholder="انتخاب لیست قیمت"
+              searchPlaceholder="جستجو در لیست قیمت"
+              emptyMessage="لیست قیمتی پیدا نشد"
               invalid={Boolean(fieldErrors.selectedPriceListId)}
             />
             <FieldError message={fieldErrors.selectedPriceListId} />
