@@ -1609,7 +1609,11 @@ export function OrderForm({
           {items.map((item, index) => {
             const product = productsById[item.productId];
             const productLabel =
-              product?.name || item.productLabel || item.productId || "";
+              item.productLabel ||
+              product?.name ||
+              product?.productObjectId ||
+              item.productId ||
+              "";
             const productCode = product
               ? product.sepidarCode || product.sku || product.productObjectId || product.name
               : "";
@@ -1642,17 +1646,17 @@ export function OrderForm({
                     <SearchableSelect
                       value={item.productId || undefined}
                       selectedOption={
-                        product
+                        item.productLabel
                           ? {
-                              value: product.objectId,
-                              label: productIdentityLabel(product),
-                              searchText: productIdentityLabel(product),
+                              value: item.productId || item.rowId,
+                              label: item.productLabel,
+                              searchText: item.productLabel,
                             }
-                          : item.productLabel
+                          : product
                             ? {
-                                value: item.productId || item.rowId,
-                                label: item.productLabel,
-                                searchText: item.productLabel,
+                                value: product.objectId,
+                                label: productIdentityLabel(product),
+                                searchText: productIdentityLabel(product),
                               }
                             : null
                       }
