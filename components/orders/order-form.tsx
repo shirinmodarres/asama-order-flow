@@ -57,6 +57,7 @@ interface DraftItem {
   rowId: string;
   productId: string;
   quantity: number;
+  productLabel?: string;
 }
 
 interface OrderPriceListOption {
@@ -1607,6 +1608,8 @@ export function OrderForm({
         <div className="mt-5 space-y-3">
           {items.map((item, index) => {
             const product = productsById[item.productId];
+            const productLabel =
+              product?.name || item.productLabel || item.productId || "";
             const productCode = product
               ? product.sepidarCode || product.sku || product.productObjectId || product.name
               : "";
@@ -1619,7 +1622,7 @@ export function OrderForm({
                 ]
                   .filter(Boolean)
                   .join(" • ")
-              : `آیتم ${formatNumber(index + 1)}`;
+              : item.productLabel || `آیتم ${formatNumber(index + 1)}`;
             const editableAvailableQuantity = product
               ? getEditableAvailableQuantity({
                   product,
@@ -1638,8 +1641,30 @@ export function OrderForm({
                     <PackageSearch className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
                     <SearchableSelect
                       value={item.productId || undefined}
+                      selectedOption={
+                        product
+                          ? {
+                              value: product.objectId,
+                              label: productIdentityLabel(product),
+                              searchText: productIdentityLabel(product),
+                            }
+                          : item.productLabel
+                            ? {
+                                value: item.productId || item.rowId,
+                                label: item.productLabel,
+                                searchText: item.productLabel,
+                              }
+                            : null
+                      }
                       onValueChange={(value) =>
-                        updateRow(item.rowId, { productId: value })
+                        updateRow(item.rowId, {
+                          productId: value,
+                          productLabel:
+                            productsById[value]?.name ||
+                            productsById[value]?.productObjectId ||
+                            item.productLabel ||
+                            "",
+                        })
                       }
                       options={products
                         .filter((option) => {
@@ -1952,7 +1977,7 @@ function getAllowedStockTitles(customer: Customer): string[] {
 }
 
 function createEmptyRow(index: number): DraftItem {
-  return { rowId: `empty-${index}`, productId: "", quantity: 1 };
+  return { rowId: `empty-${index}`, productId: "", quantity: 1, productLabel: "" };
 }
 
 function getOldOrderQuantities(
@@ -2264,6 +2289,7 @@ function mapOrderItems(items: OrderItem[], products: Product[]): DraftItem[] {
     rowId: `${index}-${item.objectId || item.productId || item.productSku}`,
     productId: resolveProductObjectId(item, products),
     quantity: item.quantity,
+    productLabel: item.productName || item.productSku || "",
   }));
 
   return mappedItems.length ? mappedItems : [createEmptyRow(0)];
