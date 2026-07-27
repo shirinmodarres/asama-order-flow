@@ -458,12 +458,22 @@ export function OrderForm({
         return;
       }
       if (assignedCustomersOnly && !hasGeneratedPriceList) {
+        if (isEditMode && initialOrder) {
+          keepOrderSnapshotProducts();
+          setIsLoadingProducts(false);
+          return;
+        }
         setProducts([]);
         setProductsError("NO_PRICE_LIST_ASSIGNED");
         setIsLoadingProducts(false);
         return;
       }
       if (hasGeneratedPriceList && !selectedPriceListId) {
+        if (isEditMode && initialOrder) {
+          keepOrderSnapshotProducts();
+          setIsLoadingProducts(false);
+          return;
+        }
         setProducts([]);
         setIsLoadingProducts(false);
         return;
@@ -472,6 +482,11 @@ export function OrderForm({
         (!hasGeneratedPriceList && !saleTypeId) ||
         (assignedCustomersOnly && !hasAssignmentInventory(customer))
       ) {
+        if (isEditMode && initialOrder) {
+          keepOrderSnapshotProducts();
+          setIsLoadingProducts(false);
+          return;
+        }
         keepOrderSnapshotProducts();
         setIsLoadingProducts(false);
         return;
@@ -679,6 +694,7 @@ export function OrderForm({
   const requiresPriceListSelection =
     sepidarProductsOnly && Boolean(selectedCustomerId) && hasGeneratedPriceList;
   const isNajaOrder = initialOrder?.orderType === "naja";
+  const isEditMode = mode === "edit";
   const selectedSalesType =
     mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
     orderSalesTypeFallback ||
@@ -686,7 +702,6 @@ export function OrderForm({
   const orderSalesTypeTitle =
     initialOrder?.salesTypeTitle ??
     initialOrder?.saleType?.title ??
-    initialOrder?.priceListTitle ??
     null;
   const currentSaleTypeTitle =
     selectedSalesType?.title ??
@@ -842,7 +857,7 @@ export function OrderForm({
       return;
     }
 
-    if (!selectedSalesTypeId) {
+    if (!selectedSalesTypeId && !isEditMode) {
       setFieldErrors({
         salesTypeObjectId: "لطفاً روش پرداخت را انتخاب کنید.",
       });
@@ -850,6 +865,7 @@ export function OrderForm({
     }
 
     if (
+      !isEditMode &&
       sepidarProductsOnly &&
       selectedCustomer &&
       !hasGeneratedPriceList &&
@@ -861,7 +877,7 @@ export function OrderForm({
       return;
     }
 
-    if (requiresPriceListSelection && !selectedPriceListId) {
+    if (!isEditMode && requiresPriceListSelection && !selectedPriceListId) {
       setFieldErrors({
         selectedPriceListId: "لطفاً روش پرداخت را انتخاب کنید.",
       });
@@ -1668,6 +1684,7 @@ export function OrderForm({
                       triggerClassName="h-11 pr-10 text-sm"
                       disabled={
                         sepidarProductsOnly &&
+                        !isEditMode &&
                         (!selectedCustomerId ||
                           !hasAssignmentInventory(selectedCustomer) ||
                           (requiresPriceListSelection &&
