@@ -5,6 +5,7 @@ import {
   getWarehouseStatusLabel,
 } from "@/lib/domain/statuses";
 import { formatCurrency, formatNumber } from "@/lib/expert/utils";
+import { PaymentMethodRow } from "@/components/shared/payment-method-row";
 
 interface OrderSummaryCardProps {
   customerName: string | null;
@@ -48,11 +49,11 @@ export function OrderSummaryCard({
         <SummaryRow label="تعداد آیتم" value={formatNumber(itemCount)} />
         <SummaryRow label="جمع تعداد" value={formatNumber(totalQuantity)} />
         <SummaryRow label="مبلغ تقریبی" value={formatCurrency(totalAmount)} />
-        <SummaryRow label="لیست قیمت" value={saleTypeTitle || "-"} />
-        <SummaryRow
+        <PaymentMethodRow value={saleTypeTitle} />
+        {/* <SummaryRow
           label="انبارهای مجاز"
           value={stockTitles.length ? stockTitles.join("، ") : "-"}
-        />
+        /> */}
         <SummaryRow label="وضعیت سفارش" value={getOrderStatusLabel(status)} />
         <SummaryRow
           label="وضعیت انبار"

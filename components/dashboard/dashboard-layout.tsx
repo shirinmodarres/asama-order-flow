@@ -105,7 +105,7 @@ export function DashboardLayout({ role, title, children }: DashboardLayoutProps)
             user={currentUser}
             onMenuClick={() => setIsSidebarOpen(true)}
           />
-          <div className="mt-6 min-h-0 min-w-0 flex-1 space-y-6 overflow-y-auto overflow-x-auto pb-8 pr-1">
+          <div className="dashboard-scrollbar-hidden mt-6 min-h-0 min-w-0 flex-1 space-y-6 overflow-y-auto overflow-x-auto pb-8 pr-1">
             {children}
           </div>
         </main>

@@ -150,7 +150,7 @@ export default function ExpertQuotationDetailPage() {
                 <h3 className="text-base font-semibold text-[#1F3A5F]">اطلاعات پیش فاکتور</h3>
                 <dl className="mt-4 space-y-3 text-sm">
                   <InfoRow label="مشتری" value={quotation.customerName || "-"} />
-                  <InfoRow label="لیست قیمت" value={quotation.priceListTitle || "-"} />
+                  {(quotation.priceListTitle) ? <InfoRow label="روش پرداخت" value={quotation.priceListTitle || ""} /> : null}
                   <InfoRow label="وضعیت" value={<QuotationStatusPill status={quotation.status} />} />
                   <InfoRow label="تاریخ اعتبار" value={quotation.validUntil ? formatDate(quotation.validUntil) : "-"} />
                   <InfoRow label="جمع جزء" value={formatCurrency(quotation.subtotal)} />

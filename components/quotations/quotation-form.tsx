@@ -312,11 +312,11 @@ export function QuotationForm({
       return;
     }
     if (!selectedSalesTypeId) {
-      setError("لطفاً نوع فروش را انتخاب کنید.");
+      setError("لطفاً روش پرداخت را انتخاب کنید.");
       return;
     }
     if (!selectedPriceListId) {
-      setError("لطفاً لیست قیمت را انتخاب کنید.");
+      setError("لطفاً روش پرداخت را انتخاب کنید.");
       return;
     }
 
@@ -330,7 +330,7 @@ export function QuotationForm({
       if (!row.productId) {
         rowErrors.productId = SELECT_REQUIRED_MESSAGE;
       } else if (!productsById[row.productId]) {
-        rowErrors.productId = "این کالا در لیست قیمت انتخاب‌شده موجود نیست.";
+        rowErrors.productId = "این کالا در روش پرداخت انتخاب‌شده موجود نیست.";
       }
       if (!Number.isFinite(row.quantity) || row.quantity <= 0) {
         rowErrors.quantity = POSITIVE_NUMBER_MESSAGE;
@@ -395,7 +395,7 @@ export function QuotationForm({
             <FieldError message={customerError} />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
-            <span>نوع فروش</span>
+            <span>روش پرداخت</span>
             <SearchableSelect
               value={selectedSalesTypeId || undefined}
               onValueChange={setSelectedSalesTypeId}
@@ -404,20 +404,20 @@ export function QuotationForm({
                 label: salesType.title,
                 searchText: salesType.title,
               }))}
-              placeholder="انتخاب نوع فروش"
-              searchPlaceholder="جستجو در نوع فروش"
-              emptyMessage="نوع فروشی پیدا نشد"
+              placeholder="انتخاب روش پرداخت"
+              searchPlaceholder="جستجو در روش پرداخت"
+              emptyMessage="روش پرداختی پیدا نشد"
             />
           </label>
           <label className="grid gap-2 text-sm font-medium text-[#334155]">
-            <span>لیست قیمت</span>
+            <span>روش پرداخت</span>
             <SearchableSelect
               value={selectedPriceListId || undefined}
               onValueChange={setSelectedPriceListId}
               options={priceListOptions}
-              placeholder="انتخاب لیست قیمت"
-              searchPlaceholder="جستجو در لیست قیمت"
-              emptyMessage="لیست قیمت پیدا نشد"
+              placeholder="انتخاب روش پرداخت"
+              searchPlaceholder="جستجو در روش پرداخت"
+              emptyMessage="روش پرداخت پیدا نشد"
               disabled={!selectedCustomerId || priceListOptions.length === 0}
             />
           </label>
@@ -542,7 +542,7 @@ export function QuotationForm({
           <h3 className="text-base font-semibold text-[#1F3A5F]">خلاصه پیش فاکتور</h3>
           <dl className="mt-4 space-y-3 text-sm">
             <SummaryRow label="مشتری" value={selectedCustomer?.fullName || "-"} />
-            <SummaryRow label="لیست قیمت" value={selectedCustomer?.priceListTitle || selectedPriceListId || "-"} />
+            {(selectedCustomer?.priceListTitle || selectedPriceListId) ? <SummaryRow label="روش پرداخت" value={selectedCustomer?.priceListTitle || selectedPriceListId || ""} /> : null}
             <SummaryRow label="تعداد آیتم" value={formatNumber(itemCount)} />
             <SummaryRow label="جمع تعداد" value={formatNumber(totalQuantity)} />
             <SummaryRow label="جمع جزء" value={formatCurrency(subtotal)} />

@@ -191,8 +191,8 @@ export default function NajaOrderDetailsPage() {
                 }
               />
               <InfoItem
-                label="لیست قیمت"
-                value={order.priceListTitle || order.saleTypeTitle || order.saleType?.title || "-"}
+                label="روش پرداخت"
+                value={order.salesTypeTitle || order.saleType?.title || ""}
               />
               <InfoItem label="کد ملی" value={order.customerNationalId ? formatFaDigits(order.customerNationalId) : "-"} />
               <InfoItem label="موبایل مشتری" value={order.customerPhone ? formatFaDigits(order.customerPhone) : "-"} />
@@ -200,30 +200,34 @@ export default function NajaOrderDetailsPage() {
                 label="آدرس مشتری"
                 value={order.deliveryFullAddress || "-"}
               />
-              <InfoItem
-                label="نام و نام خانوادگی تحویل‌گیرنده"
-                value={
-                  [order.recipientFirstName, order.recipientLastName]
-                    .filter(Boolean)
-                    .join(" ") || "-"
-                }
-              />
-              <InfoItem
-                label="کد ملی تحویل‌گیرنده"
-                value={
-                  order.recipientNationalId
-                    ? formatFaDigits(order.recipientNationalId)
-                    : "-"
-                }
-              />
-              <InfoItem
-                label="شماره موبایل تحویل‌گیرنده"
-                value={
-                  order.recipientMobile
-                    ? formatFaDigits(order.recipientMobile)
-                    : "-"
-                }
-              />
+              {hasRecipientInfo(order) ? (
+                <>
+                  <InfoItem
+                    label="نام و نام خانوادگی تحویل‌گیرنده"
+                    value={
+                      [order.recipientFirstName, order.recipientLastName]
+                        .filter(Boolean)
+                        .join(" ") || "-"
+                    }
+                  />
+                  <InfoItem
+                    label="کد ملی تحویل‌گیرنده"
+                    value={
+                      order.recipientNationalId
+                        ? formatFaDigits(order.recipientNationalId)
+                        : "-"
+                    }
+                  />
+                  <InfoItem
+                    label="شماره موبایل تحویل‌گیرنده"
+                    value={
+                      order.recipientMobile
+                        ? formatFaDigits(order.recipientMobile)
+                        : "-"
+                    }
+                  />
+                </>
+              ) : null}
               <InfoItem
                 label="شماره سفارش"
                 value={
@@ -284,7 +288,7 @@ export default function NajaOrderDetailsPage() {
             totalAmount={totalAmount}
             status={order.orderStatus as never}
             warehouseStatus={order.warehouseStatus as never}
-            saleTypeTitle={order.priceListTitle || order.saleTypeTitle || order.saleType?.title}
+            saleTypeTitle={order.salesTypeTitle || order.saleType?.title || null}
             stockTitles={
               order.selectedStockTitles.length
                 ? order.selectedStockTitles
@@ -324,4 +328,13 @@ function getQuotationStatusLabel(order: Order): string {
   }
 
   return "ثبت نشده";
+}
+
+function hasRecipientInfo(order: Order): boolean {
+  return Boolean(
+    order.recipientFirstName ||
+      order.recipientLastName ||
+      order.recipientNationalId ||
+      order.recipientMobile,
+  );
 }

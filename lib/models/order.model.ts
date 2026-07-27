@@ -118,6 +118,10 @@ export interface Order {
   reviewRemainingMs: number | null;
   sourceLabel: string | null;
   notes: string | null;
+  editedByUserId: string | null;
+  editedByName: string | null;
+  editedAt: string | null;
+  changedFields: string[];
   cancelReasonCode: string | null;
   cancelReasonLabel: string | null;
   cancelledByName: string | null;

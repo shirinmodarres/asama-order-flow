@@ -75,6 +75,34 @@ interface SalesTypeOption {
   sepidarCode: number | null;
 }
 
+function getOrderSalesTypeOptionKey(order?: Order | null): string {
+  if (!order) return "";
+  const objectId = order.salesTypeObjectId || order.saleTypeObjectId || "";
+  if (objectId) return objectId;
+  const hasSnapshot =
+    Boolean(order.salesTypeTitle || order.saleType?.title) ||
+    order.salesTypeInternalCode !== null ||
+    order.salesTypeSepidarCode !== null ||
+    order.saleType?.sepidarSaleTypeId !== null;
+  if (!hasSnapshot) return "";
+  return `order-sales-type-${order.objectId || "fallback"}`;
+}
+
+function buildOrderSalesTypeFallback(order?: Order | null): SalesTypeOption | null {
+  if (!order) return null;
+  const objectId = getOrderSalesTypeOptionKey(order);
+  const title = order.salesTypeTitle || order.saleType?.title || "";
+  const internalCode = order.salesTypeInternalCode ?? null;
+  const sepidarCode = order.salesTypeSepidarCode ?? order.saleType?.sepidarSaleTypeId ?? null;
+  if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
+  return {
+    objectId,
+    title,
+    internalCode,
+    sepidarCode,
+  };
+}
+
 const EMPTY_PRODUCTS: Product[] = [];
 const EMPTY_CUSTOMERS: Customer[] = [];
 
@@ -93,6 +121,7 @@ export interface OrderFormSubmitPayload {
   recipientFirstName?: string;
   recipientLastName?: string;
   recipientNationalId?: string;
+  recipientMobile?: string;
   najaOrderNumber?: string;
   najaPurchaseDate?: string | null;
   notes?: string;
@@ -168,6 +197,9 @@ export function OrderForm({
   const [recipientNationalId, setRecipientNationalId] = useState(
     initialOrder?.recipientNationalId ?? "",
   );
+  const [recipientMobile, setRecipientMobile] = useState(
+    initialOrder?.recipientMobile ?? "",
+  );
   const [najaOrderNumber, setNajaOrderNumber] = useState(
     initialOrder?.najaOrderNumber ?? initialOrder?.externalOrderNumber ?? "",
   );
@@ -183,9 +215,7 @@ export function OrderForm({
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    initialOrder?.salesTypeObjectId ||
-      initialOrder?.saleTypeObjectId ||
-      "",
+    getOrderSalesTypeOptionKey(initialOrder),
   );
   const [selectedAddressId, setSelectedAddressId] = useState(
     initialOrder?.selectedCustomerAddressId
@@ -199,6 +229,10 @@ export function OrderForm({
   const [rowErrors, setRowErrors] = useState<
     Record<string, { productId?: string; quantity?: string }>
   >({});
+  const orderSalesTypeFallback = useMemo(
+    () => buildOrderSalesTypeFallback(initialOrder),
+    [initialOrder],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -209,9 +243,7 @@ export function OrderForm({
         setSalesTypes(data);
         if (!selectedSalesTypeId) {
           const initialId =
-            initialOrder?.salesTypeObjectId ||
-            initialOrder?.saleTypeObjectId ||
-            "";
+            getOrderSalesTypeOptionKey(initialOrder);
           if (initialId) setSelectedSalesTypeId(initialId);
         }
       } catch {
@@ -618,6 +650,23 @@ export function OrderForm({
   const selectedAddress = addresses.find(
     (address) => getCustomerAddressKey(address) === selectedAddressId,
   );
+  const mergedSalesTypes = useMemo(() => {
+    const map = new Map<string, SalesTypeOption>();
+    salesTypes.forEach((salesType) => {
+      map.set(salesType.objectId, salesType);
+    });
+    if (
+      orderSalesTypeFallback &&
+      !map.has(orderSalesTypeFallback.objectId) &&
+      (orderSalesTypeFallback.objectId ||
+        orderSalesTypeFallback.title ||
+        orderSalesTypeFallback.internalCode !== null ||
+        orderSalesTypeFallback.sepidarCode !== null)
+    ) {
+      map.set(orderSalesTypeFallback.objectId || `order-sales-type-${initialOrder?.objectId || "fallback"}`, orderSalesTypeFallback);
+    }
+    return Array.from(map.values());
+  }, [initialOrder?.objectId, orderSalesTypeFallback, salesTypes]);
   const priceListOptions = useMemo(
     () => getCustomerPriceListOptions(selectedCustomer, initialOrder),
     [initialOrder, selectedCustomer],
@@ -630,17 +679,84 @@ export function OrderForm({
   const requiresPriceListSelection =
     sepidarProductsOnly && Boolean(selectedCustomerId) && hasGeneratedPriceList;
   const isNajaOrder = initialOrder?.orderType === "naja";
-  const selectedSalesType = salesTypes.find((item) => item.objectId === selectedSalesTypeId) || null;
+  const selectedSalesType =
+    mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
+    orderSalesTypeFallback ||
+    null;
+  const orderSalesTypeTitle =
+    initialOrder?.salesTypeTitle ??
+    initialOrder?.saleType?.title ??
+    initialOrder?.priceListTitle ??
+    null;
   const currentSaleTypeTitle =
-    selectedPriceListOption
-      ? priceListLabel(selectedPriceListOption)
-      : selectedCustomer?.priceListTitle ??
-        initialOrder?.priceListTitle ??
-        selectedSalesType?.title ??
-        selectedCustomer?.saleType?.title ??
-        selectedCustomer?.saleType?.title ??
-        initialOrder?.salesTypeTitle ??
-        initialOrder?.saleTypeTitle;
+    selectedSalesType?.title ??
+    orderSalesTypeTitle ??
+    orderSalesTypeFallback?.title ??
+    null;
+  const selectedSalesTypeOption = selectedSalesType
+    ? {
+        value: selectedSalesType.objectId,
+        label: selectedSalesType.title,
+        searchText: [
+          selectedSalesType.title,
+          selectedSalesType.internalCode,
+          selectedSalesType.sepidarCode,
+        ]
+        .filter(Boolean)
+        .join(" "),
+      }
+    : orderSalesTypeTitle
+      ? {
+          value:
+            selectedSalesTypeId ||
+            getOrderSalesTypeOptionKey(initialOrder) ||
+            `order-sales-type-${initialOrder?.objectId || "fallback"}`,
+          label: orderSalesTypeTitle,
+          searchText: orderSalesTypeTitle,
+        }
+    : currentSaleTypeTitle
+      ? {
+          value:
+            selectedSalesTypeId ||
+            getOrderSalesTypeOptionKey(initialOrder) ||
+            `order-sales-type-${initialOrder?.objectId || "fallback"}`,
+          label: currentSaleTypeTitle,
+          searchText: currentSaleTypeTitle,
+        }
+      : null;
+
+  useEffect(() => {
+    if (!initialOrder) return;
+
+    const matchedSalesType =
+      mergedSalesTypes.find(
+        (item) =>
+          item.objectId === initialOrder.salesTypeObjectId ||
+          item.objectId === initialOrder.saleTypeObjectId ||
+          item.objectId === initialOrder.salesType?.objectId ||
+          item.objectId === initialOrder.saleType?.objectId ||
+          item.title === orderSalesTypeTitle,
+      ) || null;
+
+    if (matchedSalesType && matchedSalesType.objectId !== selectedSalesTypeId) {
+      setSelectedSalesTypeId(matchedSalesType.objectId);
+      return;
+    }
+
+    if (
+      !matchedSalesType &&
+      !selectedSalesTypeId &&
+      orderSalesTypeFallback?.objectId
+    ) {
+      setSelectedSalesTypeId(orderSalesTypeFallback.objectId);
+    }
+  }, [
+    initialOrder,
+    mergedSalesTypes,
+    orderSalesTypeFallback?.objectId,
+    orderSalesTypeTitle,
+    selectedSalesTypeId,
+  ]);
   const currentStockTitles = selectedCustomer
     ? getAllowedStockTitles(selectedCustomer)
     : initialOrder?.stockTitle
@@ -682,6 +798,13 @@ export function OrderForm({
   };
 
   const handleSubmit = async () => {
+    console.log("[ORDER_SUBMIT_CLICKED]", {
+      mode,
+      selectedCustomerId: selectedCustomerId || null,
+      selectedPriceListId: selectedPriceListId || null,
+      selectedSalesTypeId: selectedSalesTypeId || null,
+      itemCount: normalizedItems.length,
+    });
     setError("");
     setFieldErrors({});
     setRowErrors({});
@@ -721,7 +844,7 @@ export function OrderForm({
 
     if (!selectedSalesTypeId) {
       setFieldErrors({
-        salesTypeObjectId: "لطفاً نوع فروش را انتخاب کنید.",
+        salesTypeObjectId: "لطفاً روش پرداخت را انتخاب کنید.",
       });
       return;
     }
@@ -733,14 +856,14 @@ export function OrderForm({
       !selectedSalesType?.sepidarCode
     ) {
       setFieldErrors({
-        selectedCustomerId: "برای این مشتری لیست قیمت مشخص نشده است.",
+        selectedCustomerId: "برای این مشتری روش پرداخت مشخص نشده است.",
       });
       return;
     }
 
     if (requiresPriceListSelection && !selectedPriceListId) {
       setFieldErrors({
-        selectedPriceListId: "لطفاً لیست قیمت را انتخاب کنید.",
+        selectedPriceListId: "لطفاً روش پرداخت را انتخاب کنید.",
       });
       return;
     }
@@ -760,8 +883,8 @@ export function OrderForm({
         (productsById[item.productId]?.unitPrice ?? 0) <= 0
       ) {
         errors.productId = productsById[item.productId]?.priceListConflict
-          ? "این کالا در چند لیست قیمت انتخابی وجود دارد."
-          : "قیمت کالا برای این لیست قیمت ثبت نشده است.";
+          ? "این کالا در چند روش پرداخت انتخابی وجود دارد."
+          : "قیمت کالا برای این روش پرداخت ثبت نشده است.";
       }
       if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
         errors.quantity = POSITIVE_NUMBER_MESSAGE;
@@ -858,7 +981,8 @@ export function OrderForm({
       }
     }
 
-    if (selectedCustomerId && !selectedAddressId) {
+    let effectiveSelectedAddress: CustomerAddress | null = selectedAddress ?? null;
+    if (selectedCustomerId && !effectiveSelectedAddress) {
       if (process.env.NODE_ENV === "development") {
         console.error("[CUSTOMER_DELIVERY_ADDRESS_DEBUG]", {
           selectedCustomer: selectedCustomer ?? null,
@@ -876,46 +1000,57 @@ export function OrderForm({
         setFieldErrors({ selectedAddressId: "لطفاً آدرس تحویل را انتخاب کنید." });
         return;
       }
-      setSelectedAddressId(
-        String(
-          resolvedMainAddress?.customerAddressId ??
-            resolvedMainAddress?.sepidarAddressId ??
-            "",
-        ),
-      );
-      return;
+      const resolvedAddressId = String(
+        resolvedMainAddress?.customerAddressId ??
+          resolvedMainAddress?.sepidarAddressId ??
+          "",
+      ).trim();
+      if (!resolvedAddressId) {
+        setFieldErrors({ selectedAddressId: "آدرس تحویل موجود نیست" });
+        return;
+      }
+      setSelectedAddressId(resolvedAddressId);
+      effectiveSelectedAddress = resolvedMainAddress;
     }
 
     try {
+      const finalCustomerAddressId =
+        effectiveSelectedAddress?.customerAddressId ??
+        effectiveSelectedAddress?.sepidarAddressId ??
+        undefined;
+      console.log("[ORDER_SUBMIT_REQUEST]", {
+        mode,
+        customerObjectId: selectedCustomerId || null,
+        priceListId: selectedPriceListId || selectedCustomer?.priceListId || null,
+        salesTypeObjectId: selectedSalesType?.objectId || null,
+        selectedCustomerAddressId: finalCustomerAddressId ?? null,
+        itemCount: normalizedItems.length,
+      });
       await onSubmit({
         customerName: selectedCustomerId ? undefined : customerName.trim(),
         customerObjectId: selectedCustomerId || undefined,
-        customerAddressId:
-          selectedAddress?.customerAddressId ??
-          selectedAddress?.sepidarAddressId ??
-          undefined,
+        customerAddressId: finalCustomerAddressId,
         selectedCustomerAddressId:
-          selectedAddress?.customerAddressId ??
-          selectedAddress?.sepidarAddressId ??
-          undefined,
-        customerAddressTitle: selectedAddress?.title ?? resolvedMainAddress?.title ?? null,
+          finalCustomerAddressId,
+        customerAddressTitle: effectiveSelectedAddress?.title ?? resolvedMainAddress?.title ?? null,
         customerAddressText:
-          selectedAddress?.Address ?? selectedAddress?.address ?? selectedAddress?.fullAddress ?? resolvedMainAddress?.Address ?? resolvedMainAddress?.address ?? resolvedMainAddress?.fullAddress ?? null,
+          effectiveSelectedAddress?.Address ?? effectiveSelectedAddress?.address ?? effectiveSelectedAddress?.fullAddress ?? resolvedMainAddress?.Address ?? resolvedMainAddress?.address ?? resolvedMainAddress?.fullAddress ?? null,
         customerAddressZipCode:
-          selectedAddress?.ZipCode ?? selectedAddress?.zipCode ?? selectedAddress?.postalCode ?? resolvedMainAddress?.ZipCode ?? resolvedMainAddress?.zipCode ?? resolvedMainAddress?.postalCode ?? null,
+          effectiveSelectedAddress?.ZipCode ?? effectiveSelectedAddress?.zipCode ?? effectiveSelectedAddress?.postalCode ?? resolvedMainAddress?.ZipCode ?? resolvedMainAddress?.zipCode ?? resolvedMainAddress?.postalCode ?? null,
         customerAddressCityRef:
-          selectedAddress?.cityRef ?? resolvedMainAddress?.cityRef ?? null,
+          effectiveSelectedAddress?.cityRef ?? resolvedMainAddress?.cityRef ?? null,
         customerAddressPathRef:
-          selectedAddress?.pathRef ?? resolvedMainAddress?.pathRef ?? null,
+          effectiveSelectedAddress?.pathRef ?? resolvedMainAddress?.pathRef ?? null,
         customerAddressIsMain:
-          selectedAddress?.isMain ?? resolvedMainAddress?.isMain ?? false,
+          effectiveSelectedAddress?.isMain ?? resolvedMainAddress?.isMain ?? false,
+        recipientFirstName: recipientFirstName.trim(),
+        recipientLastName: recipientLastName.trim(),
+        recipientNationalId: normalizeDigits(
+          recipientNationalId.trim(),
+        ),
+        recipientMobile: normalizeDigits(recipientMobile.trim()),
         ...(initialOrder?.orderType === "naja"
           ? {
-              recipientFirstName: recipientFirstName.trim(),
-              recipientLastName: recipientLastName.trim(),
-              recipientNationalId: normalizeDigits(
-                recipientNationalId.trim(),
-              ),
               najaOrderNumber: normalizeDigits(najaOrderNumber.trim()),
               najaPurchaseDate: najaPurchaseDate || null,
             }
@@ -945,6 +1080,11 @@ export function OrderForm({
             : {}),
         })),
       });
+      console.log("[ORDER_SUBMIT_SUCCESS]", {
+        mode,
+        selectedCustomerId: selectedCustomerId || null,
+        selectedPriceListId: selectedPriceListId || null,
+      });
       if (process.env.NODE_ENV === "development") {
         console.log("[CUSTOMER_DELIVERY_ADDRESS_DEBUG]", {
           selectedCustomer: selectedCustomer ?? null,
@@ -969,6 +1109,10 @@ export function OrderForm({
         });
       }
     } catch (submitError) {
+      console.error("[ORDER_SUBMIT_FAILED]", {
+        mode,
+        error: submitError,
+      });
       setError(getErrorMessage(submitError));
     }
   };
@@ -1107,7 +1251,7 @@ export function OrderForm({
               )}
               {assignedCustomersOnly ? (
                 <span>
-                  لیست قیمت: {currentSaleTypeTitle || "-"}
+                  {currentSaleTypeTitle ? `روش پرداخت: ${currentSaleTypeTitle}` : null}
                 </span>
               ) : null}
             </div>
@@ -1189,7 +1333,7 @@ export function OrderForm({
               اطلاعات فعلی سفارش
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <span>لیست قیمت: {currentSaleTypeTitle || "-"}</span>
+      {currentSaleTypeTitle ? <span>روش پرداخت: {currentSaleTypeTitle}</span> : null}
               <span>انبار خروج: {initialOrder.stockTitle || "-"}</span>
               <span>وضعیت سفارش: {initialOrder.orderStatusLabel || "-"}</span>
               <span>
@@ -1199,105 +1343,128 @@ export function OrderForm({
           </div>
         ) : null}
 
-        {isNajaOrder ? (
-          <div className="mt-5 rounded-xl border border-[#E7EDF3] bg-[#FBFCFD] p-4">
-            <div>
-              <h3 className="text-base font-semibold text-[#102034]">
-                مصرف‌کننده نهایی
-              </h3>
-              <p className="mt-1 text-sm leading-7 text-[#6B7280]">
-                این شخص خریدار نهایی از مرکز ناجا است و با مرکز انتخاب‌شده تفاوت دارد.
-              </p>
-            </div>
+        <div className="mt-5 rounded-xl border border-[#E7EDF3] bg-[#FBFCFD] p-4">
+          <div>
+            <h3 className="text-base font-semibold text-[#102034]">
+              {isNajaOrder ? "مصرف‌کننده نهایی" : "اطلاعات تحویل‌گیرنده"}
+            </h3>
+            <p className="mt-1 text-sm leading-7 text-[#6B7280]">
+              {isNajaOrder
+                ? "این شخص خریدار نهایی از مرکز ناجا است و با مرکز انتخاب‌شده تفاوت دارد."
+                : "در صورت نیاز، اطلاعات تحویل‌گیرنده را برای سفارش ثبت کنید."}
+            </p>
+          </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 text-sm font-medium text-[#334155]">
-                <span>نام</span>
-                <Input
-                  value={recipientFirstName}
-                  onChange={(event) => {
-                    setRecipientFirstName(event.target.value);
-                    setFieldErrors((current) => ({
-                      ...current,
-                      recipientFirstName: "",
-                    }));
-                  }}
-                  aria-invalid={Boolean(fieldErrors.recipientFirstName)}
-                />
-                <FieldError message={fieldErrors.recipientFirstName} />
-              </label>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>نام</span>
+              <Input
+                value={recipientFirstName}
+                onChange={(event) => {
+                  setRecipientFirstName(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    recipientFirstName: "",
+                  }));
+                }}
+                aria-invalid={Boolean(fieldErrors.recipientFirstName)}
+              />
+              <FieldError message={fieldErrors.recipientFirstName} />
+            </label>
 
-              <label className="grid gap-2 text-sm font-medium text-[#334155]">
-                <span>نام خانوادگی</span>
-                <Input
-                  value={recipientLastName}
-                  onChange={(event) => {
-                    setRecipientLastName(event.target.value);
-                    setFieldErrors((current) => ({
-                      ...current,
-                      recipientLastName: "",
-                    }));
-                  }}
-                  aria-invalid={Boolean(fieldErrors.recipientLastName)}
-                />
-                <FieldError message={fieldErrors.recipientLastName} />
-              </label>
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>نام خانوادگی</span>
+              <Input
+                value={recipientLastName}
+                onChange={(event) => {
+                  setRecipientLastName(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    recipientLastName: "",
+                  }));
+                }}
+                aria-invalid={Boolean(fieldErrors.recipientLastName)}
+              />
+              <FieldError message={fieldErrors.recipientLastName} />
+            </label>
 
-              <label className="grid gap-2 text-sm font-medium text-[#334155]">
-                <span>کد ملی</span>
-                <Input
-                  inputMode="numeric"
-                  value={recipientNationalId}
-                  onChange={(event) => {
-                    setRecipientNationalId(event.target.value);
-                    setFieldErrors((current) => ({
-                      ...current,
-                      recipientNationalId: "",
-                    }));
-                  }}
-                  aria-invalid={Boolean(fieldErrors.recipientNationalId)}
-                />
-                <FieldError message={fieldErrors.recipientNationalId} />
-              </label>
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>کد ملی</span>
+              <Input
+                inputMode="numeric"
+                value={recipientNationalId}
+                onChange={(event) => {
+                  setRecipientNationalId(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    recipientNationalId: "",
+                  }));
+                }}
+                aria-invalid={Boolean(fieldErrors.recipientNationalId)}
+              />
+              <FieldError message={fieldErrors.recipientNationalId} />
+            </label>
 
-              <div className="mt-2 border-t border-[#E5E7EB] pt-4 md:col-span-2">
-                <h3 className="text-base font-semibold text-[#102034]">
-                  اطلاعات سفارش
-                </h3>
-              </div>
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>موبایل تحویل‌گیرنده</span>
+              <Input
+                inputMode="numeric"
+                value={recipientMobile}
+                onChange={(event) => {
+                  setRecipientMobile(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    recipientMobile: "",
+                  }));
+                }}
+                aria-invalid={Boolean(fieldErrors.recipientMobile)}
+              />
+              <FieldError message={fieldErrors.recipientMobile} />
+            </label>
 
-              <label className="grid gap-2 text-sm font-medium text-[#334155] md:col-span-2">
-                <span>شماره سفارش ناجا</span>
-                <Input
-                  inputMode="numeric"
-                  value={najaOrderNumber}
-                  onChange={(event) => {
-                    setNajaOrderNumber(event.target.value);
-                    setFieldErrors((current) => ({
-                      ...current,
-                      najaOrderNumber: "",
-                    }));
-                  }}
-                  aria-invalid={Boolean(fieldErrors.najaOrderNumber)}
-                />
-                <FieldError message={fieldErrors.najaOrderNumber} />
-              </label>
+            {isNajaOrder ? (
+              <>
+                <div className="mt-2 border-t border-[#E5E7EB] pt-4 md:col-span-2">
+                  <h3 className="text-base font-semibold text-[#102034]">
+                    اطلاعات سفارش
+                  </h3>
+                </div>
 
-              <div className="md:col-span-2">
-                <JalaliDateInput
-                  label="تاریخ سفارش"
-                  value={najaPurchaseDate}
-                  onChange={setNajaPurchaseDate}
-                  placeholder="انتخاب تاریخ سفارش"
-                />
-              </div>
-            </div>
+                <label className="grid gap-2 text-sm font-medium text-[#334155] md:col-span-2">
+                  <span>شماره سفارش ناجا</span>
+                  <Input
+                    inputMode="numeric"
+                    value={najaOrderNumber}
+                    onChange={(event) => {
+                      setNajaOrderNumber(event.target.value);
+                      setFieldErrors((current) => ({
+                        ...current,
+                        najaOrderNumber: "",
+                      }));
+                    }}
+                    aria-invalid={Boolean(fieldErrors.najaOrderNumber)}
+                  />
+                  <FieldError message={fieldErrors.najaOrderNumber} />
+                </label>
 
+                <div className="md:col-span-2">
+                  <JalaliDateInput
+                    label="تاریخ سفارش"
+                    value={najaPurchaseDate}
+                    onChange={setNajaPurchaseDate}
+                    placeholder="انتخاب تاریخ سفارش"
+                  />
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {isNajaOrder ? (
             <div className="mt-4 rounded-xl border border-[#E5E7EB] bg-white p-3 text-xs leading-6 text-[#64748B]">
               <p>آدرس مرکز ناجا: {initialOrder?.customerAddress || "-"}</p>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
 
         <div className="mt-6 flex items-start justify-between gap-4">
           <div>
@@ -1367,9 +1534,10 @@ export function OrderForm({
         ) : null}
 
         <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">
-          <span>نوع فروش</span>
+          <span>روش پرداخت</span>
           <SearchableSelect
             value={selectedSalesTypeId || undefined}
+            selectedOption={selectedSalesTypeOption}
             onValueChange={(value) => {
               setSelectedSalesTypeId(value);
               setFieldErrors((current) => ({
@@ -1377,22 +1545,22 @@ export function OrderForm({
                 salesTypeObjectId: "",
               }));
             }}
-            options={salesTypes.map((salesType) => ({
+            options={mergedSalesTypes.map((salesType) => ({
               value: salesType.objectId,
               label: salesType.title,
               searchText: [salesType.title, salesType.internalCode, salesType.sepidarCode]
                 .filter(Boolean)
                 .join(" "),
             }))}
-            placeholder="انتخاب نوع فروش"
-            searchPlaceholder="جستجو در نوع فروش"
-            emptyMessage="نوع فروشی پیدا نشد"
+            placeholder="انتخاب روش پرداخت"
+            searchPlaceholder="جستجو در روش پرداخت"
+            emptyMessage="روش پرداختی پیدا نشد"
             invalid={Boolean(fieldErrors.salesTypeObjectId)}
           />
           <FieldError message={fieldErrors.salesTypeObjectId} />
         </label>
 
-        {requiresPriceListSelection ? (
+        {mode !== "edit" && requiresPriceListSelection ? (
           <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">
             <span>لیست قیمت</span>
             <SearchableSelect
@@ -1424,7 +1592,7 @@ export function OrderForm({
           {items.map((item, index) => {
             const product = productsById[item.productId];
             const productCode = product
-              ? product.sepidarCode || product.sku || product.objectId
+              ? product.sepidarCode || product.sku || product.productObjectId || product.name
               : "";
             const helperText = product
               ? [
@@ -1483,7 +1651,7 @@ export function OrderForm({
                         sepidarProductsOnly && !selectedCustomerId
                           ? "ابتدا مشتری را انتخاب کنید."
                           : requiresPriceListSelection && !selectedPriceListId
-                            ? "ابتدا لیست قیمت را انتخاب کنید."
+                            ? "ابتدا روش پرداخت را انتخاب کنید."
                           : "انتخاب کالا"
                       }
                       searchPlaceholder="جستجو در کالاها"
@@ -1535,7 +1703,12 @@ export function OrderForm({
                     />
                     <ReadonlyValueInput
                       label="لیست قیمت"
-                      value={product?.priceListTitle || product?.priceListId || "-"}
+                      value={
+                        selectedPriceListOption?.title ||
+                        product?.priceListTitle ||
+                        product?.priceListId ||
+                        ""
+                      }
                     />
                   </div>
                   <FieldError
@@ -1880,11 +2053,11 @@ function createProductFromOrderItem(item: OrderItem): Product {
 
 function productIdentityLabel(product: Product): string {
   return [
-    product.sepidarCode || product.sku || product.objectId,
+    product.sepidarCode || product.sku || product.productObjectId || product.name,
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",
-    product.priceListConflict ? "تداخل لیست قیمت" : "",
+    product.priceListConflict ? "تداخل روش پرداخت" : "",
   ]
     .filter(Boolean)
     .join(" - ");

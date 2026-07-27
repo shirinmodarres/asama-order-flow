@@ -9,6 +9,7 @@ import { JalaliDateInput } from "@/components/shared/jalali-date-input";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
 import { LoadingState } from "@/components/shared/loading-state";
 import { OrderSummaryCard } from "@/components/shared/order-summary-card";
+import { PaymentMethodRow } from "@/components/shared/payment-method-row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -96,6 +97,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const selectedProduct =
     products.find((product) => product.objectId === productId) ?? null;
   const totalAmount = selectedProduct ? selectedProduct.unitPrice * quantity : 0;
+  const paymentMethodTitle = getPaymentMethodTitle(selectedCustomer);
 
   useEffect(() => {
     let isMounted = true;
@@ -199,7 +201,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
         label: [
           customer.sepidarCustomerCode || customer.id,
           customer.fullName,
-          customer.saleType?.title ? `لیست قیمت: ${customer.saleType.title}` : "",
+          customer.saleType?.title ? `روش پرداخت: ${customer.saleType.title}` : "",
         ]
           .filter(Boolean)
           .join(" - "),
@@ -257,8 +259,8 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
     }
     if (selectedProduct && selectedProduct.unitPrice <= 0) {
       nextErrors.productId = selectedProduct.priceListConflict
-        ? "این کالا در چند لیست قیمت انتخابی وجود دارد."
-        : "قیمت کالا برای این لیست قیمت ثبت نشده است.";
+        ? "این کالا در چند روش پرداخت انتخابی وجود دارد."
+        : "قیمت کالا برای این روش پرداخت ثبت نشده است.";
     }
     if (!createdByName.trim()) {
       nextErrors.createdByName = "این فیلد الزامی است.";
@@ -372,9 +374,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
                       ? formatFaDigits(selectedCustomer.sepidarCustomerCode)
                       : "-"}
                   </span>
-                  <span>
-                    لیست قیمت: {selectedCustomer.priceListTitle || selectedCustomer.saleType?.title || "-"}
-                  </span>
+                  <PaymentMethodRow value={paymentMethodTitle} />
                   <span className="sm:col-span-3">
                     آدرس مرکز:{" "}
                     {selectedCustomer.sepidarAddress?.Address ||
@@ -459,8 +459,13 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
                     }
                   />
                   <ReadonlyValueInput
-                    label="لیست قیمت"
-                    value={selectedProduct?.priceListTitle || selectedProduct?.priceListId || "-"}
+                    label="روش پرداخت"
+                    value={
+                      selectedProduct?.priceListTitle ||
+                      paymentMethodTitle ||
+                      selectedProduct?.priceListId ||
+                      "-"
+                    }
                   />
                 </div>
               </div>
@@ -638,7 +643,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
           totalAmount={totalAmount}
           status="pending_approval"
           warehouseStatus="reserved"
-          saleTypeTitle={selectedCustomer?.saleType?.title}
+          saleTypeTitle={paymentMethodTitle}
           stockTitles={
             selectedCustomer ? getAllowedStockTitles(selectedCustomer) : []
           }
@@ -671,13 +676,26 @@ function getAllowedStockTitles(customer: Customer): string[] {
   return customer.allowedStockTitles;
 }
 
+function getPaymentMethodTitle(customer: Customer | null | undefined): string | null {
+  if (!customer) return null;
+  return (
+    customer.priceListTitle ||
+    customer.saleType?.title ||
+    (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
+    (customer as Customer & { saleTypeTitle?: string | null }).saleTypeTitle ||
+    customer.priceLists?.[0]?.name ||
+    customer.priceLists?.[0]?.title ||
+    null
+  );
+}
+
 function productIdentityLabel(product: Product): string {
   return [
-    product.sepidarCode || product.sku || product.objectId,
+    product.sepidarCode || product.sku || product.productObjectId || product.name,
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",
-    product.priceListConflict ? "تداخل لیست قیمت" : "",
+    product.priceListConflict ? "تداخل روش پرداخت" : "",
   ]
     .filter(Boolean)
     .join(" - ");
