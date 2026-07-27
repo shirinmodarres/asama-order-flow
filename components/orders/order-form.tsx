@@ -2301,8 +2301,14 @@ function mapOrderItems(items: OrderItem[], products: Product[]): DraftItem[] {
 
 function resolveProductObjectId(item: OrderItem, products: Product[]): string {
   const rawProductId = item.productId || "";
+  const rawProductName = item.productName || "";
   const matchedProduct = products.find(
     (product) =>
+      (item.sepidarItemId !== null &&
+        item.sepidarItemId !== undefined &&
+        product.sepidarItemId === item.sepidarItemId) ||
+      (rawProductName && product.name === rawProductName) ||
+      (rawProductName && product.sepidarCode === rawProductName) ||
       (item.priceListItemId && product.priceListItemId === item.priceListItemId) ||
       (item.priceListId &&
         product.priceListId === item.priceListId &&
