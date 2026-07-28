@@ -235,7 +235,7 @@ export default function SupportShopProductsPage() {
       header: "ویژه",
       render: (row) => (
         <Badge variant={row.isFeatured ? "brand" : "neutral"}>
-          {row.isFeatured ? "ویژه" : "عادی"}
+          {row.isFeatured ? "ویژه" : "بازار"}
         </Badge>
       ),
     },
@@ -341,7 +341,7 @@ export default function SupportShopProductsPage() {
             options={[
               { value: "all", label: "همه" },
               { value: "featured", label: "ویژه" },
-              { value: "normal", label: "عادی" },
+              { value: "normal", label: "بازار" },
             ]}
           />
           <FilterSelect

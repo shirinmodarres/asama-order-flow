@@ -210,7 +210,7 @@ export default function WebsiteProductDetailPage() {
                   {product.isActive ? "فعال" : "غیرفعال"}
                 </Badge>
                 <Badge variant={product.isFeatured ? "brand" : "neutral"}>
-                  {product.isFeatured ? "ویژه" : "عادی"}
+                  {product.isFeatured ? "ویژه" : "بازار"}
                 </Badge>
               </div>
               <div className="mt-5 grid gap-3">

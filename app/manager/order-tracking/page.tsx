@@ -116,7 +116,7 @@ export default function ManagerOrderTrackingPage() {
     {
       key: "source",
       header: "منبع",
-      render: (row) => (row.orderType === "naja" ? "ناجا" : "عادی"),
+      render: (row) => (row.orderType === "naja" ? "ناجا" : "بازار"),
     },
     { key: "creator", header: "ثبت کننده", render: (row) => row.createdByName },
     {

@@ -410,7 +410,7 @@ export default function ExitSlipCreatePage() {
               />
               <InfoItem
                 label="نوع سفارش"
-                value={order.orderType === "naja" ? "ناجا" : "عادی"}
+                value={order.orderType === "naja" ? "ناجا" : "بازار"}
               />
               <InfoItem
                 label="انبار خروج"

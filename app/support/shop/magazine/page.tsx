@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getErrorMessage } from "@/lib/api/api-error";
+import { formatDate } from "@/lib/expert/utils";
 import type {
   WebsiteMagazinePost,
   WebsiteMagazinePostStatus,
@@ -126,7 +127,7 @@ export default function SupportShopMagazinePage() {
       header: "ویژه",
       render: (row) => (
         <Badge variant={row.isFeatured ? "brand" : "neutral"}>
-          {row.isFeatured ? "ویژه" : "عادی"}
+          {row.isFeatured ? "ویژه" : "بازار"}
         </Badge>
       ),
     },
@@ -299,11 +300,4 @@ function getStatusVariant(status: WebsiteMagazinePostStatus) {
   if (status === "published") return "success";
   if (status === "archived") return "neutral";
   return "warning";
-}
-
-function formatDate(value?: string | null): string {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("fa-IR");
 }

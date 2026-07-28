@@ -32,7 +32,6 @@ import {
 } from "@/lib/services/expert-customer.service";
 import {
   listOrderProductsForAssignment,
-  listOrderProductsBySaleType,
   listProducts,
 } from "@/lib/services/product.service";
 import { createDeprecatedProductInventoryFields } from "@/lib/mappers/product.mapper";
@@ -78,10 +77,20 @@ interface SalesTypeOption {
 
 function getOrderSalesTypeOptionKey(order?: Order | null): string {
   if (!order) return "";
-  const objectId = order.salesTypeObjectId || order.saleTypeObjectId || "";
+  const objectId =
+    order.salesTypeObjectId ||
+    order.saleTypeObjectId ||
+    order.salesType?.objectId ||
+    order.saleType?.objectId ||
+    "";
   if (objectId) return objectId;
   const hasSnapshot =
-    Boolean(order.salesTypeTitle || order.saleType?.title) ||
+    Boolean(
+      order.salesTypeTitle ||
+        order.saleTypeTitle ||
+        order.salesType?.title ||
+        order.saleType?.title,
+    ) ||
     order.salesTypeInternalCode !== null ||
     order.salesTypeSepidarCode !== null ||
     order.saleType?.sepidarSaleTypeId !== null;
@@ -89,18 +98,53 @@ function getOrderSalesTypeOptionKey(order?: Order | null): string {
   return `order-sales-type-${order.objectId || "fallback"}`;
 }
 
-function buildOrderSalesTypeFallback(order?: Order | null): SalesTypeOption | null {
+function getOrderSalesTypeSnapshot(order?: Order | null) {
   if (!order) return null;
-  const objectId = getOrderSalesTypeOptionKey(order);
-  const title = order.salesTypeTitle || order.saleType?.title || "";
-  const internalCode = order.salesTypeInternalCode ?? null;
-  const sepidarCode = order.salesTypeSepidarCode ?? order.saleType?.sepidarSaleTypeId ?? null;
-  if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
+  const objectId =
+    order.salesTypeObjectId ||
+    order.saleTypeObjectId ||
+    order.salesType?.objectId ||
+    order.saleType?.objectId ||
+    "";
+  const title =
+    order.salesTypeTitle ||
+    order.saleTypeTitle ||
+    order.salesType?.title ||
+    order.saleType?.title ||
+    "";
+  const internalCode =
+    order.salesTypeInternalCode ?? null;
+  const sepidarCode =
+    order.salesTypeSepidarCode ??
+    order.sepidarSaleTypeId ??
+    order.salesType?.sepidarCode ??
+    order.saleType?.sepidarSaleTypeId ??
+    null;
+
+  if (!objectId && !title && !internalCode && sepidarCode == null) {
+    return null;
+  }
+
   return {
     objectId,
     title,
     internalCode,
     sepidarCode,
+  };
+}
+
+function buildOrderSalesTypeFallback(
+  order?: Order | null,
+): SalesTypeOption | null {
+  const snapshot = getOrderSalesTypeSnapshot(order);
+  if (!snapshot) return null;
+  const objectId =
+    snapshot.objectId || getOrderSalesTypeOptionKey(order) || `order-sales-type-${order?.objectId || "fallback"}`;
+  return {
+    objectId,
+    title: snapshot.title,
+    internalCode: snapshot.internalCode,
+    sepidarCode: snapshot.sepidarCode,
   };
 }
 
@@ -416,7 +460,7 @@ export function OrderForm({
   useEffect(() => {
     let isMounted = true;
 
-    async function loadProductsBySaleType() {
+    async function loadProductsForOrder() {
       if (!sepidarProductsOnly) return;
       const fallbackProducts = mergeProducts(providedProducts, initialOrder);
       const keepOrderSnapshotProducts = () => {
@@ -440,12 +484,6 @@ export function OrderForm({
       const customer = assignedCustomersOnly
         ? selectedAssignment
         : customers.find((entry) => entry.objectId === selectedCustomerId);
-      const saleTypeId =
-        selectedSalesType?.sepidarCode ??
-        selectedCustomer?.saleType?.sepidarSaleTypeId ??
-        initialOrder?.salesTypeSepidarCode ??
-        customer?.saleType?.sepidarSaleTypeId ??
-        initialOrder?.sepidarSaleTypeId;
       const priceListOptions = getCustomerPriceListOptions(
         customer,
         initialOrder,
@@ -454,7 +492,11 @@ export function OrderForm({
 
       setProductsError("");
       if (!selectedCustomerId) {
-        keepOrderSnapshotProducts();
+        if (mode === "edit" && initialOrder) {
+          keepOrderSnapshotProducts();
+        } else {
+          setProducts([]);
+        }
         setIsLoadingProducts(false);
         return;
       }
@@ -479,16 +521,14 @@ export function OrderForm({
         setIsLoadingProducts(false);
         return;
       }
-      if (
-        (!hasGeneratedPriceList && !saleTypeId) ||
-        (assignedCustomersOnly && !hasAssignmentInventory(customer))
-      ) {
+      if (assignedCustomersOnly && !hasAssignmentInventory(customer)) {
         if (isEditMode && initialOrder) {
           keepOrderSnapshotProducts();
           setIsLoadingProducts(false);
           return;
         }
-        keepOrderSnapshotProducts();
+        setProducts([]);
+        setProductsError("NO_PRICE_LIST_ASSIGNED");
         setIsLoadingProducts(false);
         return;
       }
@@ -500,13 +540,13 @@ export function OrderForm({
           expertUserId:
             initialOrder?.expertUserId ?? getStoredCurrentUser()?.objectId,
         };
-        const data = hasGeneratedPriceList && context.customerObjectId
+        const data = context.customerObjectId
           ? await listOrderProductsForAssignment({
               customerObjectId: context.customerObjectId,
               expertUserId: context.expertUserId,
               priceListId: selectedPriceListId,
             })
-          : await listOrderProductsBySaleType(saleTypeId ?? 0, context);
+          : [];
         if (!isMounted) return;
         const mergedProducts = mergeProducts(data, initialOrder);
         setProducts(mergedProducts);
@@ -533,7 +573,7 @@ export function OrderForm({
       }
     }
 
-    loadProductsBySaleType();
+    loadProductsForOrder();
 
     return () => {
       isMounted = false;
@@ -648,6 +688,15 @@ export function OrderForm({
       }, {}),
     [products],
   );
+  const liveProductsById = useMemo(
+    () =>
+      products.reduce<Record<string, Product>>((accumulator, product) => {
+        if (product.inventorySource === "order_snapshot") return accumulator;
+        accumulator[product.objectId] = product;
+        return accumulator;
+      }, {}),
+    [products],
+  );
   const oldQuantityByProductId = useMemo(
     () => getOldOrderQuantities(initialOrder, products),
     [initialOrder, products],
@@ -700,10 +749,15 @@ export function OrderForm({
     mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
     orderSalesTypeFallback ||
     null;
-  const orderSalesTypeTitle =
-    initialOrder?.salesTypeTitle ??
-    initialOrder?.saleType?.title ??
-    null;
+  const selectedSalesTypeIsSelectable = Boolean(
+    selectedSalesType &&
+      mergedSalesTypes.some((item) => item.objectId === selectedSalesType.objectId),
+  );
+  const orderSalesTypeSnapshot = getOrderSalesTypeSnapshot(initialOrder);
+  const orderSalesTypeTitle = orderSalesTypeSnapshot?.title || null;
+  const orderSalesTypeOptionId =
+    getOrderSalesTypeOptionKey(initialOrder) ||
+    "";
   const currentSaleTypeTitle =
     selectedSalesType?.title ??
     orderSalesTypeTitle ??
@@ -723,18 +777,18 @@ export function OrderForm({
       }
     : orderSalesTypeTitle
       ? {
-          value:
-            selectedSalesTypeId ||
-            getOrderSalesTypeOptionKey(initialOrder) ||
-            `order-sales-type-${initialOrder?.objectId || "fallback"}`,
-          label: orderSalesTypeTitle,
-          searchText: orderSalesTypeTitle,
-        }
+        value:
+          selectedSalesTypeId ||
+          orderSalesTypeOptionId ||
+          `order-sales-type-${initialOrder?.objectId || "fallback"}`,
+        label: orderSalesTypeTitle,
+        searchText: orderSalesTypeTitle,
+      }
     : currentSaleTypeTitle
       ? {
           value:
             selectedSalesTypeId ||
-            getOrderSalesTypeOptionKey(initialOrder) ||
+            orderSalesTypeOptionId ||
             `order-sales-type-${initialOrder?.objectId || "fallback"}`,
           label: currentSaleTypeTitle,
           searchText: currentSaleTypeTitle,
@@ -744,32 +798,32 @@ export function OrderForm({
   useEffect(() => {
     if (!initialOrder) return;
 
+    const snapshot = getOrderSalesTypeSnapshot(initialOrder);
+    if (!snapshot) return;
+
     const matchedSalesType =
       mergedSalesTypes.find(
         (item) =>
-          item.objectId === initialOrder.salesTypeObjectId ||
-          item.objectId === initialOrder.saleTypeObjectId ||
-          item.objectId === initialOrder.salesType?.objectId ||
-          item.objectId === initialOrder.saleType?.objectId ||
-          item.title === orderSalesTypeTitle,
+          item.objectId === snapshot.objectId ||
+          item.title === snapshot.title ||
+          (snapshot.sepidarCode !== null && item.sepidarCode === snapshot.sepidarCode) ||
+          (snapshot.internalCode !== null &&
+            item.internalCode !== null &&
+            String(item.internalCode) === String(snapshot.internalCode)),
       ) || null;
 
-    if (matchedSalesType && matchedSalesType.objectId !== selectedSalesTypeId) {
-      setSelectedSalesTypeId(matchedSalesType.objectId);
-      return;
-    }
+    const nextSelectedId =
+      matchedSalesType?.objectId ||
+      snapshot.objectId ||
+      orderSalesTypeOptionId;
 
-    if (
-      !matchedSalesType &&
-      !selectedSalesTypeId &&
-      orderSalesTypeFallback?.objectId
-    ) {
-      setSelectedSalesTypeId(orderSalesTypeFallback.objectId);
+    if (nextSelectedId && nextSelectedId !== selectedSalesTypeId) {
+      setSelectedSalesTypeId(nextSelectedId);
     }
   }, [
     initialOrder,
+    orderSalesTypeOptionId,
     mergedSalesTypes,
-    orderSalesTypeFallback?.objectId,
     orderSalesTypeTitle,
     selectedSalesTypeId,
   ]);
@@ -880,7 +934,7 @@ export function OrderForm({
 
     if (!isEditMode && requiresPriceListSelection && !selectedPriceListId) {
       setFieldErrors({
-        selectedPriceListId: "لطفاً روش پرداخت را انتخاب کنید.",
+        selectedPriceListId: "لطفاً لیست قیمت را انتخاب کنید.",
       });
       return;
     }
@@ -900,8 +954,8 @@ export function OrderForm({
         (productsById[item.productId]?.unitPrice ?? 0) <= 0
       ) {
         errors.productId = productsById[item.productId]?.priceListConflict
-          ? "این کالا در چند روش پرداخت انتخابی وجود دارد."
-          : "قیمت کالا برای این روش پرداخت ثبت نشده است.";
+          ? "این کالا در چند لیست قیمت انتخابی وجود دارد."
+          : "قیمت کالا برای این لیست قیمت ثبت نشده است.";
       }
       if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
         errors.quantity = POSITIVE_NUMBER_MESSAGE;
@@ -966,6 +1020,9 @@ export function OrderForm({
       const insufficientProduct = Array.from(requestedByProduct.entries()).find(
         ([productId, quantity]) => {
           const product = productsById[productId];
+          if (!product || product.inventorySource === "order_snapshot") {
+            return false;
+          }
           const availableQuantity = product
             ? getEditableAvailableQuantity({
                 product,
@@ -1072,9 +1129,15 @@ export function OrderForm({
               najaPurchaseDate: najaPurchaseDate || null,
             }
           : {}),
-        salesTypeObjectId: selectedSalesType?.objectId || undefined,
-        saleTypeObjectId: selectedSalesType?.objectId || undefined,
-        sepidarSaleTypeId: selectedSalesType?.sepidarCode ?? undefined,
+        salesTypeObjectId: selectedSalesTypeIsSelectable
+          ? selectedSalesType?.objectId
+          : undefined,
+        saleTypeObjectId: selectedSalesTypeIsSelectable
+          ? selectedSalesType?.objectId
+          : undefined,
+        sepidarSaleTypeId: selectedSalesTypeIsSelectable
+          ? selectedSalesType?.sepidarCode ?? undefined
+          : undefined,
         priceListId:
           selectedPriceListId || selectedCustomer?.priceListId || undefined,
         notes: notes.trim(),
@@ -1607,11 +1670,12 @@ export function OrderForm({
 
         <div className="mt-5 space-y-3">
           {items.map((item, index) => {
+            const liveProduct = liveProductsById[item.productId];
             const product = productsById[item.productId];
-            const productLabel =
-              product?.name || item.productLabel || item.productId || "";
+            const inventoryProduct = liveProduct ?? null;
+        
             const productCode = product
-              ? product.sepidarCode || product.sku || product.productObjectId || product.name
+              ? product.sepidarCode 
               : "";
             const helperText = product
               ? [
@@ -1623,9 +1687,9 @@ export function OrderForm({
                   .filter(Boolean)
                   .join(" • ")
               : item.productLabel || `آیتم ${formatNumber(index + 1)}`;
-            const editableAvailableQuantity = product
+            const editableAvailableQuantity = inventoryProduct
               ? getEditableAvailableQuantity({
-                  product,
+                  product: inventoryProduct,
                   mode,
                   oldQuantityByProductId,
                 })
@@ -1642,17 +1706,17 @@ export function OrderForm({
                     <SearchableSelect
                       value={item.productId || undefined}
                       selectedOption={
-                        product
+                        item.productLabel
                           ? {
-                              value: product.objectId,
-                              label: productIdentityLabel(product),
-                              searchText: productIdentityLabel(product),
+                              value: item.productId || item.rowId,
+                              label: item.productLabel,
+                              searchText: item.productLabel,
                             }
-                          : item.productLabel
+                          : product
                             ? {
-                                value: item.productId || item.rowId,
-                                label: item.productLabel,
-                                searchText: item.productLabel,
+                                value: product.objectId,
+                                label: productIdentityLabel(product),
+                                searchText: productIdentityLabel(product),
                               }
                             : null
                       }
@@ -1661,7 +1725,6 @@ export function OrderForm({
                           productId: value,
                           productLabel:
                             productsById[value]?.name ||
-                            productsById[value]?.productObjectId ||
                             item.productLabel ||
                             "",
                         })
@@ -1692,7 +1755,7 @@ export function OrderForm({
                         sepidarProductsOnly && !selectedCustomerId
                           ? "ابتدا مشتری را انتخاب کنید."
                           : requiresPriceListSelection && !selectedPriceListId
-                            ? "ابتدا روش پرداخت را انتخاب کنید."
+                            ? "ابتدا لیست قیمت را انتخاب کنید."
                           : "انتخاب کالا"
                       }
                       searchPlaceholder="جستجو در کالاها"
@@ -1736,11 +1799,11 @@ export function OrderForm({
                           : "موجودی قابل فروش"
                       }
                       value={
-                        product
+                        inventoryProduct
                           ? `${formatNumber(editableAvailableQuantity)} ${
-                              product.unit || ""
+                              inventoryProduct.unit || ""
                             }`.trim()
-                        : "-"
+                          : "-"
                       }
                     />
                     <ReadonlyValueInput
@@ -1765,17 +1828,17 @@ export function OrderForm({
                       inputMode="numeric"
                       min={1}
                       max={
-                        product
+                        inventoryProduct
                           ? sepidarProductsOnly
-                            ? product.hasAvailableSalesQuantity
+                            ? inventoryProduct.hasAvailableSalesQuantity
                               ? getEditableAvailableQuantity({
-                                  product,
+                                  product: inventoryProduct,
                                   mode,
                                   oldQuantityByProductId,
                                 })
                               : undefined
                             : getEditableAvailableQuantity({
-                                product,
+                                product: inventoryProduct,
                                 mode,
                                 oldQuantityByProductId,
                               })
@@ -2095,11 +2158,11 @@ function createProductFromOrderItem(item: OrderItem): Product {
 
 function productIdentityLabel(product: Product): string {
   return [
-    product.sepidarCode || product.sku || product.productObjectId || product.name,
+    product.sepidarCode ,
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",
-    product.priceListConflict ? "تداخل روش پرداخت" : "",
+    product.priceListConflict ? "تداخل لیست قیمت" : "",
   ]
     .filter(Boolean)
     .join(" - ");
@@ -2145,11 +2208,12 @@ function ReadonlyAmountPill({
 }
 
 function mergeCustomers(customers: Customer[], order?: Order | null): Customer[] {
-  if (!order?.customerObjectId) return customers;
-  if (customers.some((customer) => customer.objectId === order.customerObjectId)) {
+  const orderCustomerObjectId = order?.customerObjectId || order?.customer?.objectId || "";
+  if (!orderCustomerObjectId) return customers;
+  if (customers.some((customer) => customer.objectId === orderCustomerObjectId)) {
     return customers;
   }
-  const fallbackCustomer = order.customer ?? createCustomerFromOrder(order);
+  const fallbackCustomer = order?.customer ?? (order ? createCustomerFromOrder(order) : null);
   return fallbackCustomer ? [fallbackCustomer, ...customers] : customers;
 }
 
@@ -2236,10 +2300,11 @@ function toNumericAddressId(value: string | number | null | undefined): number |
 }
 
 function createCustomerFromOrder(order: Order): Customer | null {
-  if (!order.customerObjectId) return null;
+  const customerObjectId = order.customerObjectId || order.customer?.objectId || "";
+  if (!customerObjectId) return null;
   return {
-    objectId: order.customerObjectId,
-    id: order.sepidarCustomerCode ?? order.customerObjectId,
+    objectId: customerObjectId,
+    id: order.sepidarCustomerCode ?? customerObjectId,
     sepidarCustomerId:
       order.sepidarCustomerId === null ? null : String(order.sepidarCustomerId),
     sepidarCustomerCode: order.sepidarCustomerCode,
@@ -2297,17 +2362,25 @@ function mapOrderItems(items: OrderItem[], products: Product[]): DraftItem[] {
 
 function resolveProductObjectId(item: OrderItem, products: Product[]): string {
   const rawProductId = item.productId || "";
+  const rawProductName = item.productName || "";
+  if (rawProductId) {
+    const exactMatch = products.find(
+      (product) =>
+        product.objectId === rawProductId ||
+        product.productObjectId === rawProductId ||
+        product.id === rawProductId,
+    );
+    if (exactMatch) return exactMatch.objectId;
+  }
   const matchedProduct = products.find(
     (product) =>
+      (item.sepidarItemId !== null &&
+        item.sepidarItemId !== undefined &&
+        product.sepidarItemId === item.sepidarItemId) ||
       (item.priceListItemId && product.priceListItemId === item.priceListItemId) ||
-      (item.priceListId &&
-        product.priceListId === item.priceListId &&
-        (product.productObjectId === rawProductId ||
-          product.objectId === rawProductId)) ||
-      product.objectId === rawProductId ||
-      product.productObjectId === rawProductId ||
-      product.id === rawProductId ||
-      product.sku === rawProductId ||
+      (item.priceListId && product.priceListId === item.priceListId) ||
+      (rawProductName && product.name === rawProductName) ||
+      (rawProductName && product.sepidarCode === rawProductName) ||
       product.sku === item.productSku,
   );
 
