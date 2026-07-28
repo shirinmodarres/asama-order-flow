@@ -448,6 +448,14 @@ export default function ManagerOrderReviewPage() {
                 value={order.orderType === "naja" ? "ناجا" : "بازار"}
               />
               <InfoItem label="مشتری" value={order.customerName ?? "-"} />
+              <InfoItem
+                label="روش پرداخت"
+                value={order.salesTypeTitle || order.saleType?.title || "-"}
+              />
+              <InfoItem
+                label="لیست قیمت"
+                value={order.priceListTitle || "-"}
+              />
               {order.orderType === "naja" ? (
                 <>
                   <InfoItem
@@ -457,14 +465,6 @@ export default function ManagerOrderReviewPage() {
                         ? formatFaDigits(order.sepidarCustomerCode)
                         : "-"
                     }
-                  />
-                  <InfoItem
-                    label="روش پرداخت"
-                    value={order.salesTypeTitle || order.saleType?.title || ""}
-                  />
-                  <InfoItem
-                    label="لیست قیمت"
-                    value={order.priceListTitle || "-"}
                   />
                   {order.salesTypeTitle || order.saleType?.title ? (
                     <div className="sm:col-span-2 rounded-xl border border-[#D7E5F0] bg-[#F8FBFF] px-4 py-3 text-sm leading-7 text-[#1F3A5F]">
@@ -703,6 +703,22 @@ export default function ManagerOrderReviewPage() {
             <p className="mt-2 text-lg font-semibold text-[#102034]">
               {formatCurrency(totalAmount)}
             </p>
+          </div>
+
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            <p className="text-sm font-semibold text-[#1F3A5F]">
+              اطلاعات فروش
+            </p>
+            <div className="mt-3 space-y-3 text-sm">
+              <InfoItem
+                label="روش پرداخت"
+                value={order.salesTypeTitle || order.saleType?.title || "-"}
+              />
+              <InfoItem
+                label="لیست قیمت"
+                value={order.priceListTitle || "-"}
+              />
+            </div>
           </div>
 
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
