@@ -84,9 +84,14 @@ function getOrderSalesTypeOptionKey(order?: Order | null): string {
   order.saleType?.objectId ||
   "";
   if (objectId) return objectId;
-  const hasSnapshot =
-    Boolean(order.salesTypeTitle || order.saleType?.title) ||
-    order.salesTypeInternalCode !== null ||
+const hasSnapshot =
+  Boolean(
+    order.salesTypeTitle ||
+    order.saleTypeTitle ||
+    order.salesType?.title ||
+    order.saleType?.title
+  ) ||
+      order.salesTypeInternalCode !== null ||
     order.salesTypeSepidarCode !== null ||
     order.saleType?.sepidarSaleTypeId !== null;
   if (!hasSnapshot) return "";
@@ -719,6 +724,8 @@ export function OrderForm({
     orderSalesTypeTitle ??
     orderSalesTypeFallback?.title ??
     null;
+
+    console.log(initialOrder);
   const selectedSalesTypeOption = selectedSalesType
     ? {
         value: selectedSalesType.objectId,
