@@ -562,7 +562,7 @@ export function QuotationForm({
             ) : null}
             <SummaryRow label="تعداد آیتم" value={formatNumber(itemCount)} />
             <SummaryRow label="جمع تعداد" value={formatNumber(totalQuantity)} />
-            <SummaryRow label="جمع جزء" value={formatCurrency(subtotal)} />
+            <SummaryRow label="جمع مبلغ اقلام" value={formatCurrency(subtotal)} />
             <SummaryRow label="درصد تخفیف کل" value={`${formatNumber(discountPercentage)}%`} />
             <SummaryRow label="مبلغ تخفیف" value={formatCurrency(discountAmount)} />
             <SummaryRow label="مبلغ مشمول مالیات" value={formatCurrency(taxableAmount)} />

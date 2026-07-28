@@ -342,7 +342,7 @@ function ItemsTable({
 function TotalsBlock({ quotation }: { quotation: SalesQuotation }) {
   return (
     <section className="summary-table mr-auto w-full max-w-[260px] overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95 text-[10px]">
-      <Total label="جمع جزء" value={quotation.subtotal} />
+      <Total label="جمع مبلغ اقلام" value={quotation.subtotal} />
       <Total label="مبلغ تخفیف" value={quotation.discountAmount} />
       <Total label="مالیات (۱۰٪)" value={quotation.taxAmount} />
       <Total label="جمع کل" value={quotation.total} emphasis />
