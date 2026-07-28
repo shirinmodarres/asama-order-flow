@@ -77,12 +77,12 @@ interface SalesTypeOption {
 
 function getOrderSalesTypeOptionKey(order?: Order | null): string {
   if (!order) return "";
-  const objectId =
-    order.salesTypeObjectId ||
-    order.saleTypeObjectId ||
-    order.salesType?.objectId ||
-    order.saleType?.objectId ||
-    "";
+ const objectId =
+  order.salesTypeObjectId ||
+  order.saleTypeObjectId ||
+  order.salesType?.objectId ||
+  order.saleType?.objectId ||
+  "";
   if (objectId) return objectId;
   const hasSnapshot =
     Boolean(order.salesTypeTitle || order.saleType?.title) ||
@@ -96,8 +96,12 @@ function getOrderSalesTypeOptionKey(order?: Order | null): string {
 function buildOrderSalesTypeFallback(order?: Order | null): SalesTypeOption | null {
   if (!order) return null;
   const objectId = getOrderSalesTypeOptionKey(order);
-  const title = order.salesTypeTitle || order.saleType?.title || "";
-  const internalCode = order.salesTypeInternalCode ?? null;
+const title =
+  order.salesTypeTitle ||
+  order.saleTypeTitle ||
+  order.salesType?.title ||
+  order.saleType?.title ||
+  "";  const internalCode = order.salesTypeInternalCode ?? null;
   const sepidarCode = order.salesTypeSepidarCode ?? order.saleType?.sepidarSaleTypeId ?? null;
   if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
   return {
@@ -704,10 +708,12 @@ export function OrderForm({
     selectedSalesType &&
       mergedSalesTypes.some((item) => item.objectId === selectedSalesType.objectId),
   );
-  const orderSalesTypeTitle =
-    initialOrder?.salesTypeTitle ??
-    initialOrder?.saleType?.title ??
-    null;
+ const orderSalesTypeTitle =
+  initialOrder?.salesTypeTitle ??
+  initialOrder?.saleTypeTitle ??
+  initialOrder?.salesType?.title ??
+  initialOrder?.saleType?.title ??
+  null;
   const currentSaleTypeTitle =
     selectedSalesType?.title ??
     orderSalesTypeTitle ??
@@ -1621,14 +1627,9 @@ export function OrderForm({
         <div className="mt-5 space-y-3">
           {items.map((item, index) => {
             const product = productsById[item.productId];
-            const productLabel =
-              item.productLabel ||
-              product?.name ||
-              product?.productObjectId ||
-              item.productId ||
-              "";
+        
             const productCode = product
-              ? product.sepidarCode || product.sku || product.name
+              ? product.sepidarCode 
               : "";
             const helperText = product
               ? [
@@ -2111,7 +2112,7 @@ function createProductFromOrderItem(item: OrderItem): Product {
 
 function productIdentityLabel(product: Product): string {
   return [
-    product.sepidarCode || product.sku || product.name,
+    product.sepidarCode ,
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",
