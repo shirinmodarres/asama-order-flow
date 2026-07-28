@@ -2,6 +2,7 @@ import { httpClient } from "@/lib/api/http-client";
 import { ApiError } from "@/lib/api/api-error";
 import { getShipmentStopReasonLabel } from "@/lib/domain/order-action-reasons";
 import { mapOrderDto, mapOrderListDto } from "@/lib/mappers/order.mapper";
+import { normalizeOrderEditPayload } from "@/lib/mappers/order-edit.mapper";
 import {
   mapProductOrderOptionListDto,
   mapProductOrderOptionDto,
@@ -24,11 +25,6 @@ import type {
   UpdatePendingOrderPayload,
   UnlockShipmentPayload,
 } from "@/lib/models/order.model";
-import {
-  normalizeDigits,
-  normalizePhone,
-  toNumber,
-} from "@/lib/utils/number-format";
 
 export async function listOrders(filters?: OrderFilters): Promise<Order[]> {
   const data = await httpClient.get<unknown>(buildOrdersPath(filters));
@@ -162,28 +158,7 @@ export async function releaseShipment(
 function normalizeOrderPayload(
   payload: UpdatePendingOrderPayload,
 ): Record<string, unknown> {
-  return {
-    ...payload,
-    recipientNationalId: payload.recipientNationalId
-      ? normalizeDigits(payload.recipientNationalId)
-      : payload.recipientNationalId,
-    recipientMobile: payload.recipientMobile
-      ? normalizePhone(payload.recipientMobile)
-      : payload.recipientMobile,
-    najaOrderNumber: payload.najaOrderNumber
-      ? normalizeDigits(payload.najaOrderNumber)
-      : payload.najaOrderNumber,
-    items: payload.items?.map((item) => ({
-      ...item,
-      quantity: toNumber(item.quantity),
-      unitPrice:
-        item.unitPrice !== undefined ? toNumber(item.unitPrice) : undefined,
-      priceNoteItemId:
-        item.priceNoteItemId !== undefined && item.priceNoteItemId !== null
-          ? toNumber(item.priceNoteItemId)
-          : item.priceNoteItemId,
-    })),
-  };
+  return normalizeOrderEditPayload(payload);
 }
 
 function mergeOrderProducts(products: ReturnType<typeof mapProductOrderOptionListDto>, order: Order) {

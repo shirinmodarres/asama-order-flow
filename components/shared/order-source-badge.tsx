@@ -6,5 +6,5 @@ export function OrderSourceBadge({ source }: { source: OrderSource }) {
     return <Badge variant="warning">سفارش ناجا</Badge>;
   }
 
-  return <Badge variant="neutral">سفارش عادی</Badge>;
+  return <Badge variant="neutral">سفارش بازار</Badge>;
 }

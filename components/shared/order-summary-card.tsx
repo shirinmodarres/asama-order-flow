@@ -15,6 +15,7 @@ interface OrderSummaryCardProps {
   status: string;
   warehouseStatus: string;
   saleTypeTitle?: string | null;
+  priceListTitle?: string | null;
   stockTitles?: string[];
 }
 
@@ -26,6 +27,7 @@ export function OrderSummaryCard({
   status,
   warehouseStatus,
   saleTypeTitle,
+  priceListTitle,
   stockTitles = [],
 }: OrderSummaryCardProps) {
   return (
@@ -50,6 +52,9 @@ export function OrderSummaryCard({
         <SummaryRow label="جمع تعداد" value={formatNumber(totalQuantity)} />
         <SummaryRow label="مبلغ تقریبی" value={formatCurrency(totalAmount)} />
         <PaymentMethodRow value={saleTypeTitle} />
+        {priceListTitle ? (
+          <SummaryRow label="لیست قیمت" value={priceListTitle} />
+        ) : null}
         {/* <SummaryRow
           label="انبارهای مجاز"
           value={stockTitles.length ? stockTitles.join("، ") : "-"}

@@ -127,7 +127,7 @@ export default function SupportShopMagazinePage() {
       header: "ویژه",
       render: (row) => (
         <Badge variant={row.isFeatured ? "brand" : "neutral"}>
-          {row.isFeatured ? "ویژه" : "عادی"}
+          {row.isFeatured ? "ویژه" : "بازار"}
         </Badge>
       ),
     },

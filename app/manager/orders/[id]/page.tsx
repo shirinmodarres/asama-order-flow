@@ -445,7 +445,7 @@ export default function ManagerOrderReviewPage() {
               />
               <InfoItem
                 label="منبع سفارش"
-                value={order.orderType === "naja" ? "ناجا" : "عادی"}
+                value={order.orderType === "naja" ? "ناجا" : "بازار"}
               />
               <InfoItem label="مشتری" value={order.customerName ?? "-"} />
               {order.orderType === "naja" ? (
@@ -461,6 +461,10 @@ export default function ManagerOrderReviewPage() {
                   <InfoItem
                     label="روش پرداخت"
                     value={order.salesTypeTitle || order.saleType?.title || ""}
+                  />
+                  <InfoItem
+                    label="لیست قیمت"
+                    value={order.priceListTitle || "-"}
                   />
                   {order.salesTypeTitle || order.saleType?.title ? (
                     <div className="sm:col-span-2 rounded-xl border border-[#D7E5F0] bg-[#F8FBFF] px-4 py-3 text-sm leading-7 text-[#1F3A5F]">

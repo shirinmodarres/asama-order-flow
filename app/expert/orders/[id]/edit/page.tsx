@@ -34,9 +34,21 @@ export default function EditExpertOrderPage() {
     async function loadOrder() {
       setIsLoading(true);
       setError("");
+      console.info("[ORDER_EDIT_LOADING]", {
+        orderId: params.id,
+      });
       try {
         const orderData = await getOrderEditData(params.id);
-        if (isMounted) setEditData(orderData);
+        if (isMounted) {
+          setEditData(orderData);
+          console.info("[ORDER_EDIT_INITIAL_VALUES]", {
+            orderId: params.id,
+            customerObjectId: orderData.order.customerObjectId,
+            salesTypeObjectId: orderData.order.salesTypeObjectId || orderData.order.saleTypeObjectId || null,
+            priceListId: orderData.order.priceListId || null,
+            itemCount: orderData.order.items.length,
+          });
+        }
       } catch (loadError) {
         if (isMounted) setError(getErrorMessage(loadError));
       } finally {
@@ -56,11 +68,27 @@ export default function EditExpertOrderPage() {
 
     setIsSubmitting(true);
     try {
+      console.info("[ORDER_EDIT_UPDATE_PAYLOAD]", {
+        orderId: editData.order.objectId,
+        payload,
+      });
       const updatedOrder = await updatePendingOrder(
         editData.order.objectId,
         payload,
       );
+      console.info("[ORDER_EDIT_SAVE_RESULT]", {
+        orderId: updatedOrder.objectId,
+        customerObjectId: updatedOrder.customerObjectId,
+        salesTypeObjectId: updatedOrder.salesTypeObjectId || updatedOrder.saleTypeObjectId || null,
+        priceListId: updatedOrder.priceListId || null,
+      });
       router.push(`/expert/orders/${updatedOrder.objectId}`);
+    } catch (submitError) {
+      console.error("[ORDER_EDIT_SAVE_FAILED]", {
+        orderId: editData.order.objectId,
+        error: submitError,
+      });
+      throw submitError;
     } finally {
       setIsSubmitting(false);
     }

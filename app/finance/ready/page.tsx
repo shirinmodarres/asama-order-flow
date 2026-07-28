@@ -131,7 +131,7 @@ export default function FinanceReadyPage() {
     {
       key: "source",
       header: "منبع",
-      render: (row) => (row.order.orderType === "naja" ? "ناجا" : "عادی"),
+      render: (row) => (row.order.orderType === "naja" ? "ناجا" : "بازار"),
     },
     {
       key: "customer",

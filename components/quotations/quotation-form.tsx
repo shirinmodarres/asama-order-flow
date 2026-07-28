@@ -164,9 +164,9 @@ export function QuotationForm({
       addOption(priceList.objectId, priceList.title || priceList.displayName || priceList.name);
     });
     addOption(selectedCustomer?.priceListId, selectedCustomer?.priceListTitle);
-    if (!options.length && selectedCustomer?.saleType?.objectId) {
-      addOption(selectedCustomer.priceListId || selectedCustomer.saleType.objectId, selectedCustomer.saleType.title);
-    }
+    // if (!options.length && selectedCustomer?.saleType?.objectId) {
+    //   addOption(selectedCustomer.priceListId || selectedCustomer.saleType.objectId, selectedCustomer.saleType.title);
+    // }
     return options;
   }, [selectedCustomer]);
 
@@ -316,7 +316,7 @@ export function QuotationForm({
       return;
     }
     if (!selectedPriceListId) {
-      setError("لطفاً روش پرداخت را انتخاب کنید.");
+      setError("لطفاً لیست قیمت را انتخاب کنید.");
       return;
     }
 
@@ -330,7 +330,7 @@ export function QuotationForm({
       if (!row.productId) {
         rowErrors.productId = SELECT_REQUIRED_MESSAGE;
       } else if (!productsById[row.productId]) {
-        rowErrors.productId = "این کالا در روش پرداخت انتخاب‌شده موجود نیست.";
+        rowErrors.productId = "این کالا در لیست قیمت انتخاب‌شده موجود نیست.";
       }
       if (!Number.isFinite(row.quantity) || row.quantity <= 0) {
         rowErrors.quantity = POSITIVE_NUMBER_MESSAGE;
@@ -394,8 +394,8 @@ export function QuotationForm({
             />
             <FieldError message={customerError} />
           </label>
-          <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
-            <span>روش پرداخت</span>
+          <label className="grid content-start gap-1.5 text-sm font-medium text-[#334155]">    
+          <span>روش پرداخت</span>
             <SearchableSelect
               value={selectedSalesTypeId || undefined}
               onValueChange={setSelectedSalesTypeId}
@@ -409,7 +409,7 @@ export function QuotationForm({
               emptyMessage="روش پرداختی پیدا نشد"
             />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+          <label className="grid content-start gap-1.5 text-sm font-medium text-[#334155]">  
             <span>لیست قیمت</span>
             <SearchableSelect
               value={selectedPriceListId || undefined}

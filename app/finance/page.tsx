@@ -82,7 +82,7 @@ export default function FinancePage() {
         <ManagerSummaryCard
           title="سفارش های آماده فاکتور"
           value={readyForInvoiceCount}
-          hint="شامل جریان عادی و سفارش های ناجا"
+          hint="شامل جریان بازار و سفارش های ناجا"
         />
         <ManagerSummaryCard
           title="فاکتورهای صادرشده"

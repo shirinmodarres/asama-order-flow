@@ -78,7 +78,12 @@ interface SalesTypeOption {
 
 function getOrderSalesTypeOptionKey(order?: Order | null): string {
   if (!order) return "";
-  const objectId = order.salesTypeObjectId || order.saleTypeObjectId || "";
+  const objectId =
+    order.salesTypeObjectId ||
+    order.saleTypeObjectId ||
+    order.salesType?.objectId ||
+    order.saleType?.objectId ||
+    "";
   if (objectId) return objectId;
   const hasSnapshot =
     Boolean(order.salesTypeTitle || order.saleType?.title) ||
@@ -700,6 +705,10 @@ export function OrderForm({
     mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
     orderSalesTypeFallback ||
     null;
+  const selectedSalesTypeIsSelectable = Boolean(
+    selectedSalesType &&
+      mergedSalesTypes.some((item) => item.objectId === selectedSalesType.objectId),
+  );
   const orderSalesTypeTitle =
     initialOrder?.salesTypeTitle ??
     initialOrder?.saleType?.title ??
@@ -1072,9 +1081,15 @@ export function OrderForm({
               najaPurchaseDate: najaPurchaseDate || null,
             }
           : {}),
-        salesTypeObjectId: selectedSalesType?.objectId || undefined,
-        saleTypeObjectId: selectedSalesType?.objectId || undefined,
-        sepidarSaleTypeId: selectedSalesType?.sepidarCode ?? undefined,
+        salesTypeObjectId: selectedSalesTypeIsSelectable
+          ? selectedSalesType?.objectId
+          : undefined,
+        saleTypeObjectId: selectedSalesTypeIsSelectable
+          ? selectedSalesType?.objectId
+          : undefined,
+        sepidarSaleTypeId: selectedSalesTypeIsSelectable
+          ? selectedSalesType?.sepidarCode ?? undefined
+          : undefined,
         priceListId:
           selectedPriceListId || selectedCustomer?.priceListId || undefined,
         notes: notes.trim(),
@@ -2149,11 +2164,12 @@ function ReadonlyAmountPill({
 }
 
 function mergeCustomers(customers: Customer[], order?: Order | null): Customer[] {
-  if (!order?.customerObjectId) return customers;
-  if (customers.some((customer) => customer.objectId === order.customerObjectId)) {
+  const orderCustomerObjectId = order?.customerObjectId || order?.customer?.objectId || "";
+  if (!orderCustomerObjectId) return customers;
+  if (customers.some((customer) => customer.objectId === orderCustomerObjectId)) {
     return customers;
   }
-  const fallbackCustomer = order.customer ?? createCustomerFromOrder(order);
+  const fallbackCustomer = order?.customer ?? (order ? createCustomerFromOrder(order) : null);
   return fallbackCustomer ? [fallbackCustomer, ...customers] : customers;
 }
 
@@ -2240,10 +2256,11 @@ function toNumericAddressId(value: string | number | null | undefined): number |
 }
 
 function createCustomerFromOrder(order: Order): Customer | null {
-  if (!order.customerObjectId) return null;
+  const customerObjectId = order.customerObjectId || order.customer?.objectId || "";
+  if (!customerObjectId) return null;
   return {
-    objectId: order.customerObjectId,
-    id: order.sepidarCustomerCode ?? order.customerObjectId,
+    objectId: customerObjectId,
+    id: order.sepidarCustomerCode ?? customerObjectId,
     sepidarCustomerId:
       order.sepidarCustomerId === null ? null : String(order.sepidarCustomerId),
     sepidarCustomerCode: order.sepidarCustomerCode,
@@ -2302,22 +2319,24 @@ function mapOrderItems(items: OrderItem[], products: Product[]): DraftItem[] {
 function resolveProductObjectId(item: OrderItem, products: Product[]): string {
   const rawProductId = item.productId || "";
   const rawProductName = item.productName || "";
+  if (rawProductId) {
+    const exactMatch = products.find(
+      (product) =>
+        product.objectId === rawProductId ||
+        product.productObjectId === rawProductId ||
+        product.id === rawProductId,
+    );
+    if (exactMatch) return exactMatch.objectId;
+  }
   const matchedProduct = products.find(
     (product) =>
       (item.sepidarItemId !== null &&
         item.sepidarItemId !== undefined &&
         product.sepidarItemId === item.sepidarItemId) ||
+      (item.priceListItemId && product.priceListItemId === item.priceListItemId) ||
+      (item.priceListId && product.priceListId === item.priceListId) ||
       (rawProductName && product.name === rawProductName) ||
       (rawProductName && product.sepidarCode === rawProductName) ||
-      (item.priceListItemId && product.priceListItemId === item.priceListItemId) ||
-      (item.priceListId &&
-        product.priceListId === item.priceListId &&
-        (product.productObjectId === rawProductId ||
-          product.objectId === rawProductId)) ||
-      product.objectId === rawProductId ||
-      product.productObjectId === rawProductId ||
-      product.id === rawProductId ||
-      product.sku === rawProductId ||
       product.sku === item.productSku,
   );
 
