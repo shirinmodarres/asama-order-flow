@@ -10,8 +10,6 @@ import type { SalesQuotation } from "@/lib/models/sales-quotation.model";
 import { getSalesQuotationPdfData } from "@/lib/services/sales-quotation.service";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
-const ROWS_PER_PAGE = 12;
-
 export default function SalesQuotationPdfPage() {
   const params = useParams<{ id: string }>();
   const [quotation, setQuotation] = useState<SalesQuotation | null>(null);
@@ -80,7 +78,16 @@ export default function SalesQuotationPdfPage() {
     [quotation],
   );
 
-  const rowPages = useMemo(() => chunkRows(itemRows, ROWS_PER_PAGE), [itemRows]);
+  const rowPages = useMemo(() => {
+    const addressLength = quotation ? resolveQuotationAddress(quotation).length : 0;
+    const notesLength = quotation?.notes?.trim().length ?? 0;
+    const firstPageCapacity = Math.max(
+      6,
+      8 - (addressLength > 120 ? 1 : 0) - (notesLength > 180 ? 1 : 0),
+    );
+    const continuationCapacity = 11;
+    return paginateQuotationRows(itemRows, firstPageCapacity, continuationCapacity);
+  }, [itemRows, quotation]);
 
   return (
     <main
@@ -444,4 +451,22 @@ function chunkRows<T>(rows: T[], size: number): T[][] {
     chunks.push(rows.slice(index, index + size));
   }
   return chunks;
+}
+
+function paginateQuotationRows<T>(
+  rows: T[],
+  firstPageSize: number,
+  continuationSize: number,
+): T[][] {
+  if (rows.length <= firstPageSize) {
+    return [rows];
+  }
+
+  const pages: T[][] = [rows.slice(0, firstPageSize)];
+  let cursor = firstPageSize;
+  while (cursor < rows.length) {
+    pages.push(rows.slice(cursor, cursor + continuationSize));
+    cursor += continuationSize;
+  }
+  return pages;
 }
