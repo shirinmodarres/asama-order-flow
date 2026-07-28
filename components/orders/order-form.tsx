@@ -657,6 +657,15 @@ export function OrderForm({
       }, {}),
     [products],
   );
+  const liveProductsById = useMemo(
+    () =>
+      products.reduce<Record<string, Product>>((accumulator, product) => {
+        if (product.inventorySource === "order_snapshot") return accumulator;
+        accumulator[product.objectId] = product;
+        return accumulator;
+      }, {}),
+    [products],
+  );
   const oldQuantityByProductId = useMemo(
     () => getOldOrderQuantities(initialOrder, products),
     [initialOrder, products],
@@ -1633,7 +1642,8 @@ export function OrderForm({
 
         <div className="mt-5 space-y-3">
           {items.map((item, index) => {
-            const product = productsById[item.productId];
+            const liveProduct = liveProductsById[item.productId];
+            const product = liveProduct ?? productsById[item.productId];
         
             const productCode = product
               ? product.sepidarCode 
@@ -1760,7 +1770,7 @@ export function OrderForm({
                           : "موجودی قابل فروش"
                       }
                       value={
-                        product && product.inventorySource !== "order_snapshot"
+                        liveProduct
                           ? `${formatNumber(editableAvailableQuantity)} ${
                               product.unit || ""
                             }`.trim()
@@ -1789,7 +1799,7 @@ export function OrderForm({
                       inputMode="numeric"
                       min={1}
                       max={
-                        product && product.inventorySource !== "order_snapshot"
+                        liveProduct
                           ? sepidarProductsOnly
                             ? product.hasAvailableSalesQuantity
                               ? getEditableAvailableQuantity({
