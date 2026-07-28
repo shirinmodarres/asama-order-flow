@@ -77,43 +77,74 @@ interface SalesTypeOption {
 
 function getOrderSalesTypeOptionKey(order?: Order | null): string {
   if (!order) return "";
- const objectId =
-  order.salesTypeObjectId ||
-  order.saleTypeObjectId ||
-  order.salesType?.objectId ||
-  order.saleType?.objectId ||
-  "";
+  const objectId =
+    order.salesTypeObjectId ||
+    order.saleTypeObjectId ||
+    order.salesType?.objectId ||
+    order.saleType?.objectId ||
+    "";
   if (objectId) return objectId;
-const hasSnapshot =
-  Boolean(
-    order.salesTypeTitle ||
-    order.saleTypeTitle ||
-    order.salesType?.title ||
-    order.saleType?.title
-  ) ||
-      order.salesTypeInternalCode !== null ||
+  const hasSnapshot =
+    Boolean(
+      order.salesTypeTitle ||
+        order.saleTypeTitle ||
+        order.salesType?.title ||
+        order.saleType?.title,
+    ) ||
+    order.salesTypeInternalCode !== null ||
     order.salesTypeSepidarCode !== null ||
     order.saleType?.sepidarSaleTypeId !== null;
   if (!hasSnapshot) return "";
   return `order-sales-type-${order.objectId || "fallback"}`;
 }
 
-function buildOrderSalesTypeFallback(order?: Order | null): SalesTypeOption | null {
+function getOrderSalesTypeSnapshot(order?: Order | null) {
   if (!order) return null;
-  const objectId = getOrderSalesTypeOptionKey(order);
-const title =
-  order.salesTypeTitle ||
-  order.saleTypeTitle ||
-  order.salesType?.title ||
-  order.saleType?.title ||
-  "";  const internalCode = order.salesTypeInternalCode ?? null;
-  const sepidarCode = order.salesTypeSepidarCode ?? order.saleType?.sepidarSaleTypeId ?? null;
-  if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
+  const objectId =
+    order.salesTypeObjectId ||
+    order.saleTypeObjectId ||
+    order.salesType?.objectId ||
+    order.saleType?.objectId ||
+    "";
+  const title =
+    order.salesTypeTitle ||
+    order.saleTypeTitle ||
+    order.salesType?.title ||
+    order.saleType?.title ||
+    "";
+  const internalCode =
+    order.salesTypeInternalCode ?? null;
+  const sepidarCode =
+    order.salesTypeSepidarCode ??
+    order.sepidarSaleTypeId ??
+    order.salesType?.sepidarCode ??
+    order.saleType?.sepidarSaleTypeId ??
+    null;
+
+  if (!objectId && !title && !internalCode && sepidarCode == null) {
+    return null;
+  }
+
   return {
     objectId,
     title,
     internalCode,
     sepidarCode,
+  };
+}
+
+function buildOrderSalesTypeFallback(
+  order?: Order | null,
+): SalesTypeOption | null {
+  const snapshot = getOrderSalesTypeSnapshot(order);
+  if (!snapshot) return null;
+  const objectId =
+    snapshot.objectId || getOrderSalesTypeOptionKey(order) || `order-sales-type-${order?.objectId || "fallback"}`;
+  return {
+    objectId,
+    title: snapshot.title,
+    internalCode: snapshot.internalCode,
+    sepidarCode: snapshot.sepidarCode,
   };
 }
 
@@ -722,19 +753,16 @@ export function OrderForm({
     selectedSalesType &&
       mergedSalesTypes.some((item) => item.objectId === selectedSalesType.objectId),
   );
- const orderSalesTypeTitle =
-  initialOrder?.salesTypeTitle ??
-  initialOrder?.saleTypeTitle ??
-  initialOrder?.salesType?.title ??
-  initialOrder?.saleType?.title ??
-  null;
+  const orderSalesTypeSnapshot = getOrderSalesTypeSnapshot(initialOrder);
+  const orderSalesTypeTitle = orderSalesTypeSnapshot?.title || null;
+  const orderSalesTypeOptionId =
+    getOrderSalesTypeOptionKey(initialOrder) ||
+    "";
   const currentSaleTypeTitle =
     selectedSalesType?.title ??
     orderSalesTypeTitle ??
     orderSalesTypeFallback?.title ??
     null;
-
-    console.log(initialOrder);
   const selectedSalesTypeOption = selectedSalesType
     ? {
         value: selectedSalesType.objectId,
@@ -749,18 +777,18 @@ export function OrderForm({
       }
     : orderSalesTypeTitle
       ? {
-          value:
-            selectedSalesTypeId ||
-            getOrderSalesTypeOptionKey(initialOrder) ||
-            `order-sales-type-${initialOrder?.objectId || "fallback"}`,
-          label: orderSalesTypeTitle,
-          searchText: orderSalesTypeTitle,
-        }
+        value:
+          selectedSalesTypeId ||
+          orderSalesTypeOptionId ||
+          `order-sales-type-${initialOrder?.objectId || "fallback"}`,
+        label: orderSalesTypeTitle,
+        searchText: orderSalesTypeTitle,
+      }
     : currentSaleTypeTitle
       ? {
           value:
             selectedSalesTypeId ||
-            getOrderSalesTypeOptionKey(initialOrder) ||
+            orderSalesTypeOptionId ||
             `order-sales-type-${initialOrder?.objectId || "fallback"}`,
           label: currentSaleTypeTitle,
           searchText: currentSaleTypeTitle,
@@ -770,32 +798,32 @@ export function OrderForm({
   useEffect(() => {
     if (!initialOrder) return;
 
+    const snapshot = getOrderSalesTypeSnapshot(initialOrder);
+    if (!snapshot) return;
+
     const matchedSalesType =
       mergedSalesTypes.find(
         (item) =>
-          item.objectId === initialOrder.salesTypeObjectId ||
-          item.objectId === initialOrder.saleTypeObjectId ||
-          item.objectId === initialOrder.salesType?.objectId ||
-          item.objectId === initialOrder.saleType?.objectId ||
-          item.title === orderSalesTypeTitle,
+          item.objectId === snapshot.objectId ||
+          item.title === snapshot.title ||
+          (snapshot.sepidarCode !== null && item.sepidarCode === snapshot.sepidarCode) ||
+          (snapshot.internalCode !== null &&
+            item.internalCode !== null &&
+            String(item.internalCode) === String(snapshot.internalCode)),
       ) || null;
 
-    if (matchedSalesType && matchedSalesType.objectId !== selectedSalesTypeId) {
-      setSelectedSalesTypeId(matchedSalesType.objectId);
-      return;
-    }
+    const nextSelectedId =
+      matchedSalesType?.objectId ||
+      snapshot.objectId ||
+      orderSalesTypeOptionId;
 
-    if (
-      !matchedSalesType &&
-      !selectedSalesTypeId &&
-      orderSalesTypeFallback?.objectId
-    ) {
-      setSelectedSalesTypeId(orderSalesTypeFallback.objectId);
+    if (nextSelectedId && nextSelectedId !== selectedSalesTypeId) {
+      setSelectedSalesTypeId(nextSelectedId);
     }
   }, [
     initialOrder,
+    orderSalesTypeOptionId,
     mergedSalesTypes,
-    orderSalesTypeFallback?.objectId,
     orderSalesTypeTitle,
     selectedSalesTypeId,
   ]);
@@ -1643,7 +1671,8 @@ export function OrderForm({
         <div className="mt-5 space-y-3">
           {items.map((item, index) => {
             const liveProduct = liveProductsById[item.productId];
-            const product = liveProduct ?? productsById[item.productId];
+            const product = productsById[item.productId];
+            const inventoryProduct = liveProduct ?? null;
         
             const productCode = product
               ? product.sepidarCode 
@@ -1658,9 +1687,9 @@ export function OrderForm({
                   .filter(Boolean)
                   .join(" • ")
               : item.productLabel || `آیتم ${formatNumber(index + 1)}`;
-            const editableAvailableQuantity = product
+            const editableAvailableQuantity = inventoryProduct
               ? getEditableAvailableQuantity({
-                  product,
+                  product: inventoryProduct,
                   mode,
                   oldQuantityByProductId,
                 })
@@ -1770,9 +1799,9 @@ export function OrderForm({
                           : "موجودی قابل فروش"
                       }
                       value={
-                        liveProduct
+                        inventoryProduct
                           ? `${formatNumber(editableAvailableQuantity)} ${
-                              product.unit || ""
+                              inventoryProduct.unit || ""
                             }`.trim()
                           : "-"
                       }
@@ -1799,17 +1828,17 @@ export function OrderForm({
                       inputMode="numeric"
                       min={1}
                       max={
-                        liveProduct
+                        inventoryProduct
                           ? sepidarProductsOnly
-                            ? product.hasAvailableSalesQuantity
+                            ? inventoryProduct.hasAvailableSalesQuantity
                               ? getEditableAvailableQuantity({
-                                  product,
+                                  product: inventoryProduct,
                                   mode,
                                   oldQuantityByProductId,
                                 })
                               : undefined
                             : getEditableAvailableQuantity({
-                                product,
+                                product: inventoryProduct,
                                 mode,
                                 oldQuantityByProductId,
                               })
