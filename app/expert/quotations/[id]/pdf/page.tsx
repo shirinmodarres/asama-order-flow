@@ -103,6 +103,15 @@ export default function SalesQuotationPdfPage() {
           .no-print {
             display: none !important;
           }
+          .pdf-letterhead {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            z-index: 0 !important;
+            pointer-events: none !important;
+            margin: 0 !important;
+          }
           .pdf-page {
             box-shadow: none !important;
             border: 0 !important;
@@ -152,14 +161,14 @@ export default function SalesQuotationPdfPage() {
       </div>
 
       <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-visible rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
-        <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
+        <div className="pdf-letterhead pointer-events-none absolute inset-0 z-0 opacity-100">
           <Image
             src="/A4 - 2.svg"
             alt="Asama Letterhead"
             fill
             priority
             sizes="210mm"
-            className="object-cover"
+            className="object-contain"
           />
         </div>
 
