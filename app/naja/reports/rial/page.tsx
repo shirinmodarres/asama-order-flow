@@ -202,7 +202,7 @@ export default function NajaRialReportPage() {
     {
       key: "saleType",
       header: "لیست قیمت",
-      render: (row) => row.priceListTitle || row.saleTypeTitle || "-",
+      render: (row) => row.priceListTitle || "-",
     },
   ];
 
@@ -263,7 +263,7 @@ export default function NajaRialReportPage() {
 
         <div className="mt-3 grid gap-3 lg:grid-cols-4 lg:items-end">
           <SelectFilter
-            label="لیست قیمت"
+            label="روش پرداخت"
             value={filters.saleTypeObjectId || "all"}
             options={[{ value: "all", label: "همه نوع‌ها" }, ...saleTypeOptions]}
             onChange={(value) =>

@@ -331,10 +331,7 @@ export default function SupportCustomerAssignmentsPage() {
             row.priceListType,
           ].filter(Boolean).join(" - ");
         }
-        const saleTypeTitle = row.saleTypeTitle ? row.saleTypeTitle.split("/")[0].trim() : "";
-        return saleTypeTitle
-          ? `قدیمی: ${row.sepidarSaleTypeId ? `${formatNumber(row.sepidarSaleTypeId)} - ` : ""}${saleTypeTitle}`
-          : "-";
+        return "-";
       },
     },
     {

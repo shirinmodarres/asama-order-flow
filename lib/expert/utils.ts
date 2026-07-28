@@ -3,6 +3,7 @@ import {
   formatFaCurrency,
   formatFaNumber,
 } from "@/lib/utils/number-format";
+import { formatJalaliDate, formatJalaliDateTime } from "@/lib/utils/date-format";
 
 const textCollator = (() => {
   try {
@@ -27,18 +28,12 @@ export function formatCurrency(value?: number | string | null): string {
   return formatFaCurrency(value);
 }
 
-export function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("fa-IR");
+export function formatDate(value: string | Date | null | undefined): string {
+  return formatJalaliDate(value);
 }
 
-export function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString("fa-IR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+export function formatDateTime(value: string | Date | null | undefined): string {
+  return formatJalaliDateTime(value);
 }
 
 export function isOrderEditable(order: ExpertOrder): boolean {

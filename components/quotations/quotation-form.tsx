@@ -410,23 +410,23 @@ export function QuotationForm({
             />
           </label>
           <label className="grid gap-2 text-sm font-medium text-[#334155]">
-            <span>روش پرداخت</span>
+            <span>لیست قیمت</span>
             <SearchableSelect
               value={selectedPriceListId || undefined}
               onValueChange={setSelectedPriceListId}
               options={priceListOptions}
-              placeholder="انتخاب روش پرداخت"
-              searchPlaceholder="جستجو در روش پرداخت"
-              emptyMessage="روش پرداخت پیدا نشد"
+              placeholder="انتخاب لیست قیمت"
+              searchPlaceholder="جستجو در لیست قیمت"
+              emptyMessage="لیست قیمتی پیدا نشد"
               disabled={!selectedCustomerId || priceListOptions.length === 0}
             />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
-            <span>اعتبار تا تاریخ</span>
             <JalaliDateInput
               value={selectedValidUntil}
               onChange={setSelectedValidUntil}
               placeholder="انتخاب تاریخ اعتبار"
+              label="اعتبار تا تاریخ"
             />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-[#334155] md:col-span-2">
@@ -542,7 +542,24 @@ export function QuotationForm({
           <h3 className="text-base font-semibold text-[#1F3A5F]">خلاصه پیش فاکتور</h3>
           <dl className="mt-4 space-y-3 text-sm">
             <SummaryRow label="مشتری" value={selectedCustomer?.fullName || "-"} />
-            {(selectedCustomer?.priceListTitle || selectedPriceListId) ? <SummaryRow label="روش پرداخت" value={selectedCustomer?.priceListTitle || selectedPriceListId || ""} /> : null}
+            {selectedSalesTypeId ? (
+              <SummaryRow
+                label="روش پرداخت"
+                value={
+                  salesTypes.find((salesType) => salesType.objectId === selectedSalesTypeId)?.title ||
+                  selectedSalesTypeId
+                }
+              />
+            ) : null}
+            {selectedPriceListId ? (
+              <SummaryRow
+                label="لیست قیمت"
+                value={
+                  priceListOptions.find((option) => option.value === selectedPriceListId)?.label ||
+                  selectedPriceListId
+                }
+              />
+            ) : null}
             <SummaryRow label="تعداد آیتم" value={formatNumber(itemCount)} />
             <SummaryRow label="جمع تعداد" value={formatNumber(totalQuantity)} />
             <SummaryRow label="جمع جزء" value={formatCurrency(subtotal)} />

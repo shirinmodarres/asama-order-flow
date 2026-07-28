@@ -459,10 +459,9 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
                     }
                   />
                   <ReadonlyValueInput
-                    label="روش پرداخت"
+                    label="لیست قیمت"
                     value={
                       selectedProduct?.priceListTitle ||
-                      paymentMethodTitle ||
                       selectedProduct?.priceListId ||
                       "-"
                     }
