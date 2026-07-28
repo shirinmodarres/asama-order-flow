@@ -32,7 +32,6 @@ import {
 } from "@/lib/services/expert-customer.service";
 import {
   listOrderProductsForAssignment,
-  listOrderProductsBySaleType,
   listProducts,
 } from "@/lib/services/product.service";
 import { createDeprecatedProductInventoryFields } from "@/lib/mappers/product.mapper";
@@ -421,7 +420,7 @@ export function OrderForm({
   useEffect(() => {
     let isMounted = true;
 
-    async function loadProductsBySaleType() {
+    async function loadProductsForOrder() {
       if (!sepidarProductsOnly) return;
       const fallbackProducts = mergeProducts(providedProducts, initialOrder);
       const keepOrderSnapshotProducts = () => {
@@ -445,12 +444,6 @@ export function OrderForm({
       const customer = assignedCustomersOnly
         ? selectedAssignment
         : customers.find((entry) => entry.objectId === selectedCustomerId);
-      const saleTypeId =
-        selectedSalesType?.sepidarCode ??
-        selectedCustomer?.saleType?.sepidarSaleTypeId ??
-        initialOrder?.salesTypeSepidarCode ??
-        customer?.saleType?.sepidarSaleTypeId ??
-        initialOrder?.sepidarSaleTypeId;
       const priceListOptions = getCustomerPriceListOptions(
         customer,
         initialOrder,
@@ -459,7 +452,11 @@ export function OrderForm({
 
       setProductsError("");
       if (!selectedCustomerId) {
-        keepOrderSnapshotProducts();
+        if (mode === "edit" && initialOrder) {
+          keepOrderSnapshotProducts();
+        } else {
+          setProducts([]);
+        }
         setIsLoadingProducts(false);
         return;
       }
@@ -484,16 +481,14 @@ export function OrderForm({
         setIsLoadingProducts(false);
         return;
       }
-      if (
-        (!hasGeneratedPriceList && !saleTypeId) ||
-        (assignedCustomersOnly && !hasAssignmentInventory(customer))
-      ) {
+      if (assignedCustomersOnly && !hasAssignmentInventory(customer)) {
         if (isEditMode && initialOrder) {
           keepOrderSnapshotProducts();
           setIsLoadingProducts(false);
           return;
         }
-        keepOrderSnapshotProducts();
+        setProducts([]);
+        setProductsError("NO_PRICE_LIST_ASSIGNED");
         setIsLoadingProducts(false);
         return;
       }
@@ -505,13 +500,13 @@ export function OrderForm({
           expertUserId:
             initialOrder?.expertUserId ?? getStoredCurrentUser()?.objectId,
         };
-        const data = hasGeneratedPriceList && context.customerObjectId
+        const data = context.customerObjectId
           ? await listOrderProductsForAssignment({
               customerObjectId: context.customerObjectId,
               expertUserId: context.expertUserId,
               priceListId: selectedPriceListId,
             })
-          : await listOrderProductsBySaleType(saleTypeId ?? 0, context);
+          : [];
         if (!isMounted) return;
         const mergedProducts = mergeProducts(data, initialOrder);
         setProducts(mergedProducts);
@@ -538,7 +533,7 @@ export function OrderForm({
       }
     }
 
-    loadProductsBySaleType();
+    loadProductsForOrder();
 
     return () => {
       isMounted = false;
@@ -889,7 +884,7 @@ export function OrderForm({
 
     if (!isEditMode && requiresPriceListSelection && !selectedPriceListId) {
       setFieldErrors({
-        selectedPriceListId: "لطفاً روش پرداخت را انتخاب کنید.",
+        selectedPriceListId: "لطفاً لیست قیمت را انتخاب کنید.",
       });
       return;
     }
@@ -909,8 +904,8 @@ export function OrderForm({
         (productsById[item.productId]?.unitPrice ?? 0) <= 0
       ) {
         errors.productId = productsById[item.productId]?.priceListConflict
-          ? "این کالا در چند روش پرداخت انتخابی وجود دارد."
-          : "قیمت کالا برای این روش پرداخت ثبت نشده است.";
+          ? "این کالا در چند لیست قیمت انتخابی وجود دارد."
+          : "قیمت کالا برای این لیست قیمت ثبت نشده است.";
       }
       if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
         errors.quantity = POSITIVE_NUMBER_MESSAGE;
@@ -975,6 +970,9 @@ export function OrderForm({
       const insufficientProduct = Array.from(requestedByProduct.entries()).find(
         ([productId, quantity]) => {
           const product = productsById[productId];
+          if (!product || product.inventorySource === "order_snapshot") {
+            return false;
+          }
           const availableQuantity = product
             ? getEditableAvailableQuantity({
                 product,
@@ -1630,7 +1628,7 @@ export function OrderForm({
               item.productId ||
               "";
             const productCode = product
-              ? product.sepidarCode || product.sku || product.productObjectId || product.name
+              ? product.sepidarCode || product.sku || product.name
               : "";
             const helperText = product
               ? [
@@ -1680,7 +1678,6 @@ export function OrderForm({
                           productId: value,
                           productLabel:
                             productsById[value]?.name ||
-                            productsById[value]?.productObjectId ||
                             item.productLabel ||
                             "",
                         })
@@ -1711,7 +1708,7 @@ export function OrderForm({
                         sepidarProductsOnly && !selectedCustomerId
                           ? "ابتدا مشتری را انتخاب کنید."
                           : requiresPriceListSelection && !selectedPriceListId
-                            ? "ابتدا روش پرداخت را انتخاب کنید."
+                            ? "ابتدا لیست قیمت را انتخاب کنید."
                           : "انتخاب کالا"
                       }
                       searchPlaceholder="جستجو در کالاها"
@@ -1755,11 +1752,11 @@ export function OrderForm({
                           : "موجودی قابل فروش"
                       }
                       value={
-                        product
+                        product && product.inventorySource !== "order_snapshot"
                           ? `${formatNumber(editableAvailableQuantity)} ${
                               product.unit || ""
                             }`.trim()
-                        : "-"
+                          : "-"
                       }
                     />
                     <ReadonlyValueInput
@@ -1784,7 +1781,7 @@ export function OrderForm({
                       inputMode="numeric"
                       min={1}
                       max={
-                        product
+                        product && product.inventorySource !== "order_snapshot"
                           ? sepidarProductsOnly
                             ? product.hasAvailableSalesQuantity
                               ? getEditableAvailableQuantity({
@@ -2114,11 +2111,11 @@ function createProductFromOrderItem(item: OrderItem): Product {
 
 function productIdentityLabel(product: Product): string {
   return [
-    product.sepidarCode || product.sku || product.productObjectId || product.name,
+    product.sepidarCode || product.sku || product.name,
     product.name,
     product.brandName || product.brand,
     product.unitPrice ? formatCurrency(product.unitPrice) : "",
-    product.priceListConflict ? "تداخل روش پرداخت" : "",
+    product.priceListConflict ? "تداخل لیست قیمت" : "",
   ]
     .filter(Boolean)
     .join(" - ");
