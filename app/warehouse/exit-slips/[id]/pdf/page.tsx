@@ -18,6 +18,9 @@ function hasText(value: string | null | undefined): boolean {
   return Boolean(value && value.trim());
 }
 
+const SUMMARY_ROWS_PER_PAGE = 12;
+const DETAIL_ROWS_PER_PAGE = 16;
+
 export default function ExitSlipPdfPage() {
   const params = useParams<{ id: string }>();
   const [data, setData] = useState<ExitSlipPdfData | null>(null);
@@ -112,6 +115,9 @@ export default function ExitSlipPdfPage() {
         trackingCode: unit.trackingCode,
       }));
     }) ?? [];
+  const summaryPages = paginateRows(summaryRows, SUMMARY_ROWS_PER_PAGE);
+  const detailPages = paginateRows(detailRows, DETAIL_ROWS_PER_PAGE);
+  const hasDetailPages = detailPages.length > 0;
 
   return (
     <main
@@ -140,10 +146,10 @@ export default function ExitSlipPdfPage() {
             box-shadow: none !important;
             border: 0 !important;
             width: 210mm !important;
+            height: 297mm !important;
             margin: 0 !important;
-            min-height: 297mm !important;
             border-radius: 0 !important;
-            overflow: visible !important;
+            overflow: hidden !important;
             box-sizing: border-box !important;
           }
           .page-break-after {
@@ -155,8 +161,8 @@ export default function ExitSlipPdfPage() {
             page-break-after: auto;
           }
           .print-content {
-            padding: 18mm 20mm 16mm 20mm !important;
-            overflow: visible !important;
+            padding: 18mm 18mm 16mm 18mm !important;
+            overflow: hidden !important;
             box-sizing: border-box !important;
           }
           .print-section,
@@ -189,6 +195,14 @@ export default function ExitSlipPdfPage() {
           .print-root .tracking-cell {
             font-size: 8.5px !important;
           }
+          .print-root .pdf-page {
+            break-after: page;
+            page-break-after: always;
+          }
+          .print-root .pdf-page:last-child {
+            break-after: auto;
+            page-break-after: auto;
+          }
         }
       `}</style>
 
@@ -205,35 +219,59 @@ export default function ExitSlipPdfPage() {
       ) : !data ? (
         <p className="text-sm text-[#6B7280]">اطلاعات حواله یافت نشد.</p>
       ) : (
-        <div className="space-y-4">
-          <PdfPage pageBreakAfter>
-            <div className="space-y-3 text-[10px] leading-5">
-              <HeaderBlock data={data} />
-              <TitleBlock />
-              <CustomerBlock customer={resolvedCustomer} />
-              {hasRecipientName ? (
-                <RecipientBlock recipient={resolvedRecipient} />
-              ) : hasText(data.receiver.fullName) ? (
-                <DeliveryBlock data={data} />
-              ) : null}
-              <SummaryTable rows={summaryRows} />
-              {hasText(data.deliveryCode) || hasText(data.notes) ? (
-                <NotesBlock deliveryCode={data.deliveryCode} notes={data.notes} />
-              ) : null}
-            </div>
-          </PdfPage>
+        <div className="space-y-0">
+          {summaryPages.map((rows, index) => (
+            <PdfPage
+              key={`summary-${index}`}
+              pageBreakAfter={index < summaryPages.length - 1 || hasDetailPages}
+            >
+              <div className="space-y-3 text-[10px] leading-5">
+                <HeaderBlock data={data} />
+                <TitleBlock />
+                {index === 0 ? (
+                  <>
+                    <CustomerBlock customer={resolvedCustomer} />
+                    {hasRecipientName ? (
+                      <RecipientBlock recipient={resolvedRecipient} />
+                    ) : hasText(data.receiver.fullName) ? (
+                      <DeliveryBlock data={data} />
+                    ) : null}
+                  </>
+                ) : null}
+                <SummaryTable rows={rows} />
+                {index === summaryPages.length - 1 && !hasDetailPages ? (
+                  <>
+                    {hasText(data.deliveryCode) || hasText(data.notes) ? (
+                      <NotesBlock deliveryCode={data.deliveryCode} notes={data.notes} />
+                    ) : null}
+                    <footer className="grid grid-cols-2 gap-8 pt-7">
+                      <Signature label="امضای انباردار" />
+                      <Signature label="امضای تحویل‌گیرنده" />
+                    </footer>
+                  </>
+                ) : null}
+              </div>
+            </PdfPage>
+          ))}
 
-          <PdfPage>
-            <div className="space-y-3 text-[10px] leading-5">
-              <HeaderBlock data={data} />
-              <TitleBlock />
-              <DetailTable rows={detailRows} />
-              <footer className="grid grid-cols-2 gap-8 pt-7">
-                <Signature label="امضای انباردار" />
-                <Signature label="امضای تحویل‌گیرنده" />
-              </footer>
-            </div>
-          </PdfPage>
+          {detailPages.map((rows, index) => (
+            <PdfPage
+              key={`detail-${index}`}
+              pageBreakAfter={index < detailPages.length - 1}
+            >
+              <div className="space-y-3 text-[10px] leading-5">
+                <HeaderBlock data={data} />
+                <TitleBlock />
+                <DetailTable rows={rows} />
+                {index === detailPages.length - 1 ? (
+                  <footer className="grid grid-cols-2 gap-8 pt-7">
+                    <Signature label="امضای انباردار" />
+                    <Signature label="امضای تحویل‌گیرنده" />
+                  </footer>
+                ) : null}
+              </div>
+            </PdfPage>
+          ))}
         </div>
       )}
     </main>
@@ -249,7 +287,7 @@ function PdfPage({
 }) {
   return (
     <section
-      className={`pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-visible rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${
+      className={`pdf-page relative mx-auto h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${
         pageBreakAfter ? "page-break-after" : ""
       }`}
     >
@@ -272,8 +310,8 @@ function PdfPage({
 
 function HeaderBlock({ data }: { data: ExitSlipPdfData }) {
   return (
-    <header className="relative flex justify-between min-h-20">
-        <div className="absolute left-0 top-0  border-r-2 border-[#7BC68A] bg-white/95 text-[10px] leading-6 text-[#334155]">
+    <header className="relative flex min-h-20 justify-between">
+      <div className="absolute left-0 top-0 border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[10px] leading-6 text-[#334155]">
         <InlineInfo label="کد حواله" value={formatFaDigits(data.slipCode) || "-"} />
         <InlineInfo label="کد سفارش" value={formatFaDigits(data.orderCode) || "-"} />
         <InlineInfo
@@ -540,4 +578,14 @@ function Signature({ label }: { label: string }) {
       </div>
     </div>
   );
+}
+
+function paginateRows<T>(rows: T[], size: number): T[][] {
+  if (!rows.length) return [];
+  if (size <= 0) return [rows];
+  const chunks: T[][] = [];
+  for (let index = 0; index < rows.length; index += size) {
+    chunks.push(rows.slice(index, index + size));
+  }
+  return chunks;
 }

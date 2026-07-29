@@ -78,7 +78,8 @@ export default function SalesQuotationPdfPage() {
     [quotation],
   );
   const summaryRows = itemRows.slice(0, Math.min(itemRows.length, 6));
-  const detailRows = itemRows.length > 6 ? chunkRows(itemRows.slice(6), 18) : [];
+  const detailRows =
+    itemRows.length > 6 ? paginateQuotationRows(itemRows.slice(6), 18, 18) : [];
 
   return (
     <main
@@ -182,7 +183,7 @@ export default function SalesQuotationPdfPage() {
             pageType="summary"
             isLastPage={detailRows.length === 0}
           />
-          {detailRows.map((rows, index) => (
+          {detailRows.map((rows: QuotationItemRow[], index: number) => (
             <PdfQuotationPage
               key={`detail-${index}`}
               quotation={quotation}
@@ -217,7 +218,7 @@ function PdfQuotationPage({
   isLastPage: boolean;
 }) {
   return (
-    <section className={`pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${isLastPage ? "" : "page-break-after"}`}>
+            <section className={`pdf-page relative mx-auto h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${isLastPage ? "" : "page-break-after"}`}>
       <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
         <Image
           src="/A4 - 2.svg"
@@ -377,15 +378,6 @@ function PdfQuotationPage({
   );
 }
 
-function chunkRows<T>(rows: T[], size: number): T[][] {
-  if (!rows.length) return [];
-  const chunks: T[][] = [];
-  for (let index = 0; index < rows.length; index += size) {
-    chunks.push(rows.slice(index, index + size));
-  }
-  return chunks;
-}
-
 type QuotationItemRow = {
   key: string;
   rowNumber: number;
@@ -475,15 +467,6 @@ function formatQuotationDate(value: string): string {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
-}
-
-function chunkRows<T>(rows: T[], size: number): T[][] {
-  if (size <= 0) return [rows];
-  const chunks: T[][] = [];
-  for (let index = 0; index < rows.length; index += size) {
-    chunks.push(rows.slice(index, index + size));
-  }
-  return chunks;
 }
 
 function paginateQuotationRows<T>(
