@@ -19,6 +19,7 @@ import type {
 } from "@/lib/models/pricing.model";
 import {
   listPricingReferenceItems,
+  updatePricingReferenceFromSepidar,
 } from "@/lib/services/pricing.service";
 import { formatCurrency, formatNumber } from "@/lib/expert/utils";
 import { formatFaDigits } from "@/lib/utils/number-format";
@@ -33,6 +34,8 @@ export default function PricingReferenceDetailPage({
   const [result, setResult] = useState<PricingReferenceItemsResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -89,6 +92,31 @@ export default function PricingReferenceDetailPage({
           <Link href="/support/pricing/reference-price-lists">بازگشت</Link>
         </Button>
       </div>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <Button
+          type="button"
+          onClick={async () => {
+            setIsUpdating(true);
+            setError("");
+            setMessage("");
+            try {
+              await updatePricingReferenceFromSepidar(id);
+              const data = await listPricingReferenceItems(id);
+              setReference(data.reference);
+              setResult(data);
+              setMessage("لیست مرجع از سپیدار به‌روزرسانی شد.");
+            } catch (err) {
+              setError(getErrorMessage(err));
+            } finally {
+              setIsUpdating(false);
+            }
+          }}
+          disabled={isUpdating || isLoading}
+        >
+          {isUpdating ? "در حال به‌روزرسانی..." : "به‌روزرسانی از سپیدار"}
+        </Button>
+      </div>
+      {message ? <div className="asama-banner mb-4 px-4 py-3 text-sm">{message}</div> : null}
       {error ? <InlineErrorMessage message={error} /> : null}
       {isLoading ? <LoadingState title="در حال دریافت آیتم‌های مرجع" /> : (
         <>

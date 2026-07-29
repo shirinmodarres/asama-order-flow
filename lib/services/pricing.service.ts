@@ -74,6 +74,27 @@ export async function createPricingReference(payload: {
   return mapPricingReferenceDto(data);
 }
 
+export async function updatePricingReferenceFromSepidar(referenceId: string): Promise<{
+  reference: PricingReference | null;
+  summary: {
+    referenceId: string | null;
+    sepidarSaleTypeId: number | null;
+    addedCount: number;
+    updatedCount: number;
+    unchangedCount: number;
+    skippedCount: number;
+    failedCount: number;
+    generatedListsUpdated: number;
+    generatedAddedCount: number;
+    generatedUpdatedCount: number;
+    generatedUnchangedCount: number;
+    generatedSkippedCount: number;
+    generatedFailedCount: number;
+  };
+}> {
+  return httpClient.post(`/api/pricing/references/${referenceId}/update-from-sepidar`);
+}
+
 export async function deactivatePricingReference(referenceId: string): Promise<PricingReference> {
   const data = await httpClient.post<unknown>(
     `/api/pricing/references/${referenceId}/deactivate`,
