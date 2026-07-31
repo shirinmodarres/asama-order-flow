@@ -42,6 +42,7 @@ export function InventoryUnitsView({ role, title, subtitle }: InventoryUnitsView
   const [trackingCode, setTrackingCode] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
   const [status, setStatus] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const loadRows = async () => {
     setIsLoading(true);
@@ -147,7 +148,23 @@ export function InventoryUnitsView({ role, title, subtitle }: InventoryUnitsView
     stockObjectId !== "all" ||
     productObjectId !== "all" ||
     status !== "all" ||
-    Boolean(trackingCode || serialNumber);
+    Boolean(trackingCode || serialNumber || searchTerm);
+
+  const visibleRows = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((row) => {
+      const haystack = [
+        row.productName,
+        row.productSku,
+        row.stockTitle,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [rows, searchTerm]);
 
   return (
     <DashboardLayout role={role} title={title}>
@@ -155,6 +172,18 @@ export function InventoryUnitsView({ role, title, subtitle }: InventoryUnitsView
 
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5 xl:items-end">
+          <label className="grid gap-2 text-sm font-medium text-[#334155] md:col-span-2 xl:col-span-5">
+            <span>جستجوی کالا</span>
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6CAE75]" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                className="pr-10"
+                placeholder="نام کالا، کد کالا یا نام انبار"
+              />
+            </div>
+          </label>
           <label className="grid gap-2 text-sm font-medium text-[#334155]">
             <span>انبار</span>
             <SearchableSelect value={stockObjectId} onValueChange={setStockObjectId} options={stockOptions} placeholder="همه انبارها" searchPlaceholder="جستجو در انبارها" emptyMessage="انباری پیدا نشد" />
@@ -208,6 +237,7 @@ export function InventoryUnitsView({ role, title, subtitle }: InventoryUnitsView
                 setTrackingCode("");
                 setSerialNumber("");
                 setStatus("all");
+                setSearchTerm("");
                 window.setTimeout(() => void loadRows(), 0);
               }}
             >
@@ -222,10 +252,10 @@ export function InventoryUnitsView({ role, title, subtitle }: InventoryUnitsView
         <LoadingState title="در حال دریافت کدهای رهگیری موجودی" />
       ) : error ? (
         <PageErrorMessage title="دریافت موجودی قابل ردیابی انجام نشد" message={error} />
-      ) : rows.length ? (
+      ) : visibleRows.length ? (
         <div className="space-y-3">
-          <DataTable columns={columns} rows={rows} rowKey={rowKey} />
-          {rows.map((row) =>
+          <DataTable columns={columns} rows={visibleRows} rowKey={rowKey} />
+          {visibleRows.map((row) =>
             expanded[rowKey(row)] ? (
               <div key={`${rowKey(row)}-units`} className="overflow-x-auto rounded-xl border border-[#E5E7EB] bg-white">
                 <div className="border-b border-[#E5E7EB] px-4 py-3 text-sm font-semibold text-[#102034]">
