@@ -66,13 +66,26 @@ export function mapProductStockInventoryDto(
   const useFullRealQuantityForSales = toBooleanValue(
     record.useFullRealQuantityForSales,
   );
+  const realQuantity = toNumberValue(record.realQuantity);
+  const salesQuantity = toNumberValue(record.salesQuantity);
   const salesCapacity = toNumberValue(
     record.salesCapacity ??
       (useFullRealQuantityForSales
-        ? record.realQuantity
-        : record.salesQuantity),
+        ? realQuantity
+        : salesQuantity),
   );
-  const reservedQuantity = toNumberValue(record.reservedQuantity);
+  const backendReservedQuantity = toNumberValue(record.reservedQuantity);
+  const availableForSaleFromBackend = toNumberValue(
+    record.availableForSale ??
+      record.availableSalesQuantity ??
+      (salesCapacity - backendReservedQuantity),
+  );
+  const derivedReservedQuantity = Math.max(
+    0,
+    realQuantity - availableForSaleFromBackend,
+  );
+  const reservedQuantity =
+    backendReservedQuantity > 0 ? backendReservedQuantity : derivedReservedQuantity;
   return {
     objectId: toStringValue(record.objectId),
     id: toStringValue(record.id) || toStringValue(record.objectId),
@@ -97,8 +110,8 @@ export function mapProductStockInventoryDto(
         : toNumberValue(record.sepidarStockId),
     stockTitle: toStringValue(record.stockTitle ?? stock?.title),
     stock,
-    realQuantity: toNumberValue(record.realQuantity),
-    salesQuantity: toNumberValue(record.salesQuantity),
+    realQuantity,
+    salesQuantity,
     salesCapacity,
     useFullRealQuantityForSales,
     reservedQuantity,
