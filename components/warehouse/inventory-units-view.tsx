@@ -108,9 +108,14 @@ export function InventoryUnitsView({ role, title, subtitle }: InventoryUnitsView
       ),
     },
     { key: "stock", header: "انبار", render: (row) => row.stockTitle || "-" },
-    { key: "real", header: "موجودی رزرو شده", render: (row) => formatNumber(row.reservedQuantity) },
+    { key: "real", header: "موجودی واقعی", render: (row) => formatNumber(row.realQuantity) },
     { key: "sales", header: "موجودی فروش", render: (row) => formatNumber(row.salesQuantity) },
     { key: "reserved", header: "رزرو شده", render: (row) => formatNumber(row.reservedQuantity) },
+    {
+      key: "available",
+      header: "موجودی قابل فروش",
+      render: (row) => formatNumber(row.availableForSale),
+    },
     {
       key: "units",
       header: "کدهای رهگیری",
