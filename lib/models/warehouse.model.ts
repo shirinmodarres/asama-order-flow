@@ -94,6 +94,8 @@ export interface WarehouseInventoryUnitRow {
   stockObjectId: string | null;
   sepidarStockId: number | null;
   stockTitle: string;
+  status: WarehouseUnitStatus | string;
+  statusLabel: string;
   realQuantity: number;
   salesQuantity: number;
   salesCapacity?: number;
