@@ -52,6 +52,35 @@ interface PriceListOption {
 interface SalesTypeOption {
   objectId: string;
   title: string;
+  internalCode?: number | null;
+  sepidarCode?: number | null;
+}
+
+function getQuotationSalesTypeSnapshot(quotation?: SalesQuotation | null): SalesTypeOption | null {
+  if (!quotation) return null;
+  const objectId =
+    quotation.salesTypeObjectId ||
+    quotation.salesType?.objectId ||
+    "";
+  const title =
+    quotation.salesTypeTitle ||
+    quotation.salesType?.title ||
+    "";
+  const internalCode =
+    quotation.salesTypeInternalCode ??
+    quotation.salesType?.internalCode ??
+    null;
+  const sepidarCode =
+    quotation.salesTypeSepidarCode ??
+    quotation.salesType?.sepidarCode ??
+    null;
+  if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
+  return {
+    objectId: objectId || `quotation-sales-type-${quotation.objectId || "fallback"}`,
+    title,
+    internalCode,
+    sepidarCode,
+  };
 }
 
 export function QuotationForm({
@@ -105,6 +134,10 @@ export function QuotationForm({
   const [taxPercentage, setTaxPercentage] = useState(
     initialQuotation?.taxPercentage ?? 10,
   );
+  const quotationSalesTypeFallback = useMemo(
+    () => getQuotationSalesTypeSnapshot(initialQuotation),
+    [initialQuotation],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -115,6 +148,8 @@ export function QuotationForm({
         setSalesTypes(data.map((salesType) => ({
           objectId: salesType.objectId,
           title: salesType.title,
+          internalCode: salesType.internalCode,
+          sepidarCode: salesType.sepidarCode,
         })));
         if (!selectedSalesTypeId && initialQuotation?.salesTypeObjectId) {
           setSelectedSalesTypeId(initialQuotation.salesTypeObjectId);
@@ -169,6 +204,23 @@ export function QuotationForm({
     // }
     return options;
   }, [selectedCustomer]);
+  const mergedSalesTypes = useMemo(() => {
+    const map = new Map<string, SalesTypeOption>();
+    salesTypes.forEach((salesType) => {
+      map.set(salesType.objectId, salesType);
+    });
+    if (
+      quotationSalesTypeFallback &&
+      !map.has(quotationSalesTypeFallback.objectId) &&
+      (quotationSalesTypeFallback.objectId ||
+        quotationSalesTypeFallback.title ||
+        quotationSalesTypeFallback.internalCode !== null ||
+        quotationSalesTypeFallback.sepidarCode !== null)
+    ) {
+      map.set(quotationSalesTypeFallback.objectId, quotationSalesTypeFallback);
+    }
+    return Array.from(map.values());
+  }, [quotationSalesTypeFallback, salesTypes]);
 
   useEffect(() => {
     if (!selectedCustomer) {
@@ -399,10 +451,12 @@ export function QuotationForm({
             <SearchableSelect
               value={selectedSalesTypeId || undefined}
               onValueChange={setSelectedSalesTypeId}
-              options={salesTypes.map((salesType) => ({
+              options={mergedSalesTypes.map((salesType) => ({
                 value: salesType.objectId,
                 label: salesType.title,
-                searchText: salesType.title,
+                searchText: [salesType.title, salesType.internalCode]
+                  .filter(Boolean)
+                  .join(" "),
               }))}
               placeholder="انتخاب روش پرداخت"
               searchPlaceholder="جستجو در روش پرداخت"
