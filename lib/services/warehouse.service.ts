@@ -106,6 +106,7 @@ export async function getWarehouseStockUnitDetail(
         productName: toStringValue(group.productName),
         inStockUnitCount: toNumberValue(group.inStockUnitCount),
         realQuantity: toNumberValue(group.realQuantity),
+        reservedQuantity: toNumberValue(group.reservedQuantity),
         units: toArray(group.units).map((unitDto) => {
           const unit = toRecord(unitDto);
           return {
@@ -146,6 +147,7 @@ function mapWarehouseStockUnitSummary(dto: unknown): WarehouseStockUnitSummary {
 
 function mapWarehouseInventoryUnitRow(dto: unknown): WarehouseInventoryUnitRow {
   const record = toRecord(dto);
+  const status = toStringValue(record.status);
   return {
     objectId: toStringValue(record.objectId),
     id: toStringValue(record.id) || toStringValue(record.objectId),
@@ -162,6 +164,8 @@ function mapWarehouseInventoryUnitRow(dto: unknown): WarehouseInventoryUnitRow {
         ? null
         : toNumberValue(record.sepidarStockId),
     stockTitle: toStringValue(record.stockTitle),
+    status,
+    statusLabel: toStringValue(record.statusLabel || status),
     realQuantity: toNumberValue(record.realQuantity),
     salesQuantity: toNumberValue(record.salesQuantity),
     salesCapacity: toNumberValue(record.salesCapacity),

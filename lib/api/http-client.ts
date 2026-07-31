@@ -61,6 +61,7 @@ export async function httpRequest<T>(
       method,
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      cache: "no-store",
     });
   } catch (error) {
     throw new ApiError({

@@ -12,6 +12,7 @@ import { SectionHeader } from "@/components/shared/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { getErrorMessage } from "@/lib/api/api-error";
 import type { PanelRoleKey } from "@/lib/domain/roles";
 import { formatDateTime, formatNumber } from "@/lib/expert/utils";
@@ -38,6 +39,7 @@ export function WarehouseStockDetailView({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const loadDetail = async (nextStockObjectId: string) => {
     if (!nextStockObjectId) {
@@ -73,6 +75,22 @@ export function WarehouseStockDetailView({
     [detail],
   );
 
+  const visibleGroups = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return detail?.groups ?? [];
+    return (detail?.groups ?? []).filter((group) => {
+      const haystack = [
+        group.productName,
+        group.sepidarCode,
+        String(group.sepidarItemId ?? ""),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [detail?.groups, searchTerm]);
+
   return (
     <DashboardLayout role={role} title="جزئیات انبار">
       {isLoading ? (
@@ -101,11 +119,21 @@ export function WarehouseStockDetailView({
                 <Link href={listPath}>بازگشت به انبارها</Link>
               </Button>
             }
-          />
+            />
+          <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>جستجوی کالا</span>
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="نام کالا یا کد کالا"
+              />
+            </label>
+          </section>
 
-          {detail.groups.length ? (
+          {visibleGroups.length ? (
             <div className="space-y-3">
-              {detail.groups.map((group) => (
+              {visibleGroups.map((group) => (
                 <ProductUnitGroupCard
                   key={groupKey(group)}
                   group={group}
@@ -122,7 +150,9 @@ export function WarehouseStockDetailView({
           ) : (
             <EmptyState
               title="واحدی در این انبار ثبت نشده است"
-              description="واحدهای ثبت‌شده در رسید ورود، پس از انتخاب این انبار اینجا نمایش داده می‌شوند."
+              description={searchTerm.trim()
+                ? "کالایی با این عبارت پیدا نشد."
+                : "واحدهای ثبت‌شده در رسید ورود، پس از انتخاب این انبار اینجا نمایش داده می‌شوند."}
             />
           )}
         </div>
@@ -167,6 +197,9 @@ function ProductUnitGroupCard({
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B]">
           <Badge variant="neutral">
             واحدهای موجود: {formatNumber(group.inStockUnitCount)}
+          </Badge>
+          <Badge variant="neutral">
+            رزروشده: {formatNumber(group.reservedQuantity)}
           </Badge>
           <Badge variant="brand">
             موجودی واقعی: {formatNumber(group.realQuantity)}

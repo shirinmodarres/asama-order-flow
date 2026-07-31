@@ -7,6 +7,7 @@ import {
   mapStockTransferRequestDto,
   mapStockTransferRequestListDto,
 } from "@/lib/mappers/stock.mapper";
+import { listWarehouseInventoryUnits } from "@/lib/services/warehouse.service";
 import type {
   BulkUpdateProductStockInventoryItem,
   BulkUpdateProductStockInventoryResult,
@@ -21,6 +22,8 @@ import { mapWarehouseItemUnitDto } from "@/lib/mappers/warehouse.mapper";
 import type { WarehouseItemUnit } from "@/lib/models/warehouse.model";
 import { toArray, toRecord, toStringValue, toNumberValue } from "@/lib/mappers/mapper-utils";
 import { toNumber } from "@/lib/utils/number-format";
+
+const RESERVED_UNIT_STATUSES = new Set(["reserved_for_order", "reserved"]);
 
 export async function listSepidarStocks(): Promise<SepidarStock[]> {
   const data = await httpClient.get<unknown>(
@@ -189,10 +192,46 @@ export async function listProductStockInventory(filters?: {
     params.set("productObjectId", filters.productObjectId);
   }
   const suffix = params.toString() ? `?${params.toString()}` : "";
-  const data = await httpClient.get<unknown>(
-    `/api/support/product-stock-inventory${suffix}`,
-  );
-  return mapProductStockInventoryListDto(data);
+  const [supportData, tracedRows] = await Promise.all([
+    httpClient.get<unknown>(`/api/support/product-stock-inventory${suffix}`),
+    listWarehouseInventoryUnits(filters),
+  ]);
+  const supportRows = mapProductStockInventoryListDto(supportData);
+  const tracedReservedByKey = tracedRows.reduce((map, row) => {
+    if (!RESERVED_UNIT_STATUSES.has(String(row.status || "").trim())) {
+      return map;
+    }
+    const key = `${String(row.productObjectId || "").trim()}::${String(row.stockObjectId || "").trim()}`;
+    map.set(key, (map.get(key) ?? 0) + 1);
+    return map;
+  }, new Map<string, number>());
+
+  return supportRows.map((row: ProductStockInventory) => {
+    const key = `${String(row.productObjectId || "").trim()}::${String(row.stockObjectId || "").trim()}`;
+    const tracedReservedQuantity = tracedReservedByKey.get(key) ?? 0;
+    if (tracedReservedQuantity <= 0) {
+      return row;
+    }
+
+    const realQuantity = toNumber(row.realQuantity);
+    const salesQuantity = toNumber(row.salesQuantity);
+    const salesCapacity = toNumber(
+      row.salesCapacity ??
+        (row.useFullRealQuantityForSales
+          ? realQuantity
+          : salesQuantity),
+    );
+    const reservedQuantity = tracedReservedQuantity;
+    const unreservedQuantity = Math.max(0, realQuantity - reservedQuantity);
+    const availableForSale = Math.max(0, salesCapacity - reservedQuantity);
+    return {
+      ...row,
+      reservedQuantity,
+      unreservedQuantity,
+      availableForSale,
+      availableSalesQuantity: availableForSale,
+    };
+  });
 }
 
 export async function updateProductStockInventory(
