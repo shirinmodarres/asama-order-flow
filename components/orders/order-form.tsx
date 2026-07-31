@@ -1628,7 +1628,7 @@ export function OrderForm({
             options={mergedSalesTypes.map((salesType) => ({
               value: salesType.objectId,
               label: salesType.title,
-              searchText: [salesType.title, salesType.internalCode, salesType.sepidarCode]
+              searchText: [salesType.title, salesType.internalCode]
                 .filter(Boolean)
                 .join(" "),
             }))}
