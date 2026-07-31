@@ -137,6 +137,7 @@ export interface WarehouseStockProductGroup {
   productName: string;
   inStockUnitCount: number;
   realQuantity: number;
+  reservedQuantity: number;
   units: WarehouseStockProductUnit[];
 }
 

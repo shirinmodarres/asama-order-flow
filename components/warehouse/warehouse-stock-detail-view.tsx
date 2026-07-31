@@ -168,20 +168,11 @@ function ProductUnitGroupCard({
           <Badge variant="neutral">
             واحدهای موجود: {formatNumber(group.inStockUnitCount)}
           </Badge>
-          {/* <Badge variant="brand">
-            موجودی واقعی: {formatNumber(group.realQuantity)}
-          </Badge> */}
           <Badge variant="neutral">
-            رزروشده:{" "}
-            {formatNumber(
-              group.units.reduce(
-                (sum, unit) =>
-                  unit.status === "reserved_for_order"
-                    ? sum + 1
-                    : sum,
-                0,
-              ),
-            )}
+            رزروشده: {formatNumber(group.reservedQuantity)}
+          </Badge>
+          <Badge variant="brand">
+            موجودی واقعی: {formatNumber(group.realQuantity)}
           </Badge>
           {isOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
         </div>

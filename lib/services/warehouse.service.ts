@@ -106,6 +106,7 @@ export async function getWarehouseStockUnitDetail(
         productName: toStringValue(group.productName),
         inStockUnitCount: toNumberValue(group.inStockUnitCount),
         realQuantity: toNumberValue(group.realQuantity),
+        reservedQuantity: toNumberValue(group.reservedQuantity),
         units: toArray(group.units).map((unitDto) => {
           const unit = toRecord(unitDto);
           return {
