@@ -29,6 +29,10 @@ interface DraftState {
   useFullRealQuantityForSales: boolean;
 }
 
+function getBrandLabel(row: ProductStockInventory) {
+  return row.brandName || row.brandTitle || "-";
+}
+
 export default function SupportProductStockInventoryPage() {
   const [rows, setRows] = useState<ProductStockInventory[]>([]);
   const [drafts, setDrafts] = useState<Record<string, DraftState>>({});
@@ -292,7 +296,7 @@ export default function SupportProductStockInventoryPage() {
               {formatFaDigits(row.productSku || "-")}
             </p>
             <p className="mt-1 text-xs text-[#6B7280]">
-              برند: {row.brandName || "-"}
+              برند: {getBrandLabel(row)}
             </p>
           </div>
         );
@@ -301,7 +305,7 @@ export default function SupportProductStockInventoryPage() {
     {
       key: "brand",
       header: "برند",
-      render: (row) => row.brandName || "-",
+      render: (row) => getBrandLabel(row),
     },
     {
       key: "real",
@@ -455,9 +459,10 @@ export default function SupportProductStockInventoryPage() {
                       <h2 className="font-semibold text-[#102034]">
                         {group.title}
                       </h2>
-                      {group.rows[0]?.brandName ? (
+                      {group.rows[0] &&
+                      (group.rows[0].brandName || group.rows[0].brandTitle) ? (
                         <span className="rounded-full bg-[#EEF7F0] px-2 py-0.5 text-xs text-[#2F6B3A]">
-                          {group.rows[0].brandName}
+                          {getBrandLabel(group.rows[0])}
                         </span>
                       ) : null}
                       {group.code ? (

@@ -21,16 +21,12 @@ export function mapExpertCustomerAssignmentDto(
   const record = toRecord(dto);
   const expertRecord = toRecord(record.expert ?? record.user);
   const customerRecord = toRecord(record.customer);
-  const saleTypeRecord = toRecord(record.saleType);
   const priceListRecord = toRecord(record.priceList);
   const expert = Object.keys(expertRecord).length
     ? mapAuthUserDto(expertRecord)
     : null;
   const customer = Object.keys(customerRecord).length
     ? mapCustomerDto(customerRecord)
-    : null;
-  const saleType = Object.keys(saleTypeRecord).length
-    ? mapSepidarSaleTypeDto(saleTypeRecord)
     : null;
   const priceList = Object.keys(priceListRecord).length
     ? mapPriceListDto(priceListRecord)
@@ -56,7 +52,6 @@ export function mapExpertCustomerAssignmentDto(
     customerObjectId: toStringValue(
       record.customerObjectId ?? record.customerId ?? customer?.objectId,
     ),
-    saleTypeObjectId: toStringValue(record.saleTypeObjectId ?? saleType?.objectId) || null,
     priceListId: legacyPriceListId,
     priceListIds: priceListIds.length
       ? priceListIds
@@ -71,7 +66,6 @@ export function mapExpertCustomerAssignmentDto(
       toStringValue(record.priceListBrand) || priceList?.brandName || null,
     expert,
     customer,
-    saleType,
     priceList,
     priceLists,
     expertName: toStringValue(record.expertName) || expert?.fullName || "",
@@ -84,12 +78,6 @@ export function mapExpertCustomerAssignmentDto(
       toStringValue(record.sepidarCustomerCode) ||
       customer?.sepidarCustomerCode ||
       null,
-    saleTypeTitle:
-      toStringValue(record.saleTypeTitle) || saleType?.title || null,
-    sepidarSaleTypeId:
-      record.sepidarSaleTypeId === undefined || record.sepidarSaleTypeId === null
-        ? saleType?.sepidarSaleTypeId ?? null
-        : toNumberValue(record.sepidarSaleTypeId),
     allowedStockObjectIds: toArray(record.allowedStockObjectIds)
       .map(toStringValue)
       .filter(Boolean),

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDateTime } from "@/lib/expert/utils";
 import type { InternalInvoice } from "@/lib/models/internal-invoice.model";
 import { getInternalInvoice } from "@/lib/services/internal-invoice.service";
+import { PDF_PAGE_STYLES, PdfPage } from "@/components/pdf/pdf-shell";
+import { chunkRowsByPage } from "@/components/pdf/pdf-pagination";
 import {
   formatFaCurrency,
   formatFaDigits,
@@ -19,6 +21,15 @@ export default function InternalInvoicePrintPage() {
   const [invoice, setInvoice] = useState<InternalInvoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const pages = useMemo(
+    () =>
+      chunkRowsByPage(invoice?.items ?? [], {
+        firstPageRows: 6,
+        nextPageRows: 8,
+      }),
+    [invoice?.items],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -45,24 +56,7 @@ export default function InternalInvoicePrintPage() {
       dir="rtl"
       className="min-h-screen bg-[#E5E7EB] p-4 text-[#102034] print:bg-white print:p-0"
     >
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4;
-            margin: 12mm;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .invoice-print-page {
-            width: 100% !important;
-            min-height: 297mm !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-          }
-        }
-      `}</style>
+      <style jsx global>{PDF_PAGE_STYLES}</style>
 
       <div className="no-print mx-auto mb-4 flex max-w-[210mm] justify-end">
         <Button type="button" onClick={() => window.print()}>
@@ -70,35 +64,52 @@ export default function InternalInvoicePrintPage() {
         </Button>
       </div>
 
-      <section className="invoice-print-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-xl border border-[#D7DEE6] bg-white shadow-sm">
-        <div className="pointer-events-none absolute inset-0">
-          <Image
-            src="/1.jpg"
-            alt="سربرگ آساما"
-            fill
-            priority
-            sizes="210mm"
-            className="object-cover"
-          />
+      {isLoading ? (
+        <PdfPage imageSrc="/1.jpg" imageAlt="سربرگ آساما">
+          <p className="text-sm text-[#6B7280]">در حال دریافت فاکتور...</p>
+        </PdfPage>
+      ) : error ? (
+        <PdfPage imageSrc="/1.jpg" imageAlt="سربرگ آساما">
+          <p className="text-sm text-[#B91C1C]">{error}</p>
+        </PdfPage>
+      ) : !invoice ? (
+        <PdfPage imageSrc="/1.jpg" imageAlt="سربرگ آساما">
+          <p className="text-sm text-[#6B7280]">فاکتور یافت نشد.</p>
+        </PdfPage>
+      ) : (
+        <div className="space-y-4">
+          {pages.map((pageRows, pageIndex) => {
+            const isLastPage = pageIndex === pages.length - 1;
+            return (
+              <PdfPage
+                key={`invoice-page-${pageIndex}`}
+                imageSrc="/1.jpg"
+                imageAlt="سربرگ آساما"
+                pageBreakAfter={!isLastPage}
+              >
+                <InvoiceDocument
+                  invoice={invoice}
+                  rows={pageRows}
+                  showTotals={isLastPage}
+                />
+              </PdfPage>
+            );
+          })}
         </div>
-
-        <div className="relative z-10 p-8">
-          {isLoading ? (
-            <p className="text-sm text-[#6B7280]">در حال دریافت فاکتور...</p>
-          ) : error ? (
-            <p className="text-sm text-[#B91C1C]">{error}</p>
-          ) : !invoice ? (
-            <p className="text-sm text-[#6B7280]">فاکتور یافت نشد.</p>
-          ) : (
-            <InvoiceDocument invoice={invoice} />
-          )}
-        </div>
-      </section>
+      )}
     </main>
   );
 }
 
-function InvoiceDocument({ invoice }: { invoice: InternalInvoice }) {
+function InvoiceDocument({
+  invoice,
+  rows,
+  showTotals,
+}: {
+  invoice: InternalInvoice;
+  rows: InternalInvoice["items"];
+  showTotals: boolean;
+}) {
   return (
     <div className="space-y-5 text-[#102034]">
       {/* <header className="relative min-h-33 pb-4 pt-14">
@@ -216,7 +227,7 @@ function InvoiceDocument({ invoice }: { invoice: InternalInvoice }) {
             </tr>
           </thead>
           <tbody>
-            {invoice.items.map((item, index) => (
+            {rows.map((item, index) => (
               <tr
                 key={item.objectId || `${item.productObjectId}-${index}`}
                 className="odd:bg-white even:bg-[#F8FAFC]"
@@ -234,14 +245,16 @@ function InvoiceDocument({ invoice }: { invoice: InternalInvoice }) {
         </table>
       </section>
 
-      <section className="mr-auto w-full max-w-[420px] overflow-hidden rounded-xl border border-[#D7DEE6] bg-white/95 text-sm">
-        <Total label="مبلغ ناخالص" value={invoice.grossAmount} />
-        <Total label="تخفیف" value={invoice.discount} />
-        <Total label="مالیات" value={invoice.tax} />
-        <Total label="عوارض" value={invoice.duty} />
-        <Total label="اضافات" value={invoice.addition} />
-        <Total label="مبلغ نهایی" value={invoice.netAmount} emphasis />
-      </section>
+      {showTotals ? (
+        <section className="mr-auto w-full max-w-[420px] overflow-hidden rounded-xl border border-[#D7DEE6] bg-white/95 text-sm">
+          <Total label="مبلغ ناخالص" value={invoice.grossAmount} />
+          <Total label="تخفیف" value={invoice.discount} />
+          <Total label="مالیات" value={invoice.tax} />
+          <Total label="عوارض" value={invoice.duty} />
+          <Total label="اضافات" value={invoice.addition} />
+          <Total label="مبلغ نهایی" value={invoice.netAmount} emphasis />
+        </section>
+      ) : null}
     </div>
   );
 }

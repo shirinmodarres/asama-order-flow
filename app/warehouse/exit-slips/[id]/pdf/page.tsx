@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage } from "@/lib/api/api-error";
@@ -12,6 +11,7 @@ import {
   resolveExitSlipPdfCustomer,
   resolveExitSlipPdfRecipient,
 } from "@/lib/utils/exit-slip-customer";
+import { PDF_PAGE_STYLES, PdfPage } from "@/components/pdf/pdf-shell";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
 function hasText(value: string | null | undefined): boolean {
@@ -124,87 +124,7 @@ export default function ExitSlipPdfPage() {
       dir="rtl"
       className="min-h-screen bg-[#E5E7EB] p-4 text-[#102034] print:bg-white print:p-0"
     >
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
-          html,
-          body {
-            width: 100%;
-            min-height: 297mm;
-            margin: 0 !important;
-            background: white !important;
-            overflow: visible !important;
-            box-sizing: border-box !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .pdf-page {
-            box-shadow: none !important;
-            border: 0 !important;
-            width: 210mm !important;
-            height: 297mm !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            overflow: hidden !important;
-            box-sizing: border-box !important;
-          }
-          .page-break-after {
-            break-after: page;
-            page-break-after: always;
-          }
-          .pdf-page:last-child {
-            break-after: auto;
-            page-break-after: auto;
-          }
-          .print-content {
-            padding: 18mm 18mm 16mm 18mm !important;
-            overflow: hidden !important;
-            box-sizing: border-box !important;
-          }
-          .print-section,
-          .print-table-row {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-          .items-table thead {
-            display: table-header-group;
-          }
-          .items-table {
-            width: 100% !important;
-            table-layout: fixed !important;
-            box-sizing: border-box !important;
-            margin-inline: 0 !important;
-          }
-          .print-root {
-            font-size: 11px !important;
-            line-height: 1.9 !important;
-          }
-          .print-root .customer-info,
-          .print-root .recipient-info {
-            font-size: 10px !important;
-          }
-          .print-root .summary-table,
-          .print-root .detail-table {
-            font-size: 9.5px !important;
-          }
-          .print-root .serial-cell,
-          .print-root .tracking-cell {
-            font-size: 8.5px !important;
-          }
-          .print-root .pdf-page {
-            break-after: page;
-            page-break-after: always;
-          }
-          .print-root .pdf-page:last-child {
-            break-after: auto;
-            page-break-after: auto;
-          }
-        }
-      `}</style>
+      <style jsx global>{PDF_PAGE_STYLES}</style>
 
       <div className="no-print mx-auto mb-4 flex max-w-[210mm] justify-end">
         <Button type="button" onClick={() => window.print()}>
@@ -278,40 +198,10 @@ export default function ExitSlipPdfPage() {
   );
 }
 
-function PdfPage({
-  children,
-  pageBreakAfter = false,
-}: {
-  children: React.ReactNode;
-  pageBreakAfter?: boolean;
-}) {
-  return (
-    <section
-      className={`pdf-page relative mx-auto h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${
-        pageBreakAfter ? "page-break-after" : ""
-      }`}
-    >
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
-        <Image
-          src="/A4 - 2.svg"
-          alt="Asama Letterhead"
-          fill
-          priority
-          sizes="210mm"
-          className="object-cover"
-        />
-      </div>
-      <div className="print-content print-root relative z-10">
-        {children}
-      </div>
-    </section>
-  );
-}
-
 function HeaderBlock({ data }: { data: ExitSlipPdfData }) {
   return (
-    <header className="relative flex min-h-20 justify-between">
-      <div className="absolute left-0 top-0 border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[10px] leading-6 text-[#334155]">
+    <header className="relative flex min-h-24 items-start justify-between">
+      <div className="absolute left-0 top-[-12px] w-fit border-r-2 border-[#7BC68A] bg-white/95 px-2 py-0.5 text-[9px] leading-5 text-[#334155]">
         <InlineInfo label="کد حواله" value={formatFaDigits(data.slipCode) || "-"} />
         <InlineInfo label="کد سفارش" value={formatFaDigits(data.orderCode) || "-"} />
         <InlineInfo
@@ -429,7 +319,7 @@ function SummaryTable({
       <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
         <thead>
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
-            <TableHeader className="w-6">ردیف</TableHeader>
+            <TableHeader className="w-10">ردیف</TableHeader>
             <TableHeader>نام کالا</TableHeader>
             <TableHeader className="w-16">تعداد</TableHeader>
           </tr>
@@ -468,7 +358,7 @@ function DetailTable({
       <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
         <thead>
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
-            <TableHeader className="w-6">ردیف</TableHeader>
+            <TableHeader className="w-10">ردیف</TableHeader>
             <TableHeader className="w-[28%]">نام کالا</TableHeader>
             <TableHeader className="w-[16%]">کد کالا</TableHeader>
             <TableHeader className="w-[22%]">سریال</TableHeader>
@@ -563,7 +453,7 @@ function TableCell({
 }) {
   return (
     <td
-      className={`break-words border-l border-[#E2E8F0] px-1 py-1 align-top last:border-l-0 ${className}`}
+      className={`break-words whitespace-normal border-l border-[#E2E8F0] px-1 py-1 align-top last:border-l-0 ${className}`}
     >
       {children}
     </td>

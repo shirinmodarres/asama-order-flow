@@ -27,6 +27,11 @@ import { formatFaDigits, normalizeDigits, toNumber } from "@/lib/utils/number-fo
 import { JalaliDateInput } from "@/components/shared/jalali-date-input";
 import { SELECT_REQUIRED_MESSAGE, POSITIVE_NUMBER_MESSAGE } from "@/lib/utils/form-validation";
 import { jalaliToIso, todayJalaliParts } from "@/lib/utils/jalali-date";
+import {
+  buildQuotationSubmitPayload,
+  getQuotationCustomerSnapshot,
+  getQuotationSalesTypeSnapshot,
+} from "@/components/quotations/quotation-form.logic";
 
 interface QuotationFormProps {
   mode: "create" | "edit";
@@ -56,33 +61,6 @@ interface SalesTypeOption {
   sepidarCode?: number | null;
 }
 
-function getQuotationSalesTypeSnapshot(quotation?: SalesQuotation | null): SalesTypeOption | null {
-  if (!quotation) return null;
-  const objectId =
-    quotation.salesTypeObjectId ||
-    quotation.salesType?.objectId ||
-    "";
-  const title =
-    quotation.salesTypeTitle ||
-    quotation.salesType?.title ||
-    "";
-  const internalCode =
-    quotation.salesTypeInternalCode ??
-    quotation.salesType?.internalCode ??
-    null;
-  const sepidarCode =
-    quotation.salesTypeSepidarCode ??
-    quotation.salesType?.sepidarCode ??
-    null;
-  if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
-  return {
-    objectId: objectId || `quotation-sales-type-${quotation.objectId || "fallback"}`,
-    title,
-    internalCode,
-    sepidarCode,
-  };
-}
-
 export function QuotationForm({
   mode,
   initialQuotation,
@@ -99,10 +77,10 @@ export function QuotationForm({
   const [customerError, setCustomerError] = useState("");
   const [productError, setProductError] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState(
-    initialQuotation?.customerObjectId || "",
+    initialQuotation?.customerObjectId || initialQuotation?.customer?.objectId || "",
   );
   const [selectedPriceListId, setSelectedPriceListId] = useState(
-    initialQuotation?.priceListObjectId || "",
+    initialQuotation?.priceListObjectId || initialQuotation?.priceListId || "",
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
@@ -135,7 +113,11 @@ export function QuotationForm({
     initialQuotation?.taxPercentage ?? 10,
   );
   const quotationSalesTypeFallback = useMemo(
-    () => getQuotationSalesTypeSnapshot(initialQuotation),
+    () => getQuotationSalesTypeSnapshot(initialQuotation) as SalesTypeOption | null,
+    [initialQuotation],
+  );
+  const quotationCustomerFallback = useMemo(
+    () => getQuotationCustomerSnapshot(initialQuotation),
     [initialQuotation],
   );
 
@@ -145,12 +127,26 @@ export function QuotationForm({
       try {
         const data = await listActiveSalesTypes();
         if (!mounted) return;
-        setSalesTypes(data.map((salesType) => ({
+        const normalizedSalesTypes = data.map((salesType) => ({
           objectId: salesType.objectId,
           title: salesType.title,
           internalCode: salesType.internalCode,
           sepidarCode: salesType.sepidarCode,
-        })));
+        }));
+        if (quotationSalesTypeFallback) {
+          const exists = normalizedSalesTypes.some(
+            (salesType) => salesType.objectId === quotationSalesTypeFallback.objectId,
+          );
+          if (!exists) {
+            normalizedSalesTypes.push({
+              objectId: quotationSalesTypeFallback.objectId,
+              title: quotationSalesTypeFallback.title,
+              internalCode: quotationSalesTypeFallback.internalCode ?? null,
+              sepidarCode: quotationSalesTypeFallback.sepidarCode ?? null,
+            });
+          }
+        }
+        setSalesTypes(normalizedSalesTypes);
         if (!selectedSalesTypeId && initialQuotation?.salesTypeObjectId) {
           setSelectedSalesTypeId(initialQuotation.salesTypeObjectId);
         }
@@ -164,7 +160,16 @@ export function QuotationForm({
       try {
         const data = await listAssignedCustomersForExpert(getStoredCurrentUser()?.objectId);
         if (!mounted) return;
-        setCustomers(data);
+        const normalizedCustomers = [...data];
+        if (
+          quotationCustomerFallback &&
+          !normalizedCustomers.some(
+            (customer) => customer.objectId === quotationCustomerFallback.objectId,
+          )
+        ) {
+          normalizedCustomers.unshift(quotationCustomerFallback);
+        }
+        setCustomers(normalizedCustomers);
         if (!selectedCustomerId && data.length === 1) {
           setSelectedCustomerId(data[0].objectId);
         }
@@ -179,11 +184,19 @@ export function QuotationForm({
     return () => {
       mounted = false;
     };
-  }, [initialQuotation?.salesTypeObjectId, selectedSalesTypeId]);
+  }, [
+    initialQuotation?.salesTypeObjectId,
+    quotationCustomerFallback,
+    selectedSalesTypeId,
+  ]);
 
   const selectedCustomer = useMemo(
-    () => customers.find((customer) => customer.objectId === selectedCustomerId) ?? null,
-    [customers, selectedCustomerId],
+    () =>
+      customers.find((customer) => customer.objectId === selectedCustomerId) ??
+      (quotationCustomerFallback && quotationCustomerFallback.objectId === selectedCustomerId
+        ? quotationCustomerFallback
+        : null),
+    [customers, quotationCustomerFallback, selectedCustomerId],
   );
 
   const priceListOptions = useMemo(() => {
@@ -194,8 +207,13 @@ export function QuotationForm({
       seen.add(value);
       options.push({ value, label: label || value });
     };
-    const priceLists = selectedCustomer?.priceLists || [];
-    priceLists.forEach((priceList) => {
+    const priceLists: Array<{
+      objectId: string;
+      title?: string | null;
+      displayName?: string | null;
+      name?: string | null;
+    }> = selectedCustomer?.priceLists || [];
+    priceLists.forEach((priceList: (typeof priceLists)[number]) => {
       addOption(priceList.objectId, priceList.title || priceList.displayName || priceList.name);
     });
     addOption(selectedCustomer?.priceListId, selectedCustomer?.priceListTitle);
@@ -221,9 +239,37 @@ export function QuotationForm({
     }
     return Array.from(map.values());
   }, [quotationSalesTypeFallback, salesTypes]);
+  const selectedSalesType = useMemo(
+    () =>
+      mergedSalesTypes.find((salesType) => salesType.objectId === selectedSalesTypeId) ||
+      quotationSalesTypeFallback ||
+      null,
+    [mergedSalesTypes, quotationSalesTypeFallback, selectedSalesTypeId],
+  );
 
   useEffect(() => {
     if (!selectedCustomer) {
+      if (quotationCustomerFallback && quotationCustomerFallback.objectId === selectedCustomerId) {
+        const fallbackPriceLists = quotationCustomerFallback.priceLists || [];
+        const fallbackOptions = fallbackPriceLists
+          .map((priceList: { objectId: string; title?: string | null; displayName?: string | null; name?: string | null }) => ({
+            value: priceList.objectId,
+            label: priceList.title || priceList.displayName || priceList.name,
+          }))
+          .filter((option: { value: string; label: string }) => Boolean(option.value));
+        if (fallbackPriceLists.length) {
+          setSelectedPriceListId((current: string) => {
+            if (current && fallbackOptions.some((option: { value: string; label: string }) => option.value === current)) return current;
+            return (
+              initialQuotation?.priceListObjectId &&
+              fallbackOptions.some((option: { value: string; label: string }) => option.value === initialQuotation.priceListObjectId)
+            )
+              ? initialQuotation.priceListObjectId
+              : fallbackOptions[0].value;
+          });
+          return;
+        }
+      }
       setProducts([]);
       setSelectedPriceListId("");
       return;
@@ -236,7 +282,13 @@ export function QuotationForm({
           : priceListOptions[0].value;
       });
     }
-  }, [priceListOptions, selectedCustomer]);
+  }, [
+    initialQuotation?.priceListObjectId,
+    priceListOptions,
+    quotationCustomerFallback,
+    selectedCustomer,
+    selectedCustomerId,
+  ]);
 
   useEffect(() => {
     let mounted = true;
@@ -397,20 +449,24 @@ export function QuotationForm({
       return;
     }
 
-    await onSubmit({
-      customerObjectId: selectedCustomerId,
-      salesTypeObjectId: selectedSalesTypeId,
-      priceListObjectId: selectedPriceListId,
-      notes: notes.trim(),
-      validUntil: selectedValidUntil || null,
-      discountPercentage,
-      taxPercentage,
-      status,
-      items: resolvedRows.map((row) => ({
-        productObjectId: row.productId,
-        quantity: row.quantity,
-      })),
-    });
+    try {
+      await onSubmit(
+        buildQuotationSubmitPayload({
+          selectedCustomerId,
+          selectedSalesTypeId,
+          selectedSalesType: selectedSalesType ?? null,
+          selectedPriceListId,
+          notes,
+          selectedValidUntil,
+          discountPercentage,
+          taxPercentage,
+          status,
+          rows: resolvedRows,
+        }),
+      );
+    } catch (submitError) {
+      setError(getErrorMessage(submitError));
+    }
   };
 
   if (isLoadingCustomers) {
@@ -431,19 +487,46 @@ export function QuotationForm({
                 setProducts([]);
                 setSelectedPriceListId("");
               }}
-              options={customers.map((customer) => ({
-                value: customer.objectId,
-                label: [
-                  customer.sepidarCustomerCode || customer.id,
-                  customer.fullName,
-                ]
-                  .filter(Boolean)
-                  .join(" - "),
-              }))}
-              placeholder="انتخاب مشتری"
-              searchPlaceholder="جستجو در مشتری‌ها"
-              emptyMessage={assignedCustomersOnly ? "مشتری پیدا نشد" : "مشتری یافت نشد"}
-            />
+            options={
+              quotationCustomerFallback &&
+              !customers.some(
+                (customer) => customer.objectId === quotationCustomerFallback.objectId,
+              )
+                ? [
+                    {
+                      value: quotationCustomerFallback.objectId,
+                      label: [
+                        quotationCustomerFallback.sepidarCustomerCode ||
+                          quotationCustomerFallback.id,
+                        quotationCustomerFallback.fullName,
+                      ]
+                        .filter(Boolean)
+                        .join(" - "),
+                    },
+                    ...customers.map((customer) => ({
+                      value: customer.objectId,
+                      label: [
+                        customer.sepidarCustomerCode || customer.id,
+                        customer.fullName,
+                      ]
+                        .filter(Boolean)
+                        .join(" - "),
+                    })),
+                  ]
+                : customers.map((customer) => ({
+                    value: customer.objectId,
+                    label: [
+                      customer.sepidarCustomerCode || customer.id,
+                      customer.fullName,
+                    ]
+                      .filter(Boolean)
+                      .join(" - "),
+                  }))
+            }
+            placeholder="انتخاب مشتری"
+            searchPlaceholder="جستجو در مشتری‌ها"
+            emptyMessage={assignedCustomersOnly ? "مشتری پیدا نشد" : "مشتری یافت نشد"}
+          />
             <FieldError message={customerError} />
           </label>
           <label className="grid content-start gap-1.5 text-sm font-medium text-[#334155]">    

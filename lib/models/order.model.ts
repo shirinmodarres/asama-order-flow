@@ -66,6 +66,14 @@ export interface Order {
   priceListTitle: string | null;
   priceListType: string | null;
   priceListBrand: string | null;
+  priceList?: {
+    objectId: string | null;
+    id?: string | null;
+    title: string | null;
+    name?: string | null;
+    typeCode: string | null;
+    brandName: string | null;
+  } | null;
   warehouseId: string | null;
   warehouseName: string | null;
   warehouseType: string | null;
@@ -155,6 +163,9 @@ export interface CreateOrderPayload {
   createdByName?: string;
   expertUserId?: string;
   salesTypeObjectId?: string;
+  salesTypeTitle?: string | null;
+  salesTypeInternalCode?: number | null;
+  salesTypeSepidarCode?: number | null;
   customerObjectId?: string;
   customerAddressObjectId?: string;
   saleTypeObjectId?: string;

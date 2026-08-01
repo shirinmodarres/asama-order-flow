@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,8 @@ import { getErrorMessage } from "@/lib/api/api-error";
 import { formatCurrency, formatNumber } from "@/lib/expert/utils";
 import type { SalesQuotation } from "@/lib/models/sales-quotation.model";
 import { getSalesQuotationPdfData } from "@/lib/services/sales-quotation.service";
+import { PDF_PAGE_STYLES, PdfPage } from "@/components/pdf/pdf-shell";
+import { chunkRowsByPage } from "@/components/pdf/pdf-pagination";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
 export default function SalesQuotationPdfPage() {
@@ -77,79 +78,21 @@ export default function SalesQuotationPdfPage() {
       })) ?? [],
     [quotation],
   );
-  const summaryRows = itemRows.slice(0, Math.min(itemRows.length, 6));
-  const detailRows =
-    itemRows.length > 6 ? paginateQuotationRows(itemRows.slice(6), 18, 18) : [];
+  const itemPages = useMemo(
+    () =>
+      chunkRowsByPage(itemRows, {
+        firstPageRows: 4,
+        nextPageRows: 6,
+      }),
+    [itemRows],
+  );
 
   return (
     <main
       dir="rtl"
       className="min-h-screen bg-[#E5E7EB] p-4 text-[#102034] print:bg-white print:p-0"
     >
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
-          html,
-          body {
-            width: 100%;
-            min-height: 297mm;
-            margin: 0 !important;
-            background: white !important;
-            overflow: visible !important;
-            box-sizing: border-box !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .pdf-page {
-            box-shadow: none !important;
-            border: 0 !important;
-            width: 210mm !important;
-            min-height: 297mm !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            overflow: visible !important;
-            box-sizing: border-box !important;
-            break-after: page;
-            page-break-after: always;
-          }
-          .pdf-page:last-child {
-            break-after: auto;
-            page-break-after: auto;
-          }
-          .print-content {
-            padding: 18mm 20mm 16mm 20mm !important;
-            overflow: visible !important;
-            box-sizing: border-box !important;
-          }
-          .print-section,
-          .print-table-row {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-          .items-table thead {
-            display: table-header-group;
-          }
-          .items-table {
-            width: 100% !important;
-            table-layout: fixed !important;
-            box-sizing: border-box !important;
-            margin-inline: 0 !important;
-          }
-          .print-root {
-            font-size: 11px !important;
-            line-height: 1.9 !important;
-          }
-          .print-root .customer-info,
-          .print-root .summary-table,
-          .print-root .detail-table {
-            font-size: 10px !important;
-          }
-        }
-      `}</style>
+      <style jsx global>{PDF_PAGE_STYLES}</style>
 
       <div className="no-print mx-auto mb-4 flex max-w-[210mm] justify-end">
         <Button type="button" onClick={() => window.print()}>
@@ -157,224 +100,175 @@ export default function SalesQuotationPdfPage() {
         </Button>
       </div>
 
-      {isLoading ? (
-        <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
-          <PdfPageFrame>
-            <p className="text-sm text-[#6B7280]">در حال دریافت پیش‌فاکتور...</p>
-          </PdfPageFrame>
-        </section>
-      ) : error ? (
-        <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
-          <PdfPageFrame>
-            <p className="text-sm text-[#B91C1C]">{error}</p>
-          </PdfPageFrame>
-        </section>
-      ) : !quotation ? (
-        <section className="pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm">
-          <PdfPageFrame>
-            <p className="text-sm text-[#6B7280]">پیش‌فاکتور یافت نشد.</p>
-          </PdfPageFrame>
-        </section>
-      ) : (
-        <div className="space-y-0">
-          <PdfQuotationPage
-            quotation={quotation}
-            rows={summaryRows.length ? summaryRows : itemRows}
-            pageType="summary"
-            isLastPage={detailRows.length === 0}
-          />
-          {detailRows.map((rows: QuotationItemRow[], index: number) => (
-            <PdfQuotationPage
-              key={`detail-${index}`}
-              quotation={quotation}
-              rows={rows}
-              pageType="detail"
-              isLastPage={index === detailRows.length - 1}
-            />
-          ))}
-        </div>
-      )}
+      <div className="space-y-4">
+        {isLoading ? (
+          <PdfPage>
+            <div className="space-y-3 text-sm text-[#6B7280]">
+              در حال دریافت پیش‌فاکتور...
+            </div>
+          </PdfPage>
+        ) : error ? (
+          <PdfPage>
+            <div className="space-y-3 text-sm text-[#B91C1C]">{error}</div>
+          </PdfPage>
+        ) : !quotation ? (
+          <PdfPage>
+            <div className="space-y-3 text-sm text-[#6B7280]">پیش‌فاکتور یافت نشد.</div>
+          </PdfPage>
+        ) : (
+          <>
+            {itemPages.map((pageRows, pageIndex) => {
+              const isFirstPage = pageIndex === 0;
+              const isLastPage = pageIndex === itemPages.length - 1;
+              return (
+                <PdfPage
+                  key={`quotation-page-${pageIndex}`}
+                  pageBreakAfter={!isLastPage}
+                >
+                  <div className="space-y-2.5 text-[10px] leading-5">
+                    <header className="relative flex min-h-28 justify-between">
+                      <div className="absolute left-0 top-[-6mm] border-r-2 border-[#7BC68A] bg-white/95 px-2.5 py-1 text-[9px] leading-5 text-[#334155]">
+                        <InlineInfo
+                          label="شماره پیش‌فاکتور"
+                          value={formatFaDigits(quotation.quotationNumber) || "-"}
+                        />
+                        <InlineInfo
+                          label="تاریخ صدور"
+                          value={
+                            quotation.createdAt
+                              ? formatQuotationDate(quotation.createdAt)
+                              : "-"
+                          }
+                        />
+                        <InlineInfo
+                          label="تاریخ اعتبار"
+                          value={
+                            quotation.validUntil
+                              ? formatQuotationDate(quotation.validUntil)
+                              : "-"
+                          }
+                        />
+                      </div>
+                    </header>
+
+                    <div className="flex justify-center">
+                      <div className="bg-white/95 px-6 py-0.5">
+                        <h1 className="text-lg font-bold text-[#102034]">
+                          پیش‌فاکتور فروش
+                        </h1>
+                      </div>
+                    </div>
+
+                    {isFirstPage ? (
+                      <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+                        <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[11px] font-bold text-[#1F3A5F]">
+                          اطلاعات مشتری
+                        </h2>
+                        <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                          <InlineInfo label="نام مشتری" value={quotation.customerName || "-"} />
+                          <InlineInfo
+                            label="کد مشتری"
+                            value={
+                              quotation.customer?.sepidarCustomerCode
+                                ? formatFaDigits(quotation.customer.sepidarCustomerCode)
+                                : "-"
+                            }
+                          />
+                          <InlineInfo
+                            label="آدرس"
+                            value={resolveQuotationAddress(quotation)}
+                            className="col-span-2"
+                          />
+                        </dl>
+                      </section>
+                    ) : null}
+
+                    <section className="print-section overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95">
+                      <table className="items-table w-full border-collapse text-right text-[9px]">
+                        <thead>
+                          <tr className="bg-[#F1F5F9] text-[#334155]">
+                            <th className="w-10 border-b border-l border-[#D7DEE6] px-0.5 py-2 text-center font-semibold last:border-l-0">
+                              ردیف
+                            </th>
+                            <th className="w-18 border-b border-l border-[#D7DEE6] px-1 py-2 font-semibold last:border-l-0">
+                              کد کالا
+                            </th>
+                            <th className="border-b border-l border-[#D7DEE6] px-2 py-2 font-semibold last:border-l-0">
+                              نام کالا
+                            </th>
+                            <th className="w-10 border-b border-l border-[#D7DEE6] px-0.5 py-2 text-center font-semibold last:border-l-0">
+                              تعداد
+                            </th>
+                            <th className="w-9 border-b border-l border-[#D7DEE6] px-0.5 py-2 text-center font-semibold last:border-l-0">
+                              واحد
+                            </th>
+                            <th className="w-24 border-b border-l border-[#D7DEE6] px-1.5 py-2 font-semibold last:border-l-0">
+                              فی
+                            </th>
+                            <th className="w-28 border-b border-l border-[#D7DEE6] px-1.5 py-2 font-semibold last:border-l-0">
+                              مبلغ
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pageRows.map((row) => (
+                            <tr
+                              key={row.key}
+                              className="print-table-row odd:bg-white even:bg-[#F8FAFC]"
+                            >
+                              <Cell className="px-1 text-center">{formatNumber(row.rowNumber)}</Cell>
+                              <Cell>{formatFaDigits(row.sku) || "-"}</Cell>
+                              <Cell>{row.name}</Cell>
+                              <Cell className="px-1 text-center">{formatNumber(row.qty)}</Cell>
+                              <Cell className="px-1 text-center">عدد</Cell>
+                              <Cell>{formatCurrency(row.unitPrice)}</Cell>
+                              <Cell>{formatCurrency(row.lineTotal)}</Cell>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </section>
+
+                    {isLastPage ? (
+                      <>
+                        <section className="mr-auto w-full max-w-[260px] overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95 text-[11px]">
+                          <Total label="جمع مبلغ اقلام" value={quotation.subtotal} />
+                          <Total label="مبلغ تخفیف" value={quotation.discountAmount} />
+                          <Total label="مالیات (۱۰٪)" value={quotation.taxAmount} />
+                          <Total label="جمع کل" value={quotation.total} emphasis />
+                        </section>
+
+                        <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+                          <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[11px] font-bold text-[#1F3A5F]">
+                            توضیحات و شرایط
+                          </h2>
+                          <p className="whitespace-pre-wrap text-[9px] leading-5 text-[#334155]">
+                            {quotation.notes || "-"}
+                          </p>
+                          <p className="mt-2 text-[9px] font-bold leading-5 text-[#334155]">
+                            این پیش‌فاکتور تا تاریخ{" "}
+                            {quotation.validUntil
+                              ? formatQuotationDate(quotation.validUntil)
+                              : "-"}{" "}
+                            معتبر بوده و پس از آن نیازمند استعلام مجدد قیمت می‌باشد.
+                          </p>
+                        </section>
+
+                        <footer className="grid grid-cols-3 gap-3 pt-5">
+                          <Signature label="تنظیم کننده" />
+                          <Signature label="تأیید فروش" />
+                          <Signature label="مهر و امضاء مشتری" />
+                        </footer>
+                      </>
+                    ) : null}
+                  </div>
+                </PdfPage>
+              );
+            })}
+          </>
+        )}
+      </div>
     </main>
-  );
-}
-
-function PdfPageFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="print-content relative z-10 px-5 pb-5 pt-4">
-      {children}
-    </div>
-  );
-}
-
-function PdfQuotationPage({
-  quotation,
-  rows,
-  pageType,
-  isLastPage,
-}: {
-  quotation: SalesQuotation;
-  rows: QuotationItemRow[];
-  pageType: "summary" | "detail";
-  isLastPage: boolean;
-}) {
-  return (
-            <section className={`pdf-page relative mx-auto h-[297mm] w-full max-w-[210mm] overflow-hidden rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${isLastPage ? "" : "page-break-after"}`}>
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
-        <Image
-          src="/A4 - 2.svg"
-          alt="Asama Letterhead"
-          fill
-          priority={pageType === "summary"}
-          sizes="210mm"
-          className="object-cover"
-        />
-      </div>
-      <div className="print-content relative z-10 px-5 pb-5 pt-4">
-        <div className="space-y-3 text-[10px] leading-5">
-          <header className="relative flex min-h-20 justify-between">
-            <div className="absolute left-0 top-0  border-r-2 border-[#7BC68A] bg-white/95 px-3 py-1.5 text-[9px] leading-5 text-[#334155]">
-              <InlineInfo
-                label="شماره پیش‌فاکتور"
-                value={formatFaDigits(quotation.quotationNumber) || "-"}
-              />
-              <InlineInfo
-                label="تاریخ صدور"
-                value={quotation.createdAt ? formatQuotationDate(quotation.createdAt) : "-"}
-              />
-              <InlineInfo
-                label="تاریخ اعتبار"
-                value={quotation.validUntil ? formatQuotationDate(quotation.validUntil) : "-"}
-              />
-            </div>
-          </header>
-
-          <div className="flex justify-center">
-            <div className="bg-white/95 px-6 py-1">
-              <h1 className="text-lg font-bold text-[#102034]">پیش‌فاکتور فروش</h1>
-            </div>
-          </div>
-
-          <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-            <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[11px] font-bold text-[#1F3A5F]">
-              اطلاعات مشتری
-            </h2>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-              <InlineInfo label="نام مشتری" value={quotation.customerName || "-"} />
-              <InlineInfo
-                label="کد مشتری"
-                value={
-                  quotation.customer?.sepidarCustomerCode
-                    ? formatFaDigits(quotation.customer.sepidarCustomerCode)
-                    : "-"
-                }
-              />
-              <InlineInfo
-                label="آدرس"
-                value={resolveQuotationAddress(quotation)}
-                className="col-span-2"
-              />
-            </dl>
-          </section>
-
-          {pageType === "summary" ? (
-            <>
-              <section className="print-section overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95">
-                <table className="items-table w-full border-collapse text-right text-[9px]">
-                  <thead>
-                    <tr className="bg-[#F1F5F9] text-[#334155]">
-                      {["ردیف", "کد کالا", "نام کالا", "تعداد", "واحد", "فی", "مبلغ"].map(
-                        (header) => (
-                          <th
-                            key={header}
-                            className="border-b border-l border-[#D7DEE6] px-2 py-2 font-semibold last:border-l-0"
-                          >
-                            {header}
-                          </th>
-                        ),
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.key} className="print-table-row odd:bg-white even:bg-[#F8FAFC]">
-                        <Cell>{formatNumber(row.rowNumber)}</Cell>
-                        <Cell>{formatFaDigits(row.sku) || "-"}</Cell>
-                        <Cell>{row.name}</Cell>
-                        <Cell>{formatNumber(row.qty)}</Cell>
-                        <Cell>عدد</Cell>
-                        <Cell>{formatCurrency(row.unitPrice)}</Cell>
-                        <Cell>{formatCurrency(row.lineTotal)}</Cell>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-
-              <section className="mr-auto w-full max-w-[260px] overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95 text-[11px]">
-                <Total label="جمع جزء" value={quotation.subtotal} />
-                <Total label="مبلغ تخفیف" value={quotation.discountAmount} />
-                <Total label="مالیات (۱۰٪)" value={quotation.taxAmount} />
-                <Total label="جمع کل" value={quotation.total} emphasis />
-              </section>
-
-              <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-                <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[11px] font-bold text-[#1F3A5F]">
-                  توضیحات و شرایط
-                </h2>
-                <p className="whitespace-pre-wrap text-[9px] leading-5 text-[#334155]">
-                  {quotation.notes || "-"}
-                </p>
-                <p className="mt-2 text-[9px] font-bold leading-5 text-[#334155]">
-                  این پیش‌فاکتور تا تاریخ{" "}
-                  {quotation.validUntil ? formatQuotationDate(quotation.validUntil) : "-"}{" "}
-                  معتبر بوده و پس از آن نیازمند استعلام مجدد قیمت می‌باشد.
-                </p>
-              </section>
-            </>
-          ) : (
-            <>
-              <section className="print-section overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95">
-                <table className="items-table w-full border-collapse text-right text-[9px]">
-                  <thead>
-                    <tr className="bg-[#F1F5F9] text-[#334155]">
-                      {["ردیف", "کد کالا", "نام کالا", "تعداد", "واحد", "فی", "مبلغ"].map(
-                        (header) => (
-                          <th
-                            key={header}
-                            className="border-b border-l border-[#D7DEE6] px-2 py-2 font-semibold last:border-l-0"
-                          >
-                            {header}
-                          </th>
-                        ),
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.key} className="print-table-row odd:bg-white even:bg-[#F8FAFC]">
-                        <Cell>{formatNumber(row.rowNumber)}</Cell>
-                        <Cell>{formatFaDigits(row.sku) || "-"}</Cell>
-                        <Cell>{row.name}</Cell>
-                        <Cell>{formatNumber(row.qty)}</Cell>
-                        <Cell>عدد</Cell>
-                        <Cell>{formatCurrency(row.unitPrice)}</Cell>
-                        <Cell>{formatCurrency(row.lineTotal)}</Cell>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-
-              <footer className="grid grid-cols-3 gap-4 pt-7">
-                <Signature label="تنظیم‌کننده" />
-                <Signature label="تأیید فروش" />
-                <Signature label="مهر و امضاء مشتری" />
-              </footer>
-            </>
-          )}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -405,8 +299,20 @@ function InlineInfo({
   );
 }
 
-function Cell({ children }: { children: React.ReactNode }) {
-  return <td className="border-b border-l border-[#E5E7EB] px-2 py-2 align-top last:border-l-0">{children}</td>;
+function Cell({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <td
+      className={`border-b border-l border-[#E5E7EB] px-2 py-2 align-top last:border-l-0 ${className}`}
+    >
+      {children}
+    </td>
+  );
 }
 
 function Signature({ label }: { label: string }) {
@@ -435,6 +341,16 @@ function Total({
     >
       <span>{label}</span>
       <span>{formatCurrency(value)}</span>
+    </div>
+  );
+}
+
+function Signature({ label }: { label: string }) {
+  return (
+    <div className="pt-6">
+      <div className="border-t border-[#94A3B8] pt-1.5 text-center text-[9px] font-semibold text-[#1F3A5F]">
+        {label}
+      </div>
     </div>
   );
 }

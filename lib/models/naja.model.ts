@@ -3,6 +3,10 @@ export interface CreateNajaOrderPayload {
   expertUserId?: string;
   orderType?: "naja";
   customerObjectId: string;
+  salesTypeObjectId?: string | null;
+  salesTypeTitle?: string | null;
+  salesTypeInternalCode?: number | null;
+  salesTypeSepidarCode?: number | null;
   saleTypeObjectId?: string | null;
   sepidarSaleTypeId?: number | null;
   priceListId?: string | null;

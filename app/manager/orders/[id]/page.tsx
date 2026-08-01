@@ -454,7 +454,7 @@ export default function ManagerOrderReviewPage() {
               />
               <InfoItem
                 label="لیست قیمت"
-                value={order.priceListTitle || "-"}
+                value={order.priceListTitle || order.priceList?.title || "-"}
               />
               {order.orderType === "naja" ? (
                 <>
@@ -716,7 +716,7 @@ export default function ManagerOrderReviewPage() {
               />
               <InfoItem
                 label="لیست قیمت"
-                value={order.priceListTitle || "-"}
+                value={order.priceListTitle || order.priceList?.title || "-"}
               />
             </div>
           </div>

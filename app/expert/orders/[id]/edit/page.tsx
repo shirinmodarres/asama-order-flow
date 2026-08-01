@@ -79,7 +79,7 @@ export default function EditExpertOrderPage() {
       console.info("[ORDER_EDIT_SAVE_RESULT]", {
         orderId: updatedOrder.objectId,
         customerObjectId: updatedOrder.customerObjectId,
-        salesTypeObjectId: updatedOrder.salesTypeObjectId || updatedOrder.saleTypeObjectId || null,
+        salesTypeObjectId: updatedOrder.salesTypeObjectId || null,
         priceListId: updatedOrder.priceListId || null,
       });
       router.push(`/expert/orders/${updatedOrder.objectId}`);

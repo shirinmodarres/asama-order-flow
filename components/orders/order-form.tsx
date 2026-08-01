@@ -75,27 +75,37 @@ interface SalesTypeOption {
   sepidarCode: number | null;
 }
 
+function getSalesTypeOptionKey(option?: {
+  objectId?: string | null;
+  internalCode?: number | null;
+  sepidarCode?: number | null;
+} | null): string {
+  if (!option) return "";
+  if (option.sepidarCode !== null && option.sepidarCode !== undefined) {
+    return String(option.sepidarCode);
+  }
+  if (option.internalCode !== null && option.internalCode !== undefined) {
+    return String(option.internalCode);
+  }
+  return option.objectId ? String(option.objectId) : "";
+}
+
 function getOrderSalesTypeOptionKey(order?: Order | null): string {
   if (!order) return "";
-  const objectId =
-    order.salesTypeObjectId ||
-    order.saleTypeObjectId ||
-    order.salesType?.objectId ||
-    order.saleType?.objectId ||
-    "";
-  if (objectId) return objectId;
-  const hasSnapshot =
-    Boolean(
-      order.salesTypeTitle ||
-        order.saleTypeTitle ||
-        order.salesType?.title ||
-        order.saleType?.title,
-    ) ||
-    order.salesTypeInternalCode !== null ||
-    order.salesTypeSepidarCode !== null ||
-    order.saleType?.sepidarSaleTypeId !== null;
-  if (!hasSnapshot) return "";
-  return `order-sales-type-${order.objectId || "fallback"}`;
+  const sepidarCode =
+    order.salesTypeSepidarCode ??
+    order.sepidarSaleTypeId ??
+    order.salesType?.sepidarCode ??
+    order.saleType?.sepidarSaleTypeId ??
+    null;
+  if (sepidarCode !== null && sepidarCode !== undefined) {
+    return String(sepidarCode);
+  }
+  const internalCode = order.salesTypeInternalCode ?? null;
+  if (internalCode !== null && internalCode !== undefined) {
+    return String(internalCode);
+  }
+  return order.salesTypeObjectId || order.saleTypeObjectId || order.salesType?.objectId || order.saleType?.objectId || "";
 }
 
 function getOrderSalesTypeSnapshot(order?: Order | null) {
@@ -138,10 +148,12 @@ function buildOrderSalesTypeFallback(
 ): SalesTypeOption | null {
   const snapshot = getOrderSalesTypeSnapshot(order);
   if (!snapshot) return null;
-  const objectId =
-    snapshot.objectId || getOrderSalesTypeOptionKey(order) || `order-sales-type-${order?.objectId || "fallback"}`;
   return {
-    objectId,
+    objectId:
+      getSalesTypeOptionKey(snapshot) ||
+      getOrderSalesTypeOptionKey(order) ||
+      snapshot.objectId ||
+      `order-sales-type-${order?.objectId || "fallback"}`,
     title: snapshot.title,
     internalCode: snapshot.internalCode,
     sepidarCode: snapshot.sepidarCode,
@@ -180,8 +192,9 @@ export interface OrderFormSubmitPayload {
     pricingSource?: string | null;
   }>;
   salesTypeObjectId?: string;
-  saleTypeObjectId?: string;
-  sepidarSaleTypeId?: number;
+  salesTypeTitle?: string;
+  salesTypeInternalCode?: number | null;
+  salesTypeSepidarCode?: number | null;
   priceListId?: string;
 }
 
@@ -256,11 +269,11 @@ export function OrderForm({
     initialOrder?.customerObjectId ?? initialOrder?.customer?.objectId ?? "",
   );
   const [selectedPriceListId, setSelectedPriceListId] = useState(
-    initialOrder?.priceListId ?? "",
+    initialOrder?.priceListId ?? initialOrder?.priceList?.objectId ?? "",
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    getOrderSalesTypeOptionKey(initialOrder),
+    mode === "edit" ? getOrderSalesTypeOptionKey(initialOrder) : "",
   );
   const [selectedAddressId, setSelectedAddressId] = useState(
     initialOrder?.selectedCustomerAddressId
@@ -275,7 +288,7 @@ export function OrderForm({
     Record<string, { productId?: string; quantity?: string }>
   >({});
   const orderSalesTypeFallback = useMemo(
-    () => buildOrderSalesTypeFallback(initialOrder),
+    () => (mode === "edit" ? buildOrderSalesTypeFallback(initialOrder) : null),
     [initialOrder],
   );
 
@@ -286,9 +299,8 @@ export function OrderForm({
         const data = await listActiveSalesTypes();
         if (!mounted) return;
         setSalesTypes(data);
-        if (!selectedSalesTypeId) {
-          const initialId =
-            getOrderSalesTypeOptionKey(initialOrder);
+        if (!selectedSalesTypeId && mode === "edit") {
+          const initialId = getOrderSalesTypeOptionKey(initialOrder);
           if (initialId) setSelectedSalesTypeId(initialId);
         }
       } catch {
@@ -300,7 +312,7 @@ export function OrderForm({
     return () => {
       mounted = false;
     };
-  }, [initialOrder, selectedSalesTypeId]);
+  }, [initialOrder, mode, selectedSalesTypeId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -397,7 +409,6 @@ export function OrderForm({
               customerObjectId: assignment.objectId,
               allowedStockObjectIds: assignment.allowedStockObjectIds,
             },
-            saleType: assignment.saleType,
             allowedStocks: assignment.allowedStocks,
             allowedStockTitles: assignment.allowedStockTitles,
           });
@@ -419,7 +430,9 @@ export function OrderForm({
   useEffect(() => {
     function syncSelectedPriceList() {
       if (!sepidarProductsOnly || !selectedCustomerId) {
-        setSelectedPriceListId("");
+        if (mode === "edit" && initialOrder?.priceListId) {
+          setSelectedPriceListId(initialOrder.priceListId);
+        }
         return;
       }
 
@@ -431,7 +444,11 @@ export function OrderForm({
       );
 
       if (optionIds.length === 0) {
-        setSelectedPriceListId("");
+        if (mode === "edit" && initialOrder?.priceListId) {
+          setSelectedPriceListId(initialOrder.priceListId);
+        } else {
+          setSelectedPriceListId("");
+        }
         return;
       }
 
@@ -442,6 +459,12 @@ export function OrderForm({
           optionIds.includes(initialOrder.priceListId)
         ) {
           return initialOrder.priceListId;
+        }
+        if (
+          initialOrder?.priceList?.objectId &&
+          optionIds.includes(initialOrder.priceList.objectId)
+        ) {
+          return initialOrder.priceList.objectId;
         }
         return optionIds.length === 1 ? optionIds[0] : "";
       });
@@ -718,20 +741,26 @@ export function OrderForm({
   const mergedSalesTypes = useMemo(() => {
     const map = new Map<string, SalesTypeOption>();
     salesTypes.forEach((salesType) => {
-      map.set(salesType.objectId, salesType);
+      map.set(getSalesTypeOptionKey(salesType), salesType);
     });
     if (
+      mode === "edit" &&
       orderSalesTypeFallback &&
-      !map.has(orderSalesTypeFallback.objectId) &&
+      !map.has(getSalesTypeOptionKey(orderSalesTypeFallback)) &&
       (orderSalesTypeFallback.objectId ||
         orderSalesTypeFallback.title ||
         orderSalesTypeFallback.internalCode !== null ||
         orderSalesTypeFallback.sepidarCode !== null)
     ) {
-      map.set(orderSalesTypeFallback.objectId || `order-sales-type-${initialOrder?.objectId || "fallback"}`, orderSalesTypeFallback);
+      map.set(
+        getSalesTypeOptionKey(orderSalesTypeFallback) ||
+          orderSalesTypeFallback.objectId ||
+          `order-sales-type-${initialOrder?.objectId || "fallback"}`,
+        orderSalesTypeFallback,
+      );
     }
     return Array.from(map.values());
-  }, [initialOrder?.objectId, orderSalesTypeFallback, salesTypes]);
+  }, [initialOrder?.objectId, mode, orderSalesTypeFallback, salesTypes]);
   const priceListOptions = useMemo(
     () => getCustomerPriceListOptions(selectedCustomer, initialOrder),
     [initialOrder, selectedCustomer],
@@ -746,12 +775,34 @@ export function OrderForm({
   const isNajaOrder = initialOrder?.orderType === "naja";
   const isEditMode = mode === "edit";
   const selectedSalesType =
-    mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
-    orderSalesTypeFallback ||
+    mergedSalesTypes.find((item) => getSalesTypeOptionKey(item) === selectedSalesTypeId) ||
+    (mode === "edit" ? orderSalesTypeFallback : null) ||
     null;
+  const selectedSalesTypeFromActiveList = useMemo(() => {
+    if (!selectedSalesTypeId) return null;
+    return (
+      salesTypes.find((item) => getSalesTypeOptionKey(item) === selectedSalesTypeId) ||
+      salesTypes.find(
+        (item) =>
+          selectedSalesType &&
+          (item.title === selectedSalesType.title ||
+            (selectedSalesType.sepidarCode !== null &&
+              item.sepidarCode === selectedSalesType.sepidarCode) ||
+            (selectedSalesType.internalCode !== null &&
+              item.internalCode === selectedSalesType.internalCode)),
+      ) ||
+      null
+    );
+  }, [salesTypes, selectedSalesType, selectedSalesTypeId]);
+  const resolvedSelectedSalesType = mode === "edit"
+    ? selectedSalesType
+    : (selectedSalesTypeFromActiveList || selectedSalesType);
   const selectedSalesTypeIsSelectable = Boolean(
-    selectedSalesType &&
-      mergedSalesTypes.some((item) => item.objectId === selectedSalesType.objectId),
+    resolvedSelectedSalesType &&
+      (salesTypes.some((item) => getSalesTypeOptionKey(item) === getSalesTypeOptionKey(resolvedSelectedSalesType)) ||
+        (isEditMode &&
+          orderSalesTypeFallback &&
+          orderSalesTypeFallback.objectId === resolvedSelectedSalesType.objectId)),
   );
   const orderSalesTypeSnapshot = getOrderSalesTypeSnapshot(initialOrder);
   const orderSalesTypeTitle = orderSalesTypeSnapshot?.title || null;
@@ -759,32 +810,34 @@ export function OrderForm({
     getOrderSalesTypeOptionKey(initialOrder) ||
     "";
   const currentSaleTypeTitle =
-    selectedSalesType?.title ??
+    resolvedSelectedSalesType?.title ??
     orderSalesTypeTitle ??
     orderSalesTypeFallback?.title ??
     null;
   const selectedSalesTypeOption = selectedSalesType
     ? {
-        value: selectedSalesType.objectId,
-        label: selectedSalesType.title,
+        value:
+          getSalesTypeOptionKey(resolvedSelectedSalesType) ||
+          getSalesTypeOptionKey(selectedSalesType),
+        label: resolvedSelectedSalesType?.title || selectedSalesType.title,
         searchText: [
-          selectedSalesType.title,
-          selectedSalesType.internalCode,
-          selectedSalesType.sepidarCode,
+          resolvedSelectedSalesType?.title || selectedSalesType.title,
+          resolvedSelectedSalesType?.internalCode ?? selectedSalesType.internalCode,
+          resolvedSelectedSalesType?.sepidarCode ?? selectedSalesType.sepidarCode,
         ]
         .filter(Boolean)
         .join(" "),
       }
-    : orderSalesTypeTitle
+    : mode === "edit" && orderSalesTypeTitle
       ? {
-        value:
-          selectedSalesTypeId ||
-          orderSalesTypeOptionId ||
+          value:
+            selectedSalesTypeId ||
+            orderSalesTypeOptionId ||
           `order-sales-type-${initialOrder?.objectId || "fallback"}`,
         label: orderSalesTypeTitle,
         searchText: orderSalesTypeTitle,
       }
-    : currentSaleTypeTitle
+    : mode === "edit" && currentSaleTypeTitle
       ? {
           value:
             selectedSalesTypeId ||
@@ -796,7 +849,7 @@ export function OrderForm({
       : null;
 
   useEffect(() => {
-    if (!initialOrder) return;
+    if (!initialOrder || mode !== "edit") return;
 
     const snapshot = getOrderSalesTypeSnapshot(initialOrder);
     if (!snapshot) return;
@@ -804,7 +857,7 @@ export function OrderForm({
     const matchedSalesType =
       mergedSalesTypes.find(
         (item) =>
-          item.objectId === snapshot.objectId ||
+          getSalesTypeOptionKey(item) === getSalesTypeOptionKey(snapshot) ||
           item.title === snapshot.title ||
           (snapshot.sepidarCode !== null && item.sepidarCode === snapshot.sepidarCode) ||
           (snapshot.internalCode !== null &&
@@ -813,8 +866,13 @@ export function OrderForm({
       ) || null;
 
     const nextSelectedId =
-      matchedSalesType?.objectId ||
-      snapshot.objectId ||
+      getSalesTypeOptionKey(matchedSalesType) ||
+      (snapshot.sepidarCode !== null && snapshot.sepidarCode !== undefined
+        ? String(snapshot.sepidarCode)
+        : null) ||
+      (snapshot.internalCode !== null && snapshot.internalCode !== undefined
+        ? String(snapshot.internalCode)
+        : null) ||
       orderSalesTypeOptionId;
 
     if (nextSelectedId && nextSelectedId !== selectedSalesTypeId) {
@@ -825,6 +883,7 @@ export function OrderForm({
     orderSalesTypeOptionId,
     mergedSalesTypes,
     orderSalesTypeTitle,
+    mode,
     selectedSalesTypeId,
   ]);
   const currentStockTitles = selectedCustomer
@@ -919,12 +978,19 @@ export function OrderForm({
       return;
     }
 
+    if (!isEditMode && selectedSalesTypeId && !resolvedSelectedSalesType) {
+      setFieldErrors({
+        salesTypeObjectId: "روش پرداخت انتخاب‌شده معتبر نیست.",
+      });
+      return;
+    }
+
     if (
       !isEditMode &&
       sepidarProductsOnly &&
       selectedCustomer &&
       !hasGeneratedPriceList &&
-      !selectedSalesType?.sepidarCode
+      !resolvedSelectedSalesType?.sepidarCode
     ) {
       setFieldErrors({
         selectedCustomerId: "برای این مشتری روش پرداخت مشخص نشده است.",
@@ -1096,7 +1162,9 @@ export function OrderForm({
         mode,
         customerObjectId: selectedCustomerId || null,
         priceListId: selectedPriceListId || selectedCustomer?.priceListId || null,
-        salesTypeObjectId: selectedSalesType?.objectId || null,
+        salesTypeInternalCode: resolvedSelectedSalesType?.internalCode ?? null,
+        salesTypeSepidarCode: resolvedSelectedSalesType?.sepidarCode ?? null,
+        selectedSalesTypeTitle: resolvedSelectedSalesType?.title ?? null,
         selectedCustomerAddressId: finalCustomerAddressId ?? null,
         itemCount: normalizedItems.length,
       });
@@ -1129,17 +1197,22 @@ export function OrderForm({
               najaPurchaseDate: najaPurchaseDate || null,
             }
           : {}),
-        salesTypeObjectId: selectedSalesTypeIsSelectable
-          ? selectedSalesType?.objectId
-          : undefined,
-        saleTypeObjectId: selectedSalesTypeIsSelectable
-          ? selectedSalesType?.objectId
-          : undefined,
-        sepidarSaleTypeId: selectedSalesTypeIsSelectable
-          ? selectedSalesType?.sepidarCode ?? undefined
-          : undefined,
+        salesTypeTitle:
+          resolvedSelectedSalesType?.title ||
+          (mode === "edit" ? orderSalesTypeFallback?.title : null) ||
+          undefined,
+        salesTypeInternalCode:
+          resolvedSelectedSalesType?.internalCode ??
+          (mode === "edit" ? orderSalesTypeFallback?.internalCode ?? undefined : undefined),
+        salesTypeSepidarCode:
+          resolvedSelectedSalesType?.sepidarCode ??
+          (mode === "edit" ? orderSalesTypeFallback?.sepidarCode ?? undefined : undefined),
         priceListId:
-          selectedPriceListId || selectedCustomer?.priceListId || undefined,
+          selectedPriceListId ||
+          initialOrder?.priceListId ||
+          initialOrder?.priceList?.objectId ||
+          selectedCustomer?.priceListId ||
+          undefined,
         notes: notes.trim(),
         items: normalizedItems.map((item) => ({
           productObjectId:
@@ -1603,10 +1676,7 @@ export function OrderForm({
         !productsError &&
         sepidarProductsOnly &&
         (!requiresPriceListSelection || Boolean(selectedPriceListId)) &&
-        (selectedSalesType?.sepidarCode ||
-          selectedCustomer?.saleType?.sepidarSaleTypeId ||
-          selectedCustomer?.saleType?.sepidarSaleTypeId ||
-          hasGeneratedPriceList) &&
+        (selectedSalesType?.sepidarCode || hasGeneratedPriceList) &&
         products.length === 0 ? (
           <p className="mt-5 rounded-xl border border-[#F3D9A4] bg-[#FFF8E6] p-3 text-sm text-[#8A5A00]">
             در انبارهای مجاز این کارشناس کالایی با موجودی قابل فروش پیدا نشد.
@@ -1626,9 +1696,9 @@ export function OrderForm({
               }));
             }}
             options={mergedSalesTypes.map((salesType) => ({
-              value: salesType.objectId,
+              value: getSalesTypeOptionKey(salesType),
               label: salesType.title,
-              searchText: [salesType.title, salesType.internalCode]
+              searchText: [salesType.title, salesType.internalCode, salesType.sepidarCode]
                 .filter(Boolean)
                 .join(" "),
             }))}
@@ -1759,16 +1829,15 @@ export function OrderForm({
                           : "انتخاب کالا"
                       }
                       searchPlaceholder="جستجو در کالاها"
-                      emptyMessage={
-                        sepidarProductsOnly &&
-                        (!requiresPriceListSelection ||
-                          Boolean(selectedPriceListId)) &&
-                        (selectedCustomer?.saleType?.sepidarSaleTypeId ||
-                          hasGeneratedPriceList) &&
-                        products.length === 0
-                          ? "کالایی با موجودی قابل فروش پیدا نشد."
-                          : "کالایی پیدا نشد"
-                      }
+        emptyMessage={
+                  sepidarProductsOnly &&
+                  (!requiresPriceListSelection ||
+                    Boolean(selectedPriceListId)) &&
+                  hasGeneratedPriceList &&
+                  products.length === 0
+                    ? "کالایی با موجودی قابل فروش پیدا نشد."
+                    : "کالایی پیدا نشد"
+                }
                       triggerClassName="h-11 pr-10 text-sm"
                       disabled={
                         sepidarProductsOnly &&
@@ -1981,6 +2050,8 @@ function getCustomerPriceListOptions(
         ? [customer.priceListId]
         : order?.priceListId
           ? [order.priceListId]
+          : order?.priceList?.objectId
+            ? [order.priceList.objectId]
           : [];
 
   for (const id of fallbackIds) {
@@ -1991,12 +2062,14 @@ function getCustomerPriceListOptions(
       title:
         customer?.priceListTitle ||
         order?.priceListTitle ||
+        order?.priceList?.title ||
         customer?.priceListBrand ||
         order?.priceListBrand ||
         id,
       name:
         customer?.priceListTitle ||
         order?.priceListTitle ||
+        order?.priceList?.title ||
         customer?.priceListBrand ||
         order?.priceListBrand ||
         id,
@@ -2017,8 +2090,7 @@ function priceListLabel(priceList: OrderPriceListOption): string {
 function hasAssignmentInventory(customer: Customer | null | undefined): boolean {
   if (!customer) return false;
   return Boolean(
-    (customer.saleType?.sepidarSaleTypeId ||
-      customer.priceListId ||
+    (customer.priceListId ||
       customer.priceListIds.length > 0 ||
       customer.priceLists.length > 0) &&
       (customer.allowedStockObjectIds.length > 0 ||
@@ -2308,15 +2380,7 @@ function createCustomerFromOrder(order: Order): Customer | null {
     sepidarCustomerId:
       order.sepidarCustomerId === null ? null : String(order.sepidarCustomerId),
     sepidarCustomerCode: order.sepidarCustomerCode,
-    saleType:
-      order.saleType ??
-      (order.saleTypeTitle || order.sepidarSaleTypeId
-        ? {
-            objectId: order.saleTypeObjectId,
-            sepidarSaleTypeId: order.sepidarSaleTypeId,
-            title: order.saleTypeTitle,
-          }
-        : null),
+    saleType: null,
     priceListId: order.priceListId,
     priceListIds: order.priceListId ? [order.priceListId] : [],
     priceListTitle: order.priceListTitle,

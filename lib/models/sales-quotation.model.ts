@@ -109,6 +109,9 @@ export interface CreateSalesQuotationPayload {
   customerObjectId: string;
   priceListObjectId: string;
   salesTypeObjectId: string;
+  salesTypeTitle?: string | null;
+  salesTypeInternalCode?: number | null;
+  salesTypeSepidarCode?: number | null;
   expertObjectId?: string;
   notes?: string;
   validUntil?: string | null;
