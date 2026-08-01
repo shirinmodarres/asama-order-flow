@@ -45,7 +45,7 @@ export function DateRangeFilter({
   return (
     <label
       ref={containerRef}
-      className="relative grid w-full gap-2 text-sm font-medium text-[#334155] xl:w-56"
+      className="relative grid w-full min-w-0 gap-2 text-sm font-medium text-[#334155] xl:max-w-[18rem]"
     >
       <span>{label}</span>
       <button
@@ -66,7 +66,7 @@ export function DateRangeFilter({
       </button>
 
       {isOpen ? (
-        <div className="absolute top-full right-0 z-[120] mt-2 w-[280px] rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
+        <div className="absolute top-full right-0 z-[120] mt-2 w-[min(92vw,320px)] rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
           <div className="grid gap-3">
             <JalaliDateInput
               label="از تاریخ"

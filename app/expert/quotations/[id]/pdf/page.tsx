@@ -315,15 +315,6 @@ function Cell({
   );
 }
 
-function Signature({ label }: { label: string }) {
-  return (
-    <div className="rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-4 text-center">
-      <div className="min-h-12" />
-      <p className="text-[9px] font-bold text-[#1F3A5F]">{label}</p>
-    </div>
-  );
-}
-
 function Total({
   label,
   value,
