@@ -106,7 +106,7 @@ export default function SalesQuotationPdfPage() {
                   key={`quotation-page-${pageIndex}`}
                   pageBreakAfter={!isLastPage}
                 >
-                  <div className="space-y-3 text-[10px] leading-5">
+                  <div className="space-y-2.5 text-[10px] leading-5">
                     <header className="relative flex min-h-28 justify-between">
                       <div className="absolute left-0 top-[-6mm] border-r-2 border-[#7BC68A] bg-white/95 px-2.5 py-1 text-[9px] leading-5 text-[#334155]">
                         <InlineInfo
@@ -133,7 +133,7 @@ export default function SalesQuotationPdfPage() {
                     </header>
 
                     <div className="flex justify-center">
-                      <div className="bg-white/95 px-6 py-1">
+                      <div className="bg-white/95 px-6 py-0.5">
                         <h1 className="text-lg font-bold text-[#102034]">
                           پیش‌فاکتور فروش
                         </h1>
@@ -168,19 +168,19 @@ export default function SalesQuotationPdfPage() {
                       <table className="items-table w-full border-collapse text-right text-[9px]">
                         <thead>
                           <tr className="bg-[#F1F5F9] text-[#334155]">
-                            <th className="w-5 border-b border-l border-[#D7DEE6] px-1 py-2 font-semibold last:border-l-0">
+                            <th className="w-4 border-b border-l border-[#D7DEE6] px-0.5 py-2 font-semibold last:border-l-0">
                               ردیف
                             </th>
-                            <th className="w-20 border-b border-l border-[#D7DEE6] px-1.5 py-2 font-semibold last:border-l-0">
+                            <th className="w-18 border-b border-l border-[#D7DEE6] px-1 py-2 font-semibold last:border-l-0">
                               کد کالا
                             </th>
                             <th className="border-b border-l border-[#D7DEE6] px-2 py-2 font-semibold last:border-l-0">
                               نام کالا
                             </th>
-                            <th className="w-12 border-b border-l border-[#D7DEE6] px-1 py-2 text-center font-semibold last:border-l-0">
+                            <th className="w-10 border-b border-l border-[#D7DEE6] px-0.5 py-2 text-center font-semibold last:border-l-0">
                               تعداد
                             </th>
-                            <th className="w-10 border-b border-l border-[#D7DEE6] px-1 py-2 font-semibold last:border-l-0">
+                            <th className="w-9 border-b border-l border-[#D7DEE6] px-0.5 py-2 font-semibold last:border-l-0">
                               واحد
                             </th>
                             <th className="w-24 border-b border-l border-[#D7DEE6] px-1.5 py-2 font-semibold last:border-l-0">
@@ -197,11 +197,11 @@ export default function SalesQuotationPdfPage() {
                               key={row.key}
                               className="print-table-row odd:bg-white even:bg-[#F8FAFC]"
                             >
-                              <Cell className="text-center">{formatNumber(row.rowNumber)}</Cell>
+                              <Cell className="px-1 text-center">{formatNumber(row.rowNumber)}</Cell>
                               <Cell>{formatFaDigits(row.sku) || "-"}</Cell>
                               <Cell>{row.name}</Cell>
-                              <Cell className="text-center">{formatNumber(row.qty)}</Cell>
-                              <Cell className="text-center">عدد</Cell>
+                              <Cell className="px-1 text-center">{formatNumber(row.qty)}</Cell>
+                              <Cell className="px-1 text-center">عدد</Cell>
                               <Cell>{formatCurrency(row.unitPrice)}</Cell>
                               <Cell>{formatCurrency(row.lineTotal)}</Cell>
                             </tr>

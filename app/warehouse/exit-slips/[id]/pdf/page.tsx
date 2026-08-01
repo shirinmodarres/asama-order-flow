@@ -171,7 +171,7 @@ export default function ExitSlipPdfPage() {
 function HeaderBlock({ data }: { data: ExitSlipPdfData }) {
   return (
     <header className="relative flex min-h-24 items-start justify-between">
-      <div className="absolute left-0 top-[-6px] w-fit border-r-2 border-[#7BC68A] bg-white/95 px-2 py-0.5 text-[9px] leading-5 text-[#334155]">
+      <div className="absolute left-0 top-[-12px] w-fit border-r-2 border-[#7BC68A] bg-white/95 px-2 py-0.5 text-[9px] leading-5 text-[#334155]">
         <InlineInfo label="کد حواله" value={formatFaDigits(data.slipCode) || "-"} />
         <InlineInfo label="کد سفارش" value={formatFaDigits(data.orderCode) || "-"} />
         <InlineInfo
@@ -289,7 +289,7 @@ function SummaryTable({
       <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
         <thead>
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
-            <TableHeader className="w-6">ردیف</TableHeader>
+            <TableHeader className="w-10">ردیف</TableHeader>
             <TableHeader>نام کالا</TableHeader>
             <TableHeader className="w-16">تعداد</TableHeader>
           </tr>
@@ -328,7 +328,7 @@ function DetailTable({
       <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
         <thead>
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
-            <TableHeader className="w-6">ردیف</TableHeader>
+            <TableHeader className="w-10">ردیف</TableHeader>
             <TableHeader className="w-[28%]">نام کالا</TableHeader>
             <TableHeader className="w-[16%]">کد کالا</TableHeader>
             <TableHeader className="w-[22%]">سریال</TableHeader>
