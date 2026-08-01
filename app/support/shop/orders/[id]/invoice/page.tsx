@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Printer } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -9,6 +8,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
 import { LoadingState } from "@/components/shared/loading-state";
 import { Button } from "@/components/ui/button";
+import { PDF_PAGE_STYLES, PdfPage } from "@/components/pdf/pdf-shell";
 import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDateTime } from "@/lib/expert/utils";
 import type { WebsiteOrder } from "@/lib/models/shop.model";
@@ -79,47 +79,7 @@ export default function WebsiteOrderInvoicePage() {
 
   return (
     <DashboardLayout role="support" title="فاکتور سفارش سایت">
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A5;
-            margin: 8mm;
-          }
-
-          html,
-          body {
-            background: #fff !important;
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
-          }
-
-          body * {
-            visibility: hidden !important;
-          }
-
-          .shop-invoice-paper,
-          .shop-invoice-paper * {
-            visibility: visible !important;
-          }
-
-          .shop-invoice-paper {
-            position: absolute !important;
-            inset: 0 !important;
-            width: 100% !important;
-            min-height: 194mm !important;
-            margin: 0 !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-          }
-
-          .invoice-no-break,
-          .shop-invoice-paper tr {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-        }
-      `}</style>
+      <style jsx global>{PDF_PAGE_STYLES}</style>
 
       <div className="fixed inset-x-0 bottom-5 z-50 flex justify-center px-4 print:hidden">
         <div className="flex flex-wrap justify-center gap-2 rounded-2xl border border-[#D9E0E8] bg-white/95 p-2 shadow-xl backdrop-blur">
@@ -137,13 +97,21 @@ export default function WebsiteOrderInvoicePage() {
       </div>
 
       {isLoading ? (
-        <LoadingState title="در حال دریافت اطلاعات فاکتور" />
+        <PdfPage imageSrc="/1.jpg" imageAlt="سربرگ آساما">
+          <LoadingState title="در حال دریافت اطلاعات فاکتور" />
+        </PdfPage>
       ) : error ? (
-        <InlineErrorMessage message={error} />
+        <PdfPage imageSrc="/1.jpg" imageAlt="سربرگ آساما">
+          <InlineErrorMessage message={error} />
+        </PdfPage>
       ) : !order ? (
-        <InlineErrorMessage message="سفارش موردنظر پیدا نشد." />
+        <PdfPage imageSrc="/1.jpg" imageAlt="سربرگ آساما">
+          <InlineErrorMessage message="سفارش موردنظر پیدا نشد." />
+        </PdfPage>
       ) : (
-        <InvoiceDocument order={order} />
+        <PdfPage imageSrc="/1.jpg" imageAlt="سربرگ آساما">
+          <InvoiceDocument order={order} />
+        </PdfPage>
       )}
     </DashboardLayout>
   );
@@ -156,27 +124,13 @@ function InvoiceDocument({ order }: { order: WebsiteOrder }) {
   const description = order.orderNote || order.supportNote;
 
   return (
-    <section
-      dir="rtl"
-      className="shop-invoice-paper relative mx-auto min-h-[210mm] w-full max-w-[148mm] overflow-hidden rounded-2xl border border-[#CBD5E1] bg-white text-[#111827] shadow-[0_22px_60px_rgba(15,23,42,0.16)]"
-    >
-      <div className="pointer-events-none absolute inset-0">
-        <Image
-          src="/1.jpg"
-          alt="سربرگ A5 آساما"
-          fill
-          priority
-          sizes="148mm"
-          className="object-fill"
-        />
-      </div>
-
+    <section dir="rtl" className="space-y-5 text-[#111827]">
       <div className="absolute left-[9mm] top-[8mm] z-10 space-y-[2.5mm] text-right text-[9px] leading-none text-[#111827]">
         <p>{formatDateTime(order.createdAt)}</p>
         <p>{formatFaDigits(order.orderNumber)}</p>
       </div>
 
-      <div className="relative z-10 px-[8mm] pb-[25mm] pt-[30mm] text-[10px] leading-5">
+      <div className="relative z-10 text-[10px] leading-5">
         <header className="mb-3 text-center">
           <h1 className="text-lg font-black text-[#1F3A5F]">فاکتور فروش</h1>
         </header>

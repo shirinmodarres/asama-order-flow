@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage } from "@/lib/api/api-error";
@@ -12,6 +11,7 @@ import {
   resolveExitSlipPdfCustomer,
   resolveExitSlipPdfRecipient,
 } from "@/lib/utils/exit-slip-customer";
+import { PDF_PAGE_STYLES, PdfPage } from "@/components/pdf/pdf-shell";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
 function hasText(value: string | null | undefined): boolean {
@@ -118,79 +118,7 @@ export default function ExitSlipPdfPage() {
       dir="rtl"
       className="min-h-screen bg-[#E5E7EB] p-4 text-[#102034] print:bg-white print:p-0"
     >
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
-          html,
-          body {
-            width: 100%;
-            min-height: 297mm;
-            margin: 0 !important;
-            background: white !important;
-            overflow: visible !important;
-            box-sizing: border-box !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .pdf-page {
-            box-shadow: none !important;
-            border: 0 !important;
-            width: 210mm !important;
-            margin: 0 !important;
-            min-height: 297mm !important;
-            border-radius: 0 !important;
-            overflow: visible !important;
-            box-sizing: border-box !important;
-          }
-          .page-break-after {
-            break-after: page;
-            page-break-after: always;
-          }
-          .pdf-page:last-child {
-            break-after: auto;
-            page-break-after: auto;
-          }
-          .print-content {
-            padding: 18mm 20mm 16mm 20mm !important;
-            overflow: visible !important;
-            box-sizing: border-box !important;
-          }
-          .print-section,
-          .print-table-row {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-          .items-table thead {
-            display: table-header-group;
-          }
-          .items-table {
-            width: 100% !important;
-            table-layout: fixed !important;
-            box-sizing: border-box !important;
-            margin-inline: 0 !important;
-          }
-          .print-root {
-            font-size: 11px !important;
-            line-height: 1.9 !important;
-          }
-          .print-root .customer-info,
-          .print-root .recipient-info {
-            font-size: 10px !important;
-          }
-          .print-root .summary-table,
-          .print-root .detail-table {
-            font-size: 9.5px !important;
-          }
-          .print-root .serial-cell,
-          .print-root .tracking-cell {
-            font-size: 8.5px !important;
-          }
-        }
-      `}</style>
+      <style jsx global>{PDF_PAGE_STYLES}</style>
 
       <div className="no-print mx-auto mb-4 flex max-w-[210mm] justify-end">
         <Button type="button" onClick={() => window.print()}>
@@ -237,36 +165,6 @@ export default function ExitSlipPdfPage() {
         </div>
       )}
     </main>
-  );
-}
-
-function PdfPage({
-  children,
-  pageBreakAfter = false,
-}: {
-  children: React.ReactNode;
-  pageBreakAfter?: boolean;
-}) {
-  return (
-    <section
-      className={`pdf-page relative mx-auto min-h-[297mm] w-full max-w-[210mm] overflow-visible rounded-lg border border-[#D7DEE6] bg-white shadow-sm ${
-        pageBreakAfter ? "page-break-after" : ""
-      }`}
-    >
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-100">
-        <Image
-          src="/A4 - 2.svg"
-          alt="Asama Letterhead"
-          fill
-          priority
-          sizes="210mm"
-          className="object-cover"
-        />
-      </div>
-      <div className="print-content print-root relative z-10">
-        {children}
-      </div>
-    </section>
   );
 }
 
@@ -525,7 +423,7 @@ function TableCell({
 }) {
   return (
     <td
-      className={`break-words border-l border-[#E2E8F0] px-1 py-1 align-top last:border-l-0 ${className}`}
+      className={`break-words whitespace-normal border-l border-[#E2E8F0] px-1 py-1 align-top last:border-l-0 ${className}`}
     >
       {children}
     </td>
