@@ -27,6 +27,11 @@ import { formatFaDigits, normalizeDigits, toNumber } from "@/lib/utils/number-fo
 import { JalaliDateInput } from "@/components/shared/jalali-date-input";
 import { SELECT_REQUIRED_MESSAGE, POSITIVE_NUMBER_MESSAGE } from "@/lib/utils/form-validation";
 import { jalaliToIso, todayJalaliParts } from "@/lib/utils/jalali-date";
+import {
+  buildQuotationSubmitPayload,
+  getQuotationCustomerSnapshot,
+  getQuotationSalesTypeSnapshot,
+} from "@/components/quotations/quotation-form.logic";
 
 interface QuotationFormProps {
   mode: "create" | "edit";
@@ -54,33 +59,6 @@ interface SalesTypeOption {
   title: string;
   internalCode?: number | null;
   sepidarCode?: number | null;
-}
-
-function getQuotationSalesTypeSnapshot(quotation?: SalesQuotation | null): SalesTypeOption | null {
-  if (!quotation) return null;
-  const objectId =
-    quotation.salesTypeObjectId ||
-    quotation.salesType?.objectId ||
-    "";
-  const title =
-    quotation.salesTypeTitle ||
-    quotation.salesType?.title ||
-    "";
-  const internalCode =
-    quotation.salesTypeInternalCode ??
-    quotation.salesType?.internalCode ??
-    null;
-  const sepidarCode =
-    quotation.salesTypeSepidarCode ??
-    quotation.salesType?.sepidarCode ??
-    null;
-  if (!objectId && !title && internalCode === null && sepidarCode === null) return null;
-  return {
-    objectId: objectId || `quotation-sales-type-${quotation.objectId || "fallback"}`,
-    title,
-    internalCode,
-    sepidarCode,
-  };
 }
 
 export function QuotationForm({
@@ -137,21 +115,13 @@ export function QuotationForm({
     initialQuotation?.taxPercentage ?? 10,
   );
   const quotationSalesTypeFallback = useMemo(
-    () => getQuotationSalesTypeSnapshot(initialQuotation),
+    () => getQuotationSalesTypeSnapshot(initialQuotation) as SalesTypeOption | null,
     [initialQuotation],
   );
-  const quotationCustomerFallback = useMemo(() => {
-    if (!initialQuotation?.customer) return null;
-    return {
-      ...initialQuotation.customer,
-      objectId: initialQuotation.customerObjectId || initialQuotation.customer.objectId,
-      id: initialQuotation.customer.id || initialQuotation.customerObjectId || initialQuotation.customer.objectId,
-      fullName:
-        initialQuotation.customer.fullName ||
-        initialQuotation.customerObjectId ||
-        "",
-    };
-  }, [initialQuotation]);
+  const quotationCustomerFallback = useMemo(
+    () => getQuotationCustomerSnapshot(initialQuotation),
+    [initialQuotation],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -240,8 +210,13 @@ export function QuotationForm({
       seen.add(value);
       options.push({ value, label: label || value });
     };
-    const priceLists = selectedCustomer?.priceLists || [];
-    priceLists.forEach((priceList) => {
+    const priceLists: Array<{
+      objectId: string;
+      title?: string | null;
+      displayName?: string | null;
+      name?: string | null;
+    }> = selectedCustomer?.priceLists || [];
+    priceLists.forEach((priceList: (typeof priceLists)[number]) => {
       addOption(priceList.objectId, priceList.title || priceList.displayName || priceList.name);
     });
     addOption(selectedCustomer?.priceListId, selectedCustomer?.priceListTitle);
@@ -273,17 +248,17 @@ export function QuotationForm({
       if (quotationCustomerFallback && quotationCustomerFallback.objectId === selectedCustomerId) {
         const fallbackPriceLists = quotationCustomerFallback.priceLists || [];
         const fallbackOptions = fallbackPriceLists
-          .map((priceList) => ({
+          .map((priceList: { objectId: string; title?: string | null; displayName?: string | null; name?: string | null }) => ({
             value: priceList.objectId,
             label: priceList.title || priceList.displayName || priceList.name,
           }))
-          .filter((option) => Boolean(option.value));
+          .filter((option: { value: string; label: string }) => Boolean(option.value));
         if (fallbackPriceLists.length) {
-          setSelectedPriceListId((current) => {
-            if (current && fallbackOptions.some((option) => option.value === current)) return current;
+          setSelectedPriceListId((current: string) => {
+            if (current && fallbackOptions.some((option: { value: string; label: string }) => option.value === current)) return current;
             return (
               initialQuotation?.priceListObjectId &&
-              fallbackOptions.some((option) => option.value === initialQuotation.priceListObjectId)
+              fallbackOptions.some((option: { value: string; label: string }) => option.value === initialQuotation.priceListObjectId)
             )
               ? initialQuotation.priceListObjectId
               : fallbackOptions[0].value;
@@ -470,20 +445,23 @@ export function QuotationForm({
       return;
     }
 
-    await onSubmit({
-      customerObjectId: selectedCustomerId,
-      salesTypeObjectId: selectedSalesTypeId,
-      priceListObjectId: selectedPriceListId,
-      notes: notes.trim(),
-      validUntil: selectedValidUntil || null,
-      discountPercentage,
-      taxPercentage,
-      status,
-      items: resolvedRows.map((row) => ({
-        productObjectId: row.productId,
-        quantity: row.quantity,
-      })),
-    });
+    try {
+      await onSubmit(
+        buildQuotationSubmitPayload({
+          selectedCustomerId,
+          selectedSalesTypeId,
+          selectedPriceListId,
+          notes,
+          selectedValidUntil,
+          discountPercentage,
+          taxPercentage,
+          status,
+          rows: resolvedRows,
+        }),
+      );
+    } catch (submitError) {
+      setError(getErrorMessage(submitError));
+    }
   };
 
   if (isLoadingCustomers) {

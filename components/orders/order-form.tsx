@@ -751,7 +751,7 @@ export function OrderForm({
     null;
   const selectedSalesTypeIsSelectable = Boolean(
     selectedSalesType &&
-      mergedSalesTypes.some((item) => item.objectId === selectedSalesType.objectId),
+      salesTypes.some((item) => item.objectId === selectedSalesType.objectId),
   );
   const orderSalesTypeSnapshot = getOrderSalesTypeSnapshot(initialOrder);
   const orderSalesTypeTitle = orderSalesTypeSnapshot?.title || null;
