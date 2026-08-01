@@ -1139,7 +1139,6 @@ export function OrderForm({
         mode,
         customerObjectId: selectedCustomerId || null,
         priceListId: selectedPriceListId || selectedCustomer?.priceListId || null,
-        salesTypeObjectId: resolvedSelectedSalesType?.objectId || null,
         salesTypeInternalCode: resolvedSelectedSalesType?.internalCode ?? null,
         salesTypeSepidarCode: resolvedSelectedSalesType?.sepidarCode ?? null,
         selectedSalesTypeTitle: resolvedSelectedSalesType?.title ?? null,
@@ -1175,10 +1174,6 @@ export function OrderForm({
               najaPurchaseDate: najaPurchaseDate || null,
             }
           : {}),
-        salesTypeObjectId:
-          resolvedSelectedSalesType?.objectId ||
-          (mode === "edit" ? orderSalesTypeFallback?.objectId : null) ||
-          undefined,
         salesTypeTitle:
           resolvedSelectedSalesType?.title ||
           (mode === "edit" ? orderSalesTypeFallback?.title : null) ||
