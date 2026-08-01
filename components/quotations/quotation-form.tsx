@@ -99,14 +99,16 @@ export function QuotationForm({
   const [customerError, setCustomerError] = useState("");
   const [productError, setProductError] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState(
-    initialQuotation?.customerObjectId || "",
+    initialQuotation?.customerObjectId || initialQuotation?.customer?.objectId || "",
   );
   const [selectedPriceListId, setSelectedPriceListId] = useState(
-    initialQuotation?.priceListObjectId || "",
+    initialQuotation?.priceListObjectId || initialQuotation?.priceListId || "",
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    initialQuotation?.salesTypeObjectId || "",
+    initialQuotation?.salesTypeObjectId ||
+      initialQuotation?.salesType?.objectId ||
+      "",
   );
   const [selectedValidUntil, setSelectedValidUntil] = useState(
     initialQuotation?.validUntil?.slice(0, 10) || (() => {
@@ -138,6 +140,18 @@ export function QuotationForm({
     () => getQuotationSalesTypeSnapshot(initialQuotation),
     [initialQuotation],
   );
+  const quotationCustomerFallback = useMemo(() => {
+    if (!initialQuotation?.customer) return null;
+    return {
+      ...initialQuotation.customer,
+      objectId: initialQuotation.customerObjectId || initialQuotation.customer.objectId,
+      id: initialQuotation.customer.id || initialQuotation.customerObjectId || initialQuotation.customer.objectId,
+      fullName:
+        initialQuotation.customer.fullName ||
+        initialQuotation.customerObjectId ||
+        "",
+    };
+  }, [initialQuotation]);
 
   useEffect(() => {
     let mounted = true;
@@ -145,14 +159,28 @@ export function QuotationForm({
       try {
         const data = await listActiveSalesTypes();
         if (!mounted) return;
-        setSalesTypes(data.map((salesType) => ({
+        const normalizedSalesTypes = data.map((salesType) => ({
           objectId: salesType.objectId,
           title: salesType.title,
           internalCode: salesType.internalCode,
           sepidarCode: salesType.sepidarCode,
-        })));
-        if (!selectedSalesTypeId && initialQuotation?.salesTypeObjectId) {
-          setSelectedSalesTypeId(initialQuotation.salesTypeObjectId);
+        }));
+        if (quotationSalesTypeFallback) {
+          const exists = normalizedSalesTypes.some(
+            (salesType) => salesType.objectId === quotationSalesTypeFallback.objectId,
+          );
+          if (!exists) {
+            normalizedSalesTypes.push({
+              objectId: quotationSalesTypeFallback.objectId,
+              title: quotationSalesTypeFallback.title,
+              internalCode: quotationSalesTypeFallback.internalCode ?? null,
+              sepidarCode: quotationSalesTypeFallback.sepidarCode ?? null,
+            });
+          }
+        }
+        setSalesTypes(normalizedSalesTypes);
+        if (!selectedSalesTypeId) {
+          setSelectedSalesTypeId(quotationSalesTypeFallback?.objectId || "");
         }
       } catch {
         if (mounted) setSalesTypes([]);
@@ -164,7 +192,16 @@ export function QuotationForm({
       try {
         const data = await listAssignedCustomersForExpert(getStoredCurrentUser()?.objectId);
         if (!mounted) return;
-        setCustomers(data);
+        const normalizedCustomers = [...data];
+        if (
+          quotationCustomerFallback &&
+          !normalizedCustomers.some(
+            (customer) => customer.objectId === quotationCustomerFallback.objectId,
+          )
+        ) {
+          normalizedCustomers.unshift(quotationCustomerFallback);
+        }
+        setCustomers(normalizedCustomers);
         if (!selectedCustomerId && data.length === 1) {
           setSelectedCustomerId(data[0].objectId);
         }
@@ -179,11 +216,20 @@ export function QuotationForm({
     return () => {
       mounted = false;
     };
-  }, [initialQuotation?.salesTypeObjectId, selectedSalesTypeId]);
+  }, [
+    initialQuotation?.salesType?.objectId,
+    initialQuotation?.salesTypeObjectId,
+    quotationCustomerFallback,
+    selectedSalesTypeId,
+  ]);
 
   const selectedCustomer = useMemo(
-    () => customers.find((customer) => customer.objectId === selectedCustomerId) ?? null,
-    [customers, selectedCustomerId],
+    () =>
+      customers.find((customer) => customer.objectId === selectedCustomerId) ??
+      (quotationCustomerFallback && quotationCustomerFallback.objectId === selectedCustomerId
+        ? quotationCustomerFallback
+        : null),
+    [customers, quotationCustomerFallback, selectedCustomerId],
   );
 
   const priceListOptions = useMemo(() => {
@@ -224,6 +270,27 @@ export function QuotationForm({
 
   useEffect(() => {
     if (!selectedCustomer) {
+      if (quotationCustomerFallback && quotationCustomerFallback.objectId === selectedCustomerId) {
+        const fallbackPriceLists = quotationCustomerFallback.priceLists || [];
+        const fallbackOptions = fallbackPriceLists
+          .map((priceList) => ({
+            value: priceList.objectId,
+            label: priceList.title || priceList.displayName || priceList.name,
+          }))
+          .filter((option) => Boolean(option.value));
+        if (fallbackPriceLists.length) {
+          setSelectedPriceListId((current) => {
+            if (current && fallbackOptions.some((option) => option.value === current)) return current;
+            return (
+              initialQuotation?.priceListObjectId &&
+              fallbackOptions.some((option) => option.value === initialQuotation.priceListObjectId)
+            )
+              ? initialQuotation.priceListObjectId
+              : fallbackOptions[0].value;
+          });
+          return;
+        }
+      }
       setProducts([]);
       setSelectedPriceListId("");
       return;
@@ -236,7 +303,13 @@ export function QuotationForm({
           : priceListOptions[0].value;
       });
     }
-  }, [priceListOptions, selectedCustomer]);
+  }, [
+    initialQuotation?.priceListObjectId,
+    priceListOptions,
+    quotationCustomerFallback,
+    selectedCustomer,
+    selectedCustomerId,
+  ]);
 
   useEffect(() => {
     let mounted = true;
@@ -431,19 +504,46 @@ export function QuotationForm({
                 setProducts([]);
                 setSelectedPriceListId("");
               }}
-              options={customers.map((customer) => ({
-                value: customer.objectId,
-                label: [
-                  customer.sepidarCustomerCode || customer.id,
-                  customer.fullName,
-                ]
-                  .filter(Boolean)
-                  .join(" - "),
-              }))}
-              placeholder="انتخاب مشتری"
-              searchPlaceholder="جستجو در مشتری‌ها"
-              emptyMessage={assignedCustomersOnly ? "مشتری پیدا نشد" : "مشتری یافت نشد"}
-            />
+            options={
+              quotationCustomerFallback &&
+              !customers.some(
+                (customer) => customer.objectId === quotationCustomerFallback.objectId,
+              )
+                ? [
+                    {
+                      value: quotationCustomerFallback.objectId,
+                      label: [
+                        quotationCustomerFallback.sepidarCustomerCode ||
+                          quotationCustomerFallback.id,
+                        quotationCustomerFallback.fullName,
+                      ]
+                        .filter(Boolean)
+                        .join(" - "),
+                    },
+                    ...customers.map((customer) => ({
+                      value: customer.objectId,
+                      label: [
+                        customer.sepidarCustomerCode || customer.id,
+                        customer.fullName,
+                      ]
+                        .filter(Boolean)
+                        .join(" - "),
+                    })),
+                  ]
+                : customers.map((customer) => ({
+                    value: customer.objectId,
+                    label: [
+                      customer.sepidarCustomerCode || customer.id,
+                      customer.fullName,
+                    ]
+                      .filter(Boolean)
+                      .join(" - "),
+                  }))
+            }
+            placeholder="انتخاب مشتری"
+            searchPlaceholder="جستجو در مشتری‌ها"
+            emptyMessage={assignedCustomersOnly ? "مشتری پیدا نشد" : "مشتری یافت نشد"}
+          />
             <FieldError message={customerError} />
           </label>
           <label className="grid content-start gap-1.5 text-sm font-medium text-[#334155]">    
