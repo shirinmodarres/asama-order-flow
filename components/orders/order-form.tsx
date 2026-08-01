@@ -398,7 +398,6 @@ export function OrderForm({
               customerObjectId: assignment.objectId,
               allowedStockObjectIds: assignment.allowedStockObjectIds,
             },
-            saleType: assignment.saleType,
             allowedStocks: assignment.allowedStocks,
             allowedStockTitles: assignment.allowedStockTitles,
           });
@@ -1626,10 +1625,7 @@ export function OrderForm({
         !productsError &&
         sepidarProductsOnly &&
         (!requiresPriceListSelection || Boolean(selectedPriceListId)) &&
-        (selectedSalesType?.sepidarCode ||
-          selectedCustomer?.saleType?.sepidarSaleTypeId ||
-          selectedCustomer?.saleType?.sepidarSaleTypeId ||
-          hasGeneratedPriceList) &&
+        (selectedSalesType?.sepidarCode || hasGeneratedPriceList) &&
         products.length === 0 ? (
           <p className="mt-5 rounded-xl border border-[#F3D9A4] bg-[#FFF8E6] p-3 text-sm text-[#8A5A00]">
             در انبارهای مجاز این کارشناس کالایی با موجودی قابل فروش پیدا نشد.
@@ -1782,16 +1778,15 @@ export function OrderForm({
                           : "انتخاب کالا"
                       }
                       searchPlaceholder="جستجو در کالاها"
-                      emptyMessage={
-                        sepidarProductsOnly &&
-                        (!requiresPriceListSelection ||
-                          Boolean(selectedPriceListId)) &&
-                        (selectedCustomer?.saleType?.sepidarSaleTypeId ||
-                          hasGeneratedPriceList) &&
-                        products.length === 0
-                          ? "کالایی با موجودی قابل فروش پیدا نشد."
-                          : "کالایی پیدا نشد"
-                      }
+        emptyMessage={
+                  sepidarProductsOnly &&
+                  (!requiresPriceListSelection ||
+                    Boolean(selectedPriceListId)) &&
+                  hasGeneratedPriceList &&
+                  products.length === 0
+                    ? "کالایی با موجودی قابل فروش پیدا نشد."
+                    : "کالایی پیدا نشد"
+                }
                       triggerClassName="h-11 pr-10 text-sm"
                       disabled={
                         sepidarProductsOnly &&
@@ -2044,8 +2039,7 @@ function priceListLabel(priceList: OrderPriceListOption): string {
 function hasAssignmentInventory(customer: Customer | null | undefined): boolean {
   if (!customer) return false;
   return Boolean(
-    (customer.saleType?.sepidarSaleTypeId ||
-      customer.priceListId ||
+    (customer.priceListId ||
       customer.priceListIds.length > 0 ||
       customer.priceLists.length > 0) &&
       (customer.allowedStockObjectIds.length > 0 ||
@@ -2337,11 +2331,11 @@ function createCustomerFromOrder(order: Order): Customer | null {
     sepidarCustomerCode: order.sepidarCustomerCode,
     saleType:
       order.saleType ??
-      (order.saleTypeTitle || order.sepidarSaleTypeId
+      (order.salesTypeTitle || order.salesTypeSepidarCode || order.saleTypeTitle || order.sepidarSaleTypeId
         ? {
-            objectId: order.saleTypeObjectId,
-            sepidarSaleTypeId: order.sepidarSaleTypeId,
-            title: order.saleTypeTitle,
+            objectId: order.salesTypeObjectId || order.saleTypeObjectId,
+            sepidarSaleTypeId: order.salesTypeSepidarCode ?? order.sepidarSaleTypeId,
+            title: order.salesTypeTitle || order.saleTypeTitle,
           }
         : null),
     priceListId: order.priceListId,

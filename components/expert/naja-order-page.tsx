@@ -23,6 +23,7 @@ import {
   getAssignedCustomerForExpert,
   listAssignedCustomersForExpert,
 } from "@/lib/services/expert-customer.service";
+import { listActiveSalesTypes } from "@/lib/services/sales-type.service";
 import { createNajaOrder } from "@/lib/services/naja.service";
 import {
   listOrderProductsForAssignment,
@@ -51,6 +52,9 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [salesTypes, setSalesTypes] = useState<
+    Array<{ objectId: string; title: string; internalCode: number | null; sepidarCode: number | null }>
+  >([]);
   const [selectedAssignment, setSelectedAssignment] =
     useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +90,14 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
         );
         if (!isMounted) return;
         setCustomers(customerData);
+        const salesTypeData = await listActiveSalesTypes();
+        if (!isMounted) return;
+        setSalesTypes(salesTypeData.map((item) => ({
+          objectId: item.objectId,
+          title: item.title,
+          internalCode: item.internalCode,
+          sepidarCode: item.sepidarCode,
+        })));
       } catch (loadError) {
         if (isMounted) setError(getErrorMessage(loadError));
       } finally {
@@ -104,8 +116,8 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const selectedProduct =
     products.find((product) => product.objectId === productId) ?? null;
   const totalAmount = selectedProduct ? selectedProduct.unitPrice * quantity : 0;
-  const paymentMethodTitle = getPaymentMethodTitle(selectedCustomer);
-  const paymentMethodSnapshot = getCustomerPaymentMethodSnapshot(selectedCustomer);
+  const paymentMethodSnapshot = getCustomerPaymentMethodSnapshot(selectedCustomer, salesTypes);
+  const paymentMethodTitle = paymentMethodSnapshot?.title || getPaymentMethodTitle(selectedCustomer);
 
   useEffect(() => {
     let isMounted = true;
@@ -289,8 +301,6 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
         salesTypeTitle: paymentMethodSnapshot?.title || undefined,
         salesTypeInternalCode: paymentMethodSnapshot?.internalCode ?? undefined,
         salesTypeSepidarCode: paymentMethodSnapshot?.sepidarCode ?? undefined,
-        saleTypeObjectId: paymentMethodSnapshot?.objectId || undefined,
-        sepidarSaleTypeId: paymentMethodSnapshot?.sepidarCode ?? undefined,
         priceListId: selectedCustomer.priceListId ?? undefined,
         recipientFirstName: recipientFirstName.trim(),
         recipientLastName: recipientLastName.trim(),
@@ -689,10 +699,10 @@ function getAllowedStockTitles(customer: Customer): string[] {
 
 function getPaymentMethodTitle(customer: Customer | null | undefined): string | null {
   if (!customer) return null;
-  const paymentMethod = getCustomerPaymentMethodSnapshot(customer);
   return (
     customer.priceListTitle ||
-    paymentMethod?.title ||
+    (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
+    customer.saleType?.title ||
     (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
     (customer as Customer & { saleTypeTitle?: string | null }).saleTypeTitle ||
     customer.priceLists?.[0]?.name ||
@@ -703,26 +713,38 @@ function getPaymentMethodTitle(customer: Customer | null | undefined): string | 
 
 function getCustomerPaymentMethodSnapshot(
   customer: Customer | null | undefined,
+  salesTypes: Array<{ objectId: string; title: string; internalCode: number | null; sepidarCode: number | null }>,
 ): PaymentMethodSnapshot | null {
   if (!customer) return null;
   const saleType = customer.saleType;
-  const objectId =
-    saleType?.objectId ||
+  const salesTypeObjectId =
     (customer as Customer & { salesTypeObjectId?: string | null }).salesTypeObjectId ||
     null;
-  const title =
-    saleType?.title ||
+  const salesTypeTitle =
     (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
     (customer as Customer & { saleTypeTitle?: string | null }).saleTypeTitle ||
+    saleType?.title ||
     null;
-  const internalCode =
-    saleType?.sepidarSaleTypeId ??
+  const salesTypeInternalCode =
     (customer as Customer & { salesTypeInternalCode?: number | null }).salesTypeInternalCode ??
+    (customer as Customer & { saleTypeCode?: number | null }).saleTypeCode ??
     null;
-  const sepidarCode =
-    saleType?.sepidarSaleTypeId ??
+  const salesTypeSepidarCode =
     (customer as Customer & { salesTypeSepidarCode?: number | null }).salesTypeSepidarCode ??
+    saleType?.sepidarSaleTypeId ??
     null;
+
+  const matchedSalesType =
+    salesTypes.find((item) => item.objectId === salesTypeObjectId) ||
+    salesTypes.find((item) => salesTypeInternalCode !== null && item.internalCode === salesTypeInternalCode) ||
+    salesTypes.find((item) => salesTypeSepidarCode !== null && item.sepidarCode === salesTypeSepidarCode) ||
+    salesTypes.find((item) => item.title === salesTypeTitle) ||
+    null;
+
+  const objectId = matchedSalesType?.objectId || salesTypeObjectId || null;
+  const title = matchedSalesType?.title || salesTypeTitle || null;
+  const internalCode = matchedSalesType?.internalCode ?? salesTypeInternalCode ?? null;
+  const sepidarCode = matchedSalesType?.sepidarCode ?? salesTypeSepidarCode ?? null;
   if (!objectId && !title && internalCode === null && sepidarCode === null) {
     return null;
   }
