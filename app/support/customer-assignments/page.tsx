@@ -310,13 +310,15 @@ export default function SupportCustomerAssignmentsPage() {
     {
       key: "price-list",
       header: "لیست قیمت",
+      className: "max-w-[360px]",
+      cellClassName: "max-w-[360px] whitespace-normal leading-7",
       render: (row) => {
         if (row.priceLists.length) {
           return row.priceLists
             .map((priceList) =>
               priceList.name || priceList.displayName || priceList.title || "-",
             )
-            .join("، ");
+            .join("،\n");
         }
         if (row.priceListTitle) return row.priceListTitle;
         return "-";
