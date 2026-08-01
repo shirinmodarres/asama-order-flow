@@ -310,8 +310,8 @@ export default function SupportCustomerAssignmentsPage() {
     {
       key: "price-list",
       header: "لیست قیمت",
-      className: "max-w-[360px]",
-      cellClassName: "max-w-[360px] whitespace-normal leading-7",
+      className: "max-w-[480px]",
+      cellClassName: "max-w-[480px] whitespace-normal leading-7",
       render: (row) => {
         if (row.priceLists.length) {
           return row.priceLists
