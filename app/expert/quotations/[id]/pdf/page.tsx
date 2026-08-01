@@ -168,7 +168,7 @@ export default function SalesQuotationPdfPage() {
                       <table className="items-table w-full border-collapse text-right text-[9px]">
                         <thead>
                           <tr className="bg-[#F1F5F9] text-[#334155]">
-                            <th className="w-4 border-b border-l border-[#D7DEE6] px-0.5 py-2 font-semibold last:border-l-0">
+                            <th className="w-10 border-b border-l border-[#D7DEE6] px-0.5 py-2 font-semibold last:border-l-0">
                               ردیف
                             </th>
                             <th className="w-18 border-b border-l border-[#D7DEE6] px-1 py-2 font-semibold last:border-l-0">
@@ -180,7 +180,7 @@ export default function SalesQuotationPdfPage() {
                             <th className="w-10 border-b border-l border-[#D7DEE6] px-0.5 py-2 text-center font-semibold last:border-l-0">
                               تعداد
                             </th>
-                            <th className="w-9 border-b border-l border-[#D7DEE6] px-0.5 py-2 font-semibold last:border-l-0">
+                            <th className="w-9 border-b border-l border-[#D7DEE6] px-0.5 py-2 text-center font-semibold last:border-l-0">
                               واحد
                             </th>
                             <th className="w-24 border-b border-l border-[#D7DEE6] px-1.5 py-2 font-semibold last:border-l-0">
