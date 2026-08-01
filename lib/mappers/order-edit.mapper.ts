@@ -34,7 +34,18 @@ export function normalizeOrderEditPayload(
     customerName: trimOrUndefined(editPayload.customerName),
     createdByName: trimOrUndefined(editPayload.createdByName),
     expertUserId: trimOrUndefined(editPayload.expertUserId),
-    salesTypeObjectId: trimOrUndefined(editPayload.salesTypeObjectId),
+    salesTypeObjectId: trimOrUndefined(
+      editPayload.salesTypeObjectId ?? editPayload.saleTypeObjectId,
+    ),
+    salesTypeTitle: trimOrNull(
+      (editPayload as { salesTypeTitle?: string | null }).salesTypeTitle,
+    ),
+    salesTypeInternalCode: numberOrUndefined(
+      (editPayload as { salesTypeInternalCode?: number | null }).salesTypeInternalCode,
+    ),
+    salesTypeSepidarCode: numberOrUndefined(
+      (editPayload as { salesTypeSepidarCode?: number | null }).salesTypeSepidarCode,
+    ),
     customerObjectId: trimOrUndefined(editPayload.customerObjectId),
     customerAddressObjectId: trimOrUndefined(editPayload.customerAddressObjectId),
     customerAddressId: numberOrUndefined(editPayload.customerAddressId),
@@ -47,8 +58,6 @@ export function normalizeOrderEditPayload(
     customerAddressCityRef: numberOrUndefined(editPayload.customerAddressCityRef),
     customerAddressPathRef: numberOrUndefined(editPayload.customerAddressPathRef),
     customerAddressIsMain: editPayload.customerAddressIsMain,
-    saleTypeObjectId: trimOrUndefined(editPayload.saleTypeObjectId),
-    sepidarSaleTypeId: numberOrUndefined(editPayload.sepidarSaleTypeId),
     priceListId: trimOrUndefined(editPayload.priceListId),
     recipientFirstName: trimOrNull(editPayload.recipientFirstName),
     recipientLastName: trimOrNull(editPayload.recipientLastName),

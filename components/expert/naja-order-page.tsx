@@ -40,6 +40,13 @@ interface NajaOrderPageProps {
   role?: RoleKey;
 }
 
+type PaymentMethodSnapshot = {
+  objectId: string | null;
+  title: string | null;
+  internalCode: number | null;
+  sepidarCode: number | null;
+};
+
 export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -98,6 +105,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
     products.find((product) => product.objectId === productId) ?? null;
   const totalAmount = selectedProduct ? selectedProduct.unitPrice * quantity : 0;
   const paymentMethodTitle = getPaymentMethodTitle(selectedCustomer);
+  const paymentMethodSnapshot = getCustomerPaymentMethodSnapshot(selectedCustomer);
 
   useEffect(() => {
     let isMounted = true;
@@ -277,8 +285,12 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
         createdByName: createdByName.trim(),
         expertUserId: getStoredCurrentUser()?.objectId || undefined,
         customerObjectId,
-        saleTypeObjectId: selectedCustomer.saleType?.objectId || undefined,
-        sepidarSaleTypeId: selectedCustomer.saleType?.sepidarSaleTypeId ?? undefined,
+        salesTypeObjectId: paymentMethodSnapshot?.objectId || undefined,
+        salesTypeTitle: paymentMethodSnapshot?.title || undefined,
+        salesTypeInternalCode: paymentMethodSnapshot?.internalCode ?? undefined,
+        salesTypeSepidarCode: paymentMethodSnapshot?.sepidarCode ?? undefined,
+        saleTypeObjectId: paymentMethodSnapshot?.objectId || undefined,
+        sepidarSaleTypeId: paymentMethodSnapshot?.sepidarCode ?? undefined,
         priceListId: selectedCustomer.priceListId ?? undefined,
         recipientFirstName: recipientFirstName.trim(),
         recipientLastName: recipientLastName.trim(),
@@ -677,15 +689,44 @@ function getAllowedStockTitles(customer: Customer): string[] {
 
 function getPaymentMethodTitle(customer: Customer | null | undefined): string | null {
   if (!customer) return null;
+  const paymentMethod = getCustomerPaymentMethodSnapshot(customer);
   return (
     customer.priceListTitle ||
-    customer.saleType?.title ||
+    paymentMethod?.title ||
     (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
     (customer as Customer & { saleTypeTitle?: string | null }).saleTypeTitle ||
     customer.priceLists?.[0]?.name ||
     customer.priceLists?.[0]?.title ||
     null
   );
+}
+
+function getCustomerPaymentMethodSnapshot(
+  customer: Customer | null | undefined,
+): PaymentMethodSnapshot | null {
+  if (!customer) return null;
+  const saleType = customer.saleType;
+  const objectId =
+    saleType?.objectId ||
+    (customer as Customer & { salesTypeObjectId?: string | null }).salesTypeObjectId ||
+    null;
+  const title =
+    saleType?.title ||
+    (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
+    (customer as Customer & { saleTypeTitle?: string | null }).saleTypeTitle ||
+    null;
+  const internalCode =
+    saleType?.sepidarSaleTypeId ??
+    (customer as Customer & { salesTypeInternalCode?: number | null }).salesTypeInternalCode ??
+    null;
+  const sepidarCode =
+    saleType?.sepidarSaleTypeId ??
+    (customer as Customer & { salesTypeSepidarCode?: number | null }).salesTypeSepidarCode ??
+    null;
+  if (!objectId && !title && internalCode === null && sepidarCode === null) {
+    return null;
+  }
+  return { objectId, title, internalCode, sepidarCode };
 }
 
 function productIdentityLabel(product: Product): string {

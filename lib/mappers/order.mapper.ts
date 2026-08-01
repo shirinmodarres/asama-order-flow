@@ -180,6 +180,28 @@ export function mapOrderDto(dto: unknown): Order {
     priceListTitle: toNullableString(record.priceListTitle),
     priceListType: toNullableString(record.priceListType),
     priceListBrand: toNullableString(record.priceListBrand),
+    priceList: toRecord(record.priceList)?.objectId || record.priceListId
+      ? {
+          objectId: toNullableString(
+            toRecord(record.priceList).objectId ?? record.priceListId,
+          ),
+          id: toNullableString(toRecord(record.priceList).id ?? record.priceListId),
+          title: toNullableString(
+            toRecord(record.priceList).title ?? record.priceListTitle,
+          ),
+          name: toNullableString(
+            toRecord(record.priceList).name ??
+              toRecord(record.priceList).title ??
+              record.priceListTitle,
+          ),
+          typeCode: toNullableString(
+            toRecord(record.priceList).typeCode ?? record.priceListType,
+          ),
+          brandName: toNullableString(
+            toRecord(record.priceList).brandName ?? record.priceListBrand,
+          ),
+        }
+      : null,
     warehouseId: toNullableString(
       record.warehouseId ??
         record.warehouseObjectId ??

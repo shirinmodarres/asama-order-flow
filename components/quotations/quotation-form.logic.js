@@ -29,6 +29,7 @@ function getQuotationCustomerSnapshot(quotation) {
 function buildQuotationSubmitPayload({
   selectedCustomerId,
   selectedSalesTypeId,
+  selectedSalesType,
   selectedPriceListId,
   notes,
   selectedValidUntil,
@@ -40,6 +41,9 @@ function buildQuotationSubmitPayload({
   return {
     customerObjectId: selectedCustomerId,
     salesTypeObjectId: selectedSalesTypeId,
+    salesTypeTitle: selectedSalesType?.title ?? null,
+    salesTypeInternalCode: selectedSalesType?.internalCode ?? null,
+    salesTypeSepidarCode: selectedSalesType?.sepidarCode ?? null,
     priceListObjectId: selectedPriceListId,
     notes: notes.trim(),
     validUntil: selectedValidUntil || null,

@@ -180,8 +180,9 @@ export interface OrderFormSubmitPayload {
     pricingSource?: string | null;
   }>;
   salesTypeObjectId?: string;
-  saleTypeObjectId?: string;
-  sepidarSaleTypeId?: number;
+  salesTypeTitle?: string;
+  salesTypeInternalCode?: number | null;
+  salesTypeSepidarCode?: number | null;
   priceListId?: string;
 }
 
@@ -256,7 +257,7 @@ export function OrderForm({
     initialOrder?.customerObjectId ?? initialOrder?.customer?.objectId ?? "",
   );
   const [selectedPriceListId, setSelectedPriceListId] = useState(
-    initialOrder?.priceListId ?? "",
+    initialOrder?.priceListId ?? initialOrder?.priceList?.objectId ?? "",
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
@@ -419,7 +420,9 @@ export function OrderForm({
   useEffect(() => {
     function syncSelectedPriceList() {
       if (!sepidarProductsOnly || !selectedCustomerId) {
-        setSelectedPriceListId("");
+        if (mode === "edit" && initialOrder?.priceListId) {
+          setSelectedPriceListId(initialOrder.priceListId);
+        }
         return;
       }
 
@@ -431,7 +434,11 @@ export function OrderForm({
       );
 
       if (optionIds.length === 0) {
-        setSelectedPriceListId("");
+        if (mode === "edit" && initialOrder?.priceListId) {
+          setSelectedPriceListId(initialOrder.priceListId);
+        } else {
+          setSelectedPriceListId("");
+        }
         return;
       }
 
@@ -442,6 +449,12 @@ export function OrderForm({
           optionIds.includes(initialOrder.priceListId)
         ) {
           return initialOrder.priceListId;
+        }
+        if (
+          initialOrder?.priceList?.objectId &&
+          optionIds.includes(initialOrder.priceList.objectId)
+        ) {
+          return initialOrder.priceList.objectId;
         }
         return optionIds.length === 1 ? optionIds[0] : "";
       });
@@ -751,7 +764,10 @@ export function OrderForm({
     null;
   const selectedSalesTypeIsSelectable = Boolean(
     selectedSalesType &&
-      salesTypes.some((item) => item.objectId === selectedSalesType.objectId),
+      (salesTypes.some((item) => item.objectId === selectedSalesType.objectId) ||
+        (isEditMode &&
+          orderSalesTypeFallback &&
+          orderSalesTypeFallback.objectId === selectedSalesType.objectId)),
   );
   const orderSalesTypeSnapshot = getOrderSalesTypeSnapshot(initialOrder);
   const orderSalesTypeTitle = orderSalesTypeSnapshot?.title || null;
@@ -1132,14 +1148,21 @@ export function OrderForm({
         salesTypeObjectId: selectedSalesTypeIsSelectable
           ? selectedSalesType?.objectId
           : undefined,
-        saleTypeObjectId: selectedSalesTypeIsSelectable
-          ? selectedSalesType?.objectId
+        salesTypeTitle: selectedSalesTypeIsSelectable
+          ? selectedSalesType?.title ?? undefined
           : undefined,
-        sepidarSaleTypeId: selectedSalesTypeIsSelectable
+        salesTypeInternalCode: selectedSalesTypeIsSelectable
+          ? selectedSalesType?.internalCode ?? undefined
+          : undefined,
+        salesTypeSepidarCode: selectedSalesTypeIsSelectable
           ? selectedSalesType?.sepidarCode ?? undefined
           : undefined,
         priceListId:
-          selectedPriceListId || selectedCustomer?.priceListId || undefined,
+          selectedPriceListId ||
+          initialOrder?.priceListId ||
+          initialOrder?.priceList?.objectId ||
+          selectedCustomer?.priceListId ||
+          undefined,
         notes: notes.trim(),
         items: normalizedItems.map((item) => ({
           productObjectId:
@@ -1981,6 +2004,8 @@ function getCustomerPriceListOptions(
         ? [customer.priceListId]
         : order?.priceListId
           ? [order.priceListId]
+          : order?.priceList?.objectId
+            ? [order.priceList.objectId]
           : [];
 
   for (const id of fallbackIds) {
@@ -1991,12 +2016,14 @@ function getCustomerPriceListOptions(
       title:
         customer?.priceListTitle ||
         order?.priceListTitle ||
+        order?.priceList?.title ||
         customer?.priceListBrand ||
         order?.priceListBrand ||
         id,
       name:
         customer?.priceListTitle ||
         order?.priceListTitle ||
+        order?.priceList?.title ||
         customer?.priceListBrand ||
         order?.priceListBrand ||
         id,

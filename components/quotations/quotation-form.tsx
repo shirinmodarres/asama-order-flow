@@ -84,9 +84,7 @@ export function QuotationForm({
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    initialQuotation?.salesTypeObjectId ||
-      initialQuotation?.salesType?.objectId ||
-      "",
+    initialQuotation?.salesTypeObjectId || "",
   );
   const [selectedValidUntil, setSelectedValidUntil] = useState(
     initialQuotation?.validUntil?.slice(0, 10) || (() => {
@@ -149,8 +147,8 @@ export function QuotationForm({
           }
         }
         setSalesTypes(normalizedSalesTypes);
-        if (!selectedSalesTypeId) {
-          setSelectedSalesTypeId(quotationSalesTypeFallback?.objectId || "");
+        if (!selectedSalesTypeId && initialQuotation?.salesTypeObjectId) {
+          setSelectedSalesTypeId(initialQuotation.salesTypeObjectId);
         }
       } catch {
         if (mounted) setSalesTypes([]);
@@ -187,7 +185,6 @@ export function QuotationForm({
       mounted = false;
     };
   }, [
-    initialQuotation?.salesType?.objectId,
     initialQuotation?.salesTypeObjectId,
     quotationCustomerFallback,
     selectedSalesTypeId,
@@ -242,6 +239,13 @@ export function QuotationForm({
     }
     return Array.from(map.values());
   }, [quotationSalesTypeFallback, salesTypes]);
+  const selectedSalesType = useMemo(
+    () =>
+      mergedSalesTypes.find((salesType) => salesType.objectId === selectedSalesTypeId) ||
+      quotationSalesTypeFallback ||
+      null,
+    [mergedSalesTypes, quotationSalesTypeFallback, selectedSalesTypeId],
+  );
 
   useEffect(() => {
     if (!selectedCustomer) {
@@ -450,6 +454,7 @@ export function QuotationForm({
         buildQuotationSubmitPayload({
           selectedCustomerId,
           selectedSalesTypeId,
+          selectedSalesType: selectedSalesType ?? null,
           selectedPriceListId,
           notes,
           selectedValidUntil,
