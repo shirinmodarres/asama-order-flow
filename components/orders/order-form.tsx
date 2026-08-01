@@ -75,27 +75,37 @@ interface SalesTypeOption {
   sepidarCode: number | null;
 }
 
+function getSalesTypeOptionKey(option?: {
+  objectId?: string | null;
+  internalCode?: number | null;
+  sepidarCode?: number | null;
+} | null): string {
+  if (!option) return "";
+  if (option.sepidarCode !== null && option.sepidarCode !== undefined) {
+    return String(option.sepidarCode);
+  }
+  if (option.internalCode !== null && option.internalCode !== undefined) {
+    return String(option.internalCode);
+  }
+  return option.objectId ? String(option.objectId) : "";
+}
+
 function getOrderSalesTypeOptionKey(order?: Order | null): string {
   if (!order) return "";
-  const objectId =
-    order.salesTypeObjectId ||
-    order.saleTypeObjectId ||
-    order.salesType?.objectId ||
-    order.saleType?.objectId ||
-    "";
-  if (objectId) return objectId;
-  const hasSnapshot =
-    Boolean(
-      order.salesTypeTitle ||
-        order.saleTypeTitle ||
-        order.salesType?.title ||
-        order.saleType?.title,
-    ) ||
-    order.salesTypeInternalCode !== null ||
-    order.salesTypeSepidarCode !== null ||
-    order.saleType?.sepidarSaleTypeId !== null;
-  if (!hasSnapshot) return "";
-  return `order-sales-type-${order.objectId || "fallback"}`;
+  const sepidarCode =
+    order.salesTypeSepidarCode ??
+    order.sepidarSaleTypeId ??
+    order.salesType?.sepidarCode ??
+    order.saleType?.sepidarSaleTypeId ??
+    null;
+  if (sepidarCode !== null && sepidarCode !== undefined) {
+    return String(sepidarCode);
+  }
+  const internalCode = order.salesTypeInternalCode ?? null;
+  if (internalCode !== null && internalCode !== undefined) {
+    return String(internalCode);
+  }
+  return order.salesTypeObjectId || order.saleTypeObjectId || order.salesType?.objectId || order.saleType?.objectId || "";
 }
 
 function getOrderSalesTypeSnapshot(order?: Order | null) {
@@ -138,10 +148,12 @@ function buildOrderSalesTypeFallback(
 ): SalesTypeOption | null {
   const snapshot = getOrderSalesTypeSnapshot(order);
   if (!snapshot) return null;
-  const objectId =
-    snapshot.objectId || getOrderSalesTypeOptionKey(order) || `order-sales-type-${order?.objectId || "fallback"}`;
   return {
-    objectId,
+    objectId:
+      getSalesTypeOptionKey(snapshot) ||
+      getOrderSalesTypeOptionKey(order) ||
+      snapshot.objectId ||
+      `order-sales-type-${order?.objectId || "fallback"}`,
     title: snapshot.title,
     internalCode: snapshot.internalCode,
     sepidarCode: snapshot.sepidarCode,
@@ -288,8 +300,7 @@ export function OrderForm({
         if (!mounted) return;
         setSalesTypes(data);
         if (!selectedSalesTypeId && mode === "edit") {
-          const initialId =
-            getOrderSalesTypeOptionKey(initialOrder);
+          const initialId = getOrderSalesTypeOptionKey(initialOrder);
           if (initialId) setSelectedSalesTypeId(initialId);
         }
       } catch {
@@ -730,18 +741,23 @@ export function OrderForm({
   const mergedSalesTypes = useMemo(() => {
     const map = new Map<string, SalesTypeOption>();
     salesTypes.forEach((salesType) => {
-      map.set(salesType.objectId, salesType);
+      map.set(getSalesTypeOptionKey(salesType), salesType);
     });
     if (
       mode === "edit" &&
       orderSalesTypeFallback &&
-      !map.has(orderSalesTypeFallback.objectId) &&
+      !map.has(getSalesTypeOptionKey(orderSalesTypeFallback)) &&
       (orderSalesTypeFallback.objectId ||
         orderSalesTypeFallback.title ||
         orderSalesTypeFallback.internalCode !== null ||
         orderSalesTypeFallback.sepidarCode !== null)
     ) {
-      map.set(orderSalesTypeFallback.objectId || `order-sales-type-${initialOrder?.objectId || "fallback"}`, orderSalesTypeFallback);
+      map.set(
+        getSalesTypeOptionKey(orderSalesTypeFallback) ||
+          orderSalesTypeFallback.objectId ||
+          `order-sales-type-${initialOrder?.objectId || "fallback"}`,
+        orderSalesTypeFallback,
+      );
     }
     return Array.from(map.values());
   }, [initialOrder?.objectId, mode, orderSalesTypeFallback, salesTypes]);
@@ -759,21 +775,21 @@ export function OrderForm({
   const isNajaOrder = initialOrder?.orderType === "naja";
   const isEditMode = mode === "edit";
   const selectedSalesType =
-    mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
+    mergedSalesTypes.find((item) => getSalesTypeOptionKey(item) === selectedSalesTypeId) ||
     (mode === "edit" ? orderSalesTypeFallback : null) ||
     null;
   const selectedSalesTypeFromActiveList = useMemo(() => {
     if (!selectedSalesTypeId) return null;
     return (
-      salesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
+      salesTypes.find((item) => getSalesTypeOptionKey(item) === selectedSalesTypeId) ||
       salesTypes.find(
         (item) =>
           selectedSalesType &&
           (item.title === selectedSalesType.title ||
-            (selectedSalesType.internalCode !== null &&
-              item.internalCode === selectedSalesType.internalCode) ||
             (selectedSalesType.sepidarCode !== null &&
-              item.sepidarCode === selectedSalesType.sepidarCode)),
+              item.sepidarCode === selectedSalesType.sepidarCode) ||
+            (selectedSalesType.internalCode !== null &&
+              item.internalCode === selectedSalesType.internalCode)),
       ) ||
       null
     );
@@ -783,7 +799,7 @@ export function OrderForm({
     : (selectedSalesTypeFromActiveList || selectedSalesType);
   const selectedSalesTypeIsSelectable = Boolean(
     resolvedSelectedSalesType &&
-      (salesTypes.some((item) => item.objectId === resolvedSelectedSalesType.objectId) ||
+      (salesTypes.some((item) => getSalesTypeOptionKey(item) === getSalesTypeOptionKey(resolvedSelectedSalesType)) ||
         (isEditMode &&
           orderSalesTypeFallback &&
           orderSalesTypeFallback.objectId === resolvedSelectedSalesType.objectId)),
@@ -800,7 +816,9 @@ export function OrderForm({
     null;
   const selectedSalesTypeOption = selectedSalesType
     ? {
-        value: resolvedSelectedSalesType?.objectId || selectedSalesType.objectId,
+        value:
+          getSalesTypeOptionKey(resolvedSelectedSalesType) ||
+          getSalesTypeOptionKey(selectedSalesType),
         label: resolvedSelectedSalesType?.title || selectedSalesType.title,
         searchText: [
           resolvedSelectedSalesType?.title || selectedSalesType.title,
@@ -839,7 +857,7 @@ export function OrderForm({
     const matchedSalesType =
       mergedSalesTypes.find(
         (item) =>
-          item.objectId === snapshot.objectId ||
+          getSalesTypeOptionKey(item) === getSalesTypeOptionKey(snapshot) ||
           item.title === snapshot.title ||
           (snapshot.sepidarCode !== null && item.sepidarCode === snapshot.sepidarCode) ||
           (snapshot.internalCode !== null &&
@@ -848,8 +866,13 @@ export function OrderForm({
       ) || null;
 
     const nextSelectedId =
-      matchedSalesType?.objectId ||
-      snapshot.objectId ||
+      getSalesTypeOptionKey(matchedSalesType) ||
+      (snapshot.sepidarCode !== null && snapshot.sepidarCode !== undefined
+        ? String(snapshot.sepidarCode)
+        : null) ||
+      (snapshot.internalCode !== null && snapshot.internalCode !== undefined
+        ? String(snapshot.internalCode)
+        : null) ||
       orderSalesTypeOptionId;
 
     if (nextSelectedId && nextSelectedId !== selectedSalesTypeId) {
@@ -1673,9 +1696,9 @@ export function OrderForm({
               }));
             }}
             options={mergedSalesTypes.map((salesType) => ({
-              value: salesType.objectId,
+              value: getSalesTypeOptionKey(salesType),
               label: salesType.title,
-              searchText: [salesType.title, salesType.internalCode]
+              searchText: [salesType.title, salesType.internalCode, salesType.sepidarCode]
                 .filter(Boolean)
                 .join(" "),
             }))}
