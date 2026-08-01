@@ -261,7 +261,7 @@ export function OrderForm({
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    getOrderSalesTypeOptionKey(initialOrder),
+    mode === "edit" ? getOrderSalesTypeOptionKey(initialOrder) : "",
   );
   const [selectedAddressId, setSelectedAddressId] = useState(
     initialOrder?.selectedCustomerAddressId
@@ -276,7 +276,7 @@ export function OrderForm({
     Record<string, { productId?: string; quantity?: string }>
   >({});
   const orderSalesTypeFallback = useMemo(
-    () => buildOrderSalesTypeFallback(initialOrder),
+    () => (mode === "edit" ? buildOrderSalesTypeFallback(initialOrder) : null),
     [initialOrder],
   );
 
@@ -287,7 +287,7 @@ export function OrderForm({
         const data = await listActiveSalesTypes();
         if (!mounted) return;
         setSalesTypes(data);
-        if (!selectedSalesTypeId) {
+        if (!selectedSalesTypeId && mode === "edit") {
           const initialId =
             getOrderSalesTypeOptionKey(initialOrder);
           if (initialId) setSelectedSalesTypeId(initialId);
@@ -301,7 +301,7 @@ export function OrderForm({
     return () => {
       mounted = false;
     };
-  }, [initialOrder, selectedSalesTypeId]);
+  }, [initialOrder, mode, selectedSalesTypeId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -733,6 +733,7 @@ export function OrderForm({
       map.set(salesType.objectId, salesType);
     });
     if (
+      mode === "edit" &&
       orderSalesTypeFallback &&
       !map.has(orderSalesTypeFallback.objectId) &&
       (orderSalesTypeFallback.objectId ||
@@ -743,7 +744,7 @@ export function OrderForm({
       map.set(orderSalesTypeFallback.objectId || `order-sales-type-${initialOrder?.objectId || "fallback"}`, orderSalesTypeFallback);
     }
     return Array.from(map.values());
-  }, [initialOrder?.objectId, orderSalesTypeFallback, salesTypes]);
+  }, [initialOrder?.objectId, mode, orderSalesTypeFallback, salesTypes]);
   const priceListOptions = useMemo(
     () => getCustomerPriceListOptions(selectedCustomer, initialOrder),
     [initialOrder, selectedCustomer],
@@ -759,14 +760,33 @@ export function OrderForm({
   const isEditMode = mode === "edit";
   const selectedSalesType =
     mergedSalesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
-    orderSalesTypeFallback ||
+    (mode === "edit" ? orderSalesTypeFallback : null) ||
     null;
+  const selectedSalesTypeFromActiveList = useMemo(() => {
+    if (!selectedSalesTypeId) return null;
+    return (
+      salesTypes.find((item) => item.objectId === selectedSalesTypeId) ||
+      salesTypes.find(
+        (item) =>
+          selectedSalesType &&
+          (item.title === selectedSalesType.title ||
+            (selectedSalesType.internalCode !== null &&
+              item.internalCode === selectedSalesType.internalCode) ||
+            (selectedSalesType.sepidarCode !== null &&
+              item.sepidarCode === selectedSalesType.sepidarCode)),
+      ) ||
+      null
+    );
+  }, [salesTypes, selectedSalesType, selectedSalesTypeId]);
+  const resolvedSelectedSalesType = mode === "edit"
+    ? selectedSalesType
+    : (selectedSalesTypeFromActiveList || selectedSalesType);
   const selectedSalesTypeIsSelectable = Boolean(
-    selectedSalesType &&
-      (salesTypes.some((item) => item.objectId === selectedSalesType.objectId) ||
+    resolvedSelectedSalesType &&
+      (salesTypes.some((item) => item.objectId === resolvedSelectedSalesType.objectId) ||
         (isEditMode &&
           orderSalesTypeFallback &&
-          orderSalesTypeFallback.objectId === selectedSalesType.objectId)),
+          orderSalesTypeFallback.objectId === resolvedSelectedSalesType.objectId)),
   );
   const orderSalesTypeSnapshot = getOrderSalesTypeSnapshot(initialOrder);
   const orderSalesTypeTitle = orderSalesTypeSnapshot?.title || null;
@@ -774,32 +794,32 @@ export function OrderForm({
     getOrderSalesTypeOptionKey(initialOrder) ||
     "";
   const currentSaleTypeTitle =
-    selectedSalesType?.title ??
+    resolvedSelectedSalesType?.title ??
     orderSalesTypeTitle ??
     orderSalesTypeFallback?.title ??
     null;
   const selectedSalesTypeOption = selectedSalesType
     ? {
-        value: selectedSalesType.objectId,
-        label: selectedSalesType.title,
+        value: resolvedSelectedSalesType?.objectId || selectedSalesType.objectId,
+        label: resolvedSelectedSalesType?.title || selectedSalesType.title,
         searchText: [
-          selectedSalesType.title,
-          selectedSalesType.internalCode,
-          selectedSalesType.sepidarCode,
+          resolvedSelectedSalesType?.title || selectedSalesType.title,
+          resolvedSelectedSalesType?.internalCode ?? selectedSalesType.internalCode,
+          resolvedSelectedSalesType?.sepidarCode ?? selectedSalesType.sepidarCode,
         ]
         .filter(Boolean)
         .join(" "),
       }
-    : orderSalesTypeTitle
+    : mode === "edit" && orderSalesTypeTitle
       ? {
-        value:
-          selectedSalesTypeId ||
-          orderSalesTypeOptionId ||
+          value:
+            selectedSalesTypeId ||
+            orderSalesTypeOptionId ||
           `order-sales-type-${initialOrder?.objectId || "fallback"}`,
         label: orderSalesTypeTitle,
         searchText: orderSalesTypeTitle,
       }
-    : currentSaleTypeTitle
+    : mode === "edit" && currentSaleTypeTitle
       ? {
           value:
             selectedSalesTypeId ||
@@ -811,7 +831,7 @@ export function OrderForm({
       : null;
 
   useEffect(() => {
-    if (!initialOrder) return;
+    if (!initialOrder || mode !== "edit") return;
 
     const snapshot = getOrderSalesTypeSnapshot(initialOrder);
     if (!snapshot) return;
@@ -840,6 +860,7 @@ export function OrderForm({
     orderSalesTypeOptionId,
     mergedSalesTypes,
     orderSalesTypeTitle,
+    mode,
     selectedSalesTypeId,
   ]);
   const currentStockTitles = selectedCustomer
@@ -934,12 +955,19 @@ export function OrderForm({
       return;
     }
 
+    if (!isEditMode && selectedSalesTypeId && !resolvedSelectedSalesType) {
+      setFieldErrors({
+        salesTypeObjectId: "روش پرداخت انتخاب‌شده معتبر نیست.",
+      });
+      return;
+    }
+
     if (
       !isEditMode &&
       sepidarProductsOnly &&
       selectedCustomer &&
       !hasGeneratedPriceList &&
-      !selectedSalesType?.sepidarCode
+      !resolvedSelectedSalesType?.sepidarCode
     ) {
       setFieldErrors({
         selectedCustomerId: "برای این مشتری روش پرداخت مشخص نشده است.",
@@ -1111,7 +1139,10 @@ export function OrderForm({
         mode,
         customerObjectId: selectedCustomerId || null,
         priceListId: selectedPriceListId || selectedCustomer?.priceListId || null,
-        salesTypeObjectId: selectedSalesType?.objectId || null,
+        salesTypeObjectId: resolvedSelectedSalesType?.objectId || null,
+        salesTypeInternalCode: resolvedSelectedSalesType?.internalCode ?? null,
+        salesTypeSepidarCode: resolvedSelectedSalesType?.sepidarCode ?? null,
+        selectedSalesTypeTitle: resolvedSelectedSalesType?.title ?? null,
         selectedCustomerAddressId: finalCustomerAddressId ?? null,
         itemCount: normalizedItems.length,
       });
@@ -1144,18 +1175,20 @@ export function OrderForm({
               najaPurchaseDate: najaPurchaseDate || null,
             }
           : {}),
-        salesTypeObjectId: selectedSalesTypeIsSelectable
-          ? selectedSalesType?.objectId
-          : undefined,
-        salesTypeTitle: selectedSalesTypeIsSelectable
-          ? selectedSalesType?.title ?? undefined
-          : undefined,
-        salesTypeInternalCode: selectedSalesTypeIsSelectable
-          ? selectedSalesType?.internalCode ?? undefined
-          : undefined,
-        salesTypeSepidarCode: selectedSalesTypeIsSelectable
-          ? selectedSalesType?.sepidarCode ?? undefined
-          : undefined,
+        salesTypeObjectId:
+          resolvedSelectedSalesType?.objectId ||
+          (mode === "edit" ? orderSalesTypeFallback?.objectId : null) ||
+          undefined,
+        salesTypeTitle:
+          resolvedSelectedSalesType?.title ||
+          (mode === "edit" ? orderSalesTypeFallback?.title : null) ||
+          undefined,
+        salesTypeInternalCode:
+          resolvedSelectedSalesType?.internalCode ??
+          (mode === "edit" ? orderSalesTypeFallback?.internalCode ?? undefined : undefined),
+        salesTypeSepidarCode:
+          resolvedSelectedSalesType?.sepidarCode ??
+          (mode === "edit" ? orderSalesTypeFallback?.sepidarCode ?? undefined : undefined),
         priceListId:
           selectedPriceListId ||
           initialOrder?.priceListId ||
@@ -2329,15 +2362,7 @@ function createCustomerFromOrder(order: Order): Customer | null {
     sepidarCustomerId:
       order.sepidarCustomerId === null ? null : String(order.sepidarCustomerId),
     sepidarCustomerCode: order.sepidarCustomerCode,
-    saleType:
-      order.saleType ??
-      (order.salesTypeTitle || order.salesTypeSepidarCode || order.saleTypeTitle || order.sepidarSaleTypeId
-        ? {
-            objectId: order.salesTypeObjectId || order.saleTypeObjectId,
-            sepidarSaleTypeId: order.salesTypeSepidarCode ?? order.sepidarSaleTypeId,
-            title: order.salesTypeTitle || order.saleTypeTitle,
-          }
-        : null),
+    saleType: null,
     priceListId: order.priceListId,
     priceListIds: order.priceListId ? [order.priceListId] : [],
     priceListTitle: order.priceListTitle,
