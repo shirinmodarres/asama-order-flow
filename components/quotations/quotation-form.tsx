@@ -30,6 +30,7 @@ import { jalaliToIso, todayJalaliParts } from "@/lib/utils/jalali-date";
 import {
   buildQuotationSubmitPayload,
   getQuotationCustomerSnapshot,
+  getQuotationSalesTypeOptionKey,
   getQuotationSalesTypeSnapshot,
 } from "@/components/quotations/quotation-form.logic";
 
@@ -84,7 +85,7 @@ export function QuotationForm({
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    initialQuotation?.salesTypeObjectId || "",
+    getQuotationSalesTypeOptionKey(initialQuotation) || "",
   );
   const [selectedValidUntil, setSelectedValidUntil] = useState(
     initialQuotation?.validUntil?.slice(0, 10) || (() => {
@@ -135,7 +136,7 @@ export function QuotationForm({
         }));
         if (quotationSalesTypeFallback) {
           const exists = normalizedSalesTypes.some(
-            (salesType) => salesType.objectId === quotationSalesTypeFallback.objectId,
+            (salesType) => getSalesTypeOptionKey(salesType) === getSalesTypeOptionKey(quotationSalesTypeFallback),
           );
           if (!exists) {
             normalizedSalesTypes.push({
@@ -147,8 +148,9 @@ export function QuotationForm({
           }
         }
         setSalesTypes(normalizedSalesTypes);
-        if (!selectedSalesTypeId && initialQuotation?.salesTypeObjectId) {
-          setSelectedSalesTypeId(initialQuotation.salesTypeObjectId);
+        if (!selectedSalesTypeId && initialQuotation) {
+          const nextSelected = getQuotationSalesTypeOptionKey(initialQuotation);
+          if (nextSelected) setSelectedSalesTypeId(nextSelected);
         }
       } catch {
         if (mounted) setSalesTypes([]);
@@ -241,7 +243,7 @@ export function QuotationForm({
   }, [quotationSalesTypeFallback, salesTypes]);
   const selectedSalesType = useMemo(
     () =>
-      mergedSalesTypes.find((salesType) => salesType.objectId === selectedSalesTypeId) ||
+      mergedSalesTypes.find((salesType) => getSalesTypeOptionKey(salesType) === selectedSalesTypeId) ||
       quotationSalesTypeFallback ||
       null,
     [mergedSalesTypes, quotationSalesTypeFallback, selectedSalesTypeId],
@@ -258,7 +260,7 @@ export function QuotationForm({
           }))
           .filter((option: { value: string; label: string }) => Boolean(option.value));
         if (fallbackPriceLists.length) {
-          setSelectedPriceListId((current: string) => {
+      setSelectedPriceListId((current: string) => {
             if (current && fallbackOptions.some((option: { value: string; label: string }) => option.value === current)) return current;
             return (
               initialQuotation?.priceListObjectId &&
@@ -534,8 +536,8 @@ export function QuotationForm({
             <SearchableSelect
               value={selectedSalesTypeId || undefined}
               onValueChange={setSelectedSalesTypeId}
-              options={mergedSalesTypes.map((salesType) => ({
-                value: salesType.objectId,
+          options={mergedSalesTypes.map((salesType) => ({
+                value: getSalesTypeOptionKey(salesType),
                 label: salesType.title,
                 searchText: [salesType.title, salesType.internalCode]
                   .filter(Boolean)
@@ -683,7 +685,7 @@ export function QuotationForm({
               <SummaryRow
                 label="روش پرداخت"
                 value={
-                  salesTypes.find((salesType) => salesType.objectId === selectedSalesTypeId)?.title ||
+                  salesTypes.find((salesType) => getSalesTypeOptionKey(salesType) === selectedSalesTypeId)?.title ||
                   selectedSalesTypeId
                 }
               />
@@ -732,6 +734,17 @@ function createEmptyRow(index: number): DraftRow {
     productId: "",
     quantity: 1,
   };
+}
+
+function getSalesTypeOptionKey(option?: SalesTypeOption | null): string {
+  if (!option) return "";
+  if (option.sepidarCode !== null && option.sepidarCode !== undefined) {
+    return String(option.sepidarCode);
+  }
+  if (option.internalCode !== null && option.internalCode !== undefined) {
+    return String(option.internalCode);
+  }
+  return option.objectId || "";
 }
 
 function mapQuotationItems(items: SalesQuotationItem[]): DraftRow[] {

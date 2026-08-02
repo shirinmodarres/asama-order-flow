@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { QuotationForm } from "@/components/quotations/quotation-form";
 import type { CreateSalesQuotationPayload } from "@/lib/models/sales-quotation.model";
-import { getStoredCurrentUser } from "@/lib/services/auth.service";
+import { getStoredCurrentUser, me } from "@/lib/services/auth.service";
 import { createSalesQuotation } from "@/lib/services/sales-quotation.service";
 
 export default function NewExpertQuotationPage() {
@@ -15,10 +15,18 @@ export default function NewExpertQuotationPage() {
   const handleSubmit = async (payload: CreateSalesQuotationPayload) => {
     setIsSubmitting(true);
     try {
+      const storedUser = getStoredCurrentUser();
+      const currentUser = storedUser?.objectId
+        ? storedUser
+        : (await me().catch(() => null))?.user ?? storedUser;
+      const expertObjectId = currentUser?.objectId || (currentUser as { id?: string } | null)?.id || undefined;
+      if (!expertObjectId) {
+        throw new Error("شناسه کارشناس برای ثبت پیش‌فاکتور پیدا نشد.");
+      }
       const quotation = await createSalesQuotation({
         ...payload,
         status: payload.status || "draft",
-        expertObjectId: getStoredCurrentUser()?.objectId || undefined,
+        expertObjectId,
       });
       router.push(`/expert/quotations/${quotation.objectId}`);
     } finally {
