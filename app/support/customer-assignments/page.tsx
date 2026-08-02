@@ -194,9 +194,7 @@ export default function SupportCustomerAssignmentsPage() {
     () =>
       priceLists.map((priceList) => ({
         value: priceList.objectId,
-        label: `${priceList.brandName || "-"} - ${priceList.name || "-"}${
-          priceList.code ? ` - ${formatFaDigits(priceList.code)}` : ""
-        }`,
+        label: priceList.name || priceList.title || "-",
       })),
     [priceLists],
   );
@@ -312,32 +310,25 @@ export default function SupportCustomerAssignmentsPage() {
     {
       key: "price-list",
       header: "لیست قیمت",
+      className: "max-w-[480px]",
+      cellClassName: "max-w-[480px] whitespace-normal leading-7",
       render: (row) => {
         if (row.priceLists.length) {
           return row.priceLists
             .map((priceList) =>
-              [
-                priceList.brandName,
-                priceList.name || priceList.displayName,
-                priceList.typeCode,
-              ].filter(Boolean).join(" - "),
+              priceList.name || priceList.displayName || priceList.title || "-",
             )
-            .join("، ");
+            .join("،\n");
         }
-        if (row.priceListTitle) {
-          return [
-            row.priceListBrand,
-            row.priceListTitle,
-            row.priceListType,
-          ].filter(Boolean).join(" - ");
-        }
+        if (row.priceListTitle) return row.priceListTitle;
         return "-";
       },
     },
     {
       key: "allowed-stocks",
       header: "انبارهای مجاز",
-      cellClassName: "max-w-[260px] whitespace-normal leading-7",
+      className: "min-w-[280px]",
+      cellClassName: "max-w-[420px] whitespace-normal leading-7",
       render: (row) =>
         row.allowedStocks.length
           ? row.allowedStocks

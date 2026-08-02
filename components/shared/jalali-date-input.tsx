@@ -114,7 +114,7 @@ export function JalaliDateInput({
               onClick={() => setIsOpen(false)}
             />
             <div
-              className="fixed z-[9999] w-72 rounded-xl border border-[#E5E7EB] bg-white p-3 shadow-lg"
+              className="fixed z-[9999] w-[min(92vw,20rem)] rounded-xl border border-[#E5E7EB] bg-white p-3 shadow-lg"
               style={{
                 top: popoverPosition.top,
                 right: popoverPosition.right,
@@ -189,7 +189,7 @@ export function JalaliDateInput({
           onFocus={(event) => openCalendar(event.currentTarget)}
           onClick={(event) => openCalendar(event.currentTarget)}
           placeholder={placeholder}
-          className="cursor-pointer pr-10"
+          className="cursor-pointer pr-10 text-sm sm:text-base"
           aria-invalid={Boolean(error)}
           aria-expanded={isOpen}
         />

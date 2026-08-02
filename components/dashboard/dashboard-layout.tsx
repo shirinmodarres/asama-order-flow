@@ -82,7 +82,8 @@ export function DashboardLayout({ role, title, children }: DashboardLayoutProps)
 
   return (
     <div className="h-screen overflow-hidden ">
-      <div className="flex h-screen w-full min-w-0 flex-col gap-6 overflow-hidden px-4 py-5 xl:flex-row xl:px-6 xl:py-6">        <Sidebar items={sidebarByRole[role]} />
+      <div className="flex h-screen w-full min-w-0 flex-col gap-6 overflow-hidden px-4 py-5 xl:flex-row xl:px-6 xl:py-6">
+        <Sidebar items={sidebarByRole[role]} />
 
         {isSidebarOpen ? (
           <div className="fixed inset-0 z-40 xl:hidden">
@@ -92,8 +93,8 @@ export function DashboardLayout({ role, title, children }: DashboardLayoutProps)
               className="absolute inset-0 bg-[#0F172A]/40"
               onClick={() => setIsSidebarOpen(false)}
             />
-            <aside className="shrink-0">
-              <Sidebar items={sidebarByRole[role]} />
+            <aside className="absolute inset-y-0 right-0 shrink-0">
+              <Sidebar items={sidebarByRole[role]} isMobile onClose={() => setIsSidebarOpen(false)} onNavigate={() => setIsSidebarOpen(false)} />
             </aside>
           </div>
         ) : null}
