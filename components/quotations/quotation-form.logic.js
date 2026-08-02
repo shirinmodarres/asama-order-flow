@@ -13,6 +13,19 @@ function getQuotationSalesTypeSnapshot(quotation) {
   };
 }
 
+function getQuotationSalesTypeOptionKey(quotation) {
+  if (!quotation) return "";
+  const snapshot = getQuotationSalesTypeSnapshot(quotation);
+  if (!snapshot) return "";
+  if (snapshot.sepidarCode !== null && snapshot.sepidarCode !== undefined) {
+    return String(snapshot.sepidarCode);
+  }
+  if (snapshot.internalCode !== null && snapshot.internalCode !== undefined) {
+    return String(snapshot.internalCode);
+  }
+  return snapshot.objectId || "";
+}
+
 function getQuotationCustomerSnapshot(quotation) {
   if (!quotation?.customer) return null;
   return {
@@ -61,4 +74,5 @@ module.exports = {
   buildQuotationSubmitPayload,
   getQuotationCustomerSnapshot,
   getQuotationSalesTypeSnapshot,
+  getQuotationSalesTypeOptionKey,
 };
