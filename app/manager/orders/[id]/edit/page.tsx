@@ -1,0 +1,167 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import {
+  OrderForm,
+  type OrderFormSubmitPayload,
+} from "@/components/orders/order-form";
+import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
+import { SectionHeader } from "@/components/shared/section-header";
+import { getErrorMessage } from "@/lib/api/api-error";
+import type { OrderEditData } from "@/lib/models/order.model";
+import {
+  getOrderEditData,
+  updatePendingOrder,
+} from "@/lib/services/order.service";
+import { formatFaDigits } from "@/lib/utils/number-format";
+
+export default function ManagerOrderEditPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const [editData, setEditData] = useState<OrderEditData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadOrder() {
+      setIsLoading(true);
+      setError("");
+      console.info("[ORDER_EDIT_LOADING]", {
+        orderId: params.id,
+        role: "manager",
+      });
+      try {
+        const orderData = await getOrderEditData(params.id);
+        if (isMounted) {
+          setEditData(orderData);
+          console.info("[ORDER_EDIT_INITIAL_VALUES]", {
+            orderId: params.id,
+            customerObjectId: orderData.order.customerObjectId,
+            salesTypeObjectId:
+              orderData.order.salesTypeObjectId ||
+              orderData.order.saleTypeObjectId ||
+              null,
+            priceListId: orderData.order.priceListId || null,
+            itemCount: orderData.order.items.length,
+          });
+        }
+      } catch (loadError) {
+        if (isMounted) setError(getErrorMessage(loadError));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadOrder();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params.id]);
+
+  const handleSubmit = async (payload: OrderFormSubmitPayload) => {
+    if (!editData?.order) return;
+
+    setIsSubmitting(true);
+    try {
+      console.info("[ORDER_EDIT_UPDATE_PAYLOAD]", {
+        orderId: editData.order.objectId,
+        role: "manager",
+        payload,
+      });
+      const updatedOrder = await updatePendingOrder(
+        editData.order.objectId,
+        payload,
+      );
+      console.info("[ORDER_EDIT_SAVE_RESULT]", {
+        orderId: updatedOrder.objectId,
+        customerObjectId: updatedOrder.customerObjectId,
+        salesTypeObjectId: updatedOrder.salesTypeObjectId || null,
+        priceListId: updatedOrder.priceListId || null,
+      });
+      router.push(`/manager/orders/${updatedOrder.objectId}`);
+    } catch (submitError) {
+      console.error("[ORDER_EDIT_SAVE_FAILED]", {
+        orderId: editData.order.objectId,
+        role: "manager",
+        error: submitError,
+      });
+      throw submitError;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <DashboardLayout role="manager" title="ویرایش سفارش">
+      {isLoading ? (
+        <LoadingState
+          title="در حال دریافت سفارش"
+          description="اطلاعات سفارش از سرور دریافت می شود."
+        />
+      ) : error && !editData?.order ? (
+        <PageErrorMessage title="دریافت سفارش انجام نشد" message={error} />
+      ) : !editData?.order ? (
+        <EmptyState
+          title="سفارش یافت نشد"
+          description="شناسه سفارش معتبر نیست یا رکوردی برای آن وجود ندارد."
+        />
+      ) : !canManagerEdit(editData) ? (
+        <div className="space-y-4">
+          <EmptyState
+            title="این سفارش دیگر قابل ویرایش نیست."
+            description={
+              editData.editBlockedReason ||
+              "بعد از ثبت نهایی یا خروج از انبار امکان ویرایش سفارش برای مدیر فروش وجود ندارد."
+            }
+          />
+          <div className="flex justify-center">
+            <Link
+              href={`/manager/orders/${editData.order.objectId}`}
+              className="rounded-xl bg-[#1F3A5F] px-4 py-2 text-sm font-semibold text-white"
+            >
+              بازگشت به جزئیات سفارش
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <>
+          <SectionHeader
+            title={`ویرایش ${formatFaDigits(editData.order.code)}`}
+            description="مدیر فروش می‌تواند فیلدهای اصلی سفارش را با همان قواعد جاری ویرایش کند."
+            actions={
+              <Link
+                href={`/manager/orders/${editData.order.objectId}`}
+                className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
+              >
+                بازگشت به جزئیات
+              </Link>
+            }
+          />
+
+          <OrderForm
+            mode="edit"
+            initialOrder={editData.order}
+            submitLabel="ذخیره تغییرات"
+            isSubmitting={isSubmitting}
+            initialProducts={editData.products}
+            initialCustomers={editData.customers}
+            onSubmit={handleSubmit}
+          />
+        </>
+      )}
+    </DashboardLayout>
+  );
+}
+
+function canManagerEdit(editData: OrderEditData): boolean {
+  return editData.canEdit;
+}

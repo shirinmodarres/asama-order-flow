@@ -62,8 +62,8 @@ export default function SalesQuotationPdfPage() {
   const itemPages = useMemo(
     () =>
       chunkRowsByPage(itemRows, {
-        firstPageRows: 4,
-        nextPageRows: 6,
+        firstPageRows: 12,
+        nextPageRows: 12,
       }),
     [itemRows],
   );

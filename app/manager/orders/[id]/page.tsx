@@ -409,12 +409,22 @@ export default function ManagerOrderReviewPage() {
         title="بررسی جزئیات سفارش"
         description="ثبت تصمیم نهایی مدیر فروش برای شروع یا توقف فرآیند انبار"
         actions={
-          <Link
-            href="/manager/pending-orders"
-            className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
-          >
-            بازگشت به لیست
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {order.canEdit ? (
+              <Link
+                href={`/manager/orders/${order.objectId}/edit`}
+                className="rounded-xl bg-[#1F3A5F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#16304D]"
+              >
+                ویرایش ویژه
+              </Link>
+            ) : null}
+            <Link
+              href="/manager/pending-orders"
+              className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
+            >
+              بازگشت به لیست
+            </Link>
+          </div>
         }
       />
 
