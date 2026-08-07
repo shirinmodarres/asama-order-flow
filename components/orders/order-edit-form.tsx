@@ -611,7 +611,7 @@ export function OrderEditForm({
               const editableAvailableQuantity = product
                 ? Math.max(
                     0,
-                    (product.availableForSale ?? product.availableSalesQuantity ?? 0) +
+                    (product.availableForSale ?? 0) +
                       originalQuantity -
                       item.quantity,
                   )
