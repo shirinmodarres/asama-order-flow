@@ -293,10 +293,11 @@ export function OrderForm({
     () => (mode === "edit" ? buildOrderSalesTypeFallback(initialOrder) : null),
     [initialOrder],
   );
-  const canEditCustomerFields = mode !== "edit" || editScope === "manager";
-  const canEditOrderItems = mode !== "edit" || editScope === "manager";
-  const canEditRecipientFields = mode !== "edit" || editScope === "manager";
-  const canEditDescription = mode !== "edit" || editScope === "manager";
+  const canEditCustomerFields = mode !== "edit" || editScope !== "expert";
+  const canEditItemSelection = mode !== "edit" || editScope !== "expert";
+  const canEditItemQuantity = mode !== "edit" || editScope !== "expert";
+  const canEditRecipientFields = mode !== "edit" || editScope !== "expert";
+  const canEditDescription = mode !== "edit" || editScope !== "expert";
 
   useEffect(() => {
     let mounted = true;
@@ -1680,7 +1681,7 @@ export function OrderForm({
             placeholder="انتخاب روش پرداخت"
             searchPlaceholder="جستجو در روش پرداخت"
             emptyMessage="روش پرداختی پیدا نشد"
-            disabled={isEditMode}
+            disabled={isEditMode && editScope === "expert"}
             invalid={Boolean(fieldErrors.salesTypeObjectId)}
           />
           <FieldError message={fieldErrors.salesTypeObjectId} />
@@ -1825,7 +1826,7 @@ export function OrderForm({
                           isLoadingAssignment ||
                           isLoadingProducts ||
                           Boolean(productsError))
-                        || (isEditMode && !canEditOrderItems)
+                        || (isEditMode && !canEditItemSelection)
                       }
                       invalid={Boolean(rowErrors[item.rowId]?.productId)}
                     />
@@ -1896,8 +1897,8 @@ export function OrderForm({
                           quantity: toNumber(event.target.value),
                         })
                       }
-                      readOnly={isEditMode && !canEditOrderItems}
-                      disabled={isEditMode && !canEditOrderItems}
+                      readOnly={isEditMode && !canEditItemQuantity}
+                      disabled={isEditMode && !canEditItemQuantity}
                       className="h-10 w-24 px-2 text-center text-sm font-semibold"
                       aria-invalid={Boolean(rowErrors[item.rowId]?.quantity)}
                     />
@@ -1927,7 +1928,7 @@ export function OrderForm({
                     variant="outline"
                     size="icon"
                     aria-label="حذف آیتم"
-                    disabled={isEditMode && !canEditOrderItems}
+                    disabled={isEditMode && !canEditItemSelection}
                     className="size-10 self-start justify-self-start rounded-xl sm:justify-self-center"
                   >
                     <Trash2 className="size-4" />
@@ -1960,7 +1961,7 @@ export function OrderForm({
           </label>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" onClick={addRow} disabled={isEditMode && !canEditOrderItems}>
+          <Button type="button" variant="outline" onClick={addRow} disabled={isEditMode && !canEditItemSelection}>
             افزودن آیتم
           </Button>
 
