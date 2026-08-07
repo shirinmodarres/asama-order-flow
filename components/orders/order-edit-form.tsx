@@ -229,6 +229,15 @@ export function OrderEditForm({
       }, {}),
     [products],
   );
+  const originalQuantityByProductId = useMemo(
+    () =>
+      order.items.reduce<Map<string, number>>((accumulator, item) => {
+        if (!item.productId) return accumulator;
+        accumulator.set(item.productId, Number(item.quantity || 0));
+        return accumulator;
+      }, new Map<string, number>()),
+    [order.items],
+  );
 
   const totalItems = items.length;
   const totalQuantity = items.reduce((sum, item) => sum + (Number.isFinite(item.quantity) ? item.quantity : 0), 0);
@@ -597,6 +606,16 @@ export function OrderEditForm({
           <div className="mt-5 grid gap-4">
             {items.map((item, index) => {
               const product = productMap[item.productObjectId];
+              const originalQuantity =
+                originalQuantityByProductId.get(item.productObjectId) ?? item.quantity;
+              const editableAvailableQuantity = product
+                ? Math.max(
+                    0,
+                    (product.availableForSale ?? product.availableSalesQuantity ?? 0) +
+                      originalQuantity -
+                      item.quantity,
+                  )
+                : 0;
               return (
                 <div key={item.rowId} className="rounded-2xl border border-[#E7EDF3] bg-white p-4">
                   <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
@@ -650,7 +669,7 @@ export function OrderEditForm({
                       <div className="rounded-2xl border border-[#EEF2F6] bg-[#FBFCFD] px-3 py-2.5">
                         <p className="text-xs text-[#6B7280]">موجودی قابل ویرایش</p>
                         <p className="mt-1 font-semibold text-[#102034]">
-                          {formatFaDigits(product.availableForSale ?? product.availableSalesQuantity ?? 0)}
+                          {formatFaDigits(editableAvailableQuantity)}
                         </p>
                       </div>
                       <div className="rounded-2xl border border-[#EEF2F6] bg-[#FBFCFD] px-3 py-2.5">
@@ -669,6 +688,7 @@ export function OrderEditForm({
                           type="text"
                           inputMode="numeric"
                           pattern="[0-9۰-۹٠-٩]*"
+                          max={editableAvailableQuantity}
                           value={item.quantity}
                           onChange={(event) =>
                             updateRow(item.rowId, { quantity: toNumber(normalizeDigits(event.target.value)) })
