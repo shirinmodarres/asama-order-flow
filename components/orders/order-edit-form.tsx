@@ -105,7 +105,7 @@ export function OrderEditForm({
     order.priceListId || order.priceList?.objectId || "",
   );
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    getOrderSalesTypeKey(order),
+    order.salesTypeObjectId || "",
   );
   const [selectedAddressId, setSelectedAddressId] = useState(
     getOrderCustomerAddressKey(order) || "",
@@ -764,21 +764,19 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
   const objectId =
     order.salesTypeObjectId ||
-    order.saleTypeObjectId ||
     order.salesType?.objectId ||
-    order.saleType?.objectId ||
     "";
-  const title = order.salesTypeTitle || order.saleTypeTitle || order.salesType?.title || order.saleType?.title || "";
+  const title =
+    order.salesTypeTitle ||
+    order.salesType?.title ||
+    "";
   const internalCode =
     order.salesTypeInternalCode ??
-    order.saleType?.sepidarSaleTypeId ??
     order.salesType?.internalCode ??
     null;
   const sepidarCode =
     order.salesTypeSepidarCode ??
-    order.sepidarSaleTypeId ??
     order.salesType?.sepidarCode ??
-    order.saleType?.sepidarSaleTypeId ??
     null;
 
   if (!objectId && !title && internalCode === null && sepidarCode === null) {
@@ -794,13 +792,7 @@ function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
 }
 
 function getOrderSalesTypeKey(order: Order): string {
-  const fallback = getOrderSalesTypeSnapshot(order);
-  return (
-    fallback?.objectId ||
-    fallback?.title ||
-    String(fallback?.internalCode ?? fallback?.sepidarCode ?? "") ||
-    ""
-  );
+  return order.salesTypeObjectId || order.salesType?.objectId || "";
 }
 
 function getOrderPriceListSnapshot(order: Order): PriceListOption | null {
