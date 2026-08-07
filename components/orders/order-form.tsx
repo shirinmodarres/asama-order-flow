@@ -23,7 +23,7 @@ import {
 import type { Customer, CustomerAddress } from "@/lib/models/customer.model";
 import type { Order, OrderItem } from "@/lib/models/order.model";
 import type { Product } from "@/lib/models/product.model";
-import { listCustomerAddresses, listCustomers } from "@/lib/services/customer.service";
+import { listCustomers } from "@/lib/services/customer.service";
 import { getStoredCurrentUser } from "@/lib/services/auth.service";
 import { listActiveSalesTypes } from "@/lib/services/sales-type.service";
 import {
@@ -205,6 +205,7 @@ interface OrderFormProps {
   isSubmitting?: boolean;
   assignedCustomersOnly?: boolean;
   sepidarProductsOnly?: boolean;
+  editScope?: "manager" | "expert" | "full";
   initialProducts?: Product[];
   initialCustomers?: Customer[];
   lockCustomer?: boolean;
@@ -218,6 +219,7 @@ export function OrderForm({
   isSubmitting = false,
   assignedCustomersOnly = false,
   sepidarProductsOnly = false,
+  editScope = "full",
   initialProducts,
   initialCustomers,
   lockCustomer = false,
@@ -291,6 +293,10 @@ export function OrderForm({
     () => (mode === "edit" ? buildOrderSalesTypeFallback(initialOrder) : null),
     [initialOrder],
   );
+  const canEditCustomerFields = mode !== "edit" || editScope === "manager";
+  const canEditOrderItems = mode !== "edit" || editScope === "manager";
+  const canEditRecipientFields = mode !== "edit" || editScope === "manager";
+  const canEditDescription = mode !== "edit" || editScope === "manager";
 
   useEffect(() => {
     let mounted = true;
@@ -631,9 +637,10 @@ export function OrderForm({
       setError("");
 
       try {
-        const data = await listCustomerAddresses(selectedCustomerId);
         if (!isMounted) return;
-        const normalizedAddresses = data.map(normalizeOrderCustomerAddress);
+        const normalizedAddresses = getResolvedSepidarAddresses(customer).map(
+          normalizeOrderCustomerAddress,
+        );
         const uniqueAddresses = dedupeCustomerAddresses(normalizedAddresses);
         setAddresses(uniqueAddresses);
         if (process.env.NODE_ENV === "development") {
@@ -797,13 +804,6 @@ export function OrderForm({
   const resolvedSelectedSalesType = mode === "edit"
     ? selectedSalesType
     : (selectedSalesTypeFromActiveList || selectedSalesType);
-  const selectedSalesTypeIsSelectable = Boolean(
-    resolvedSelectedSalesType &&
-      (salesTypes.some((item) => getSalesTypeOptionKey(item) === getSalesTypeOptionKey(resolvedSelectedSalesType)) ||
-        (isEditMode &&
-          orderSalesTypeFallback &&
-          orderSalesTypeFallback.objectId === resolvedSelectedSalesType.objectId)),
-  );
   const orderSalesTypeSnapshot = getOrderSalesTypeSnapshot(initialOrder);
   const orderSalesTypeTitle = orderSalesTypeSnapshot?.title || null;
   const orderSalesTypeOptionId =
@@ -848,44 +848,6 @@ export function OrderForm({
         }
       : null;
 
-  useEffect(() => {
-    if (!initialOrder || mode !== "edit") return;
-
-    const snapshot = getOrderSalesTypeSnapshot(initialOrder);
-    if (!snapshot) return;
-
-    const matchedSalesType =
-      mergedSalesTypes.find(
-        (item) =>
-          getSalesTypeOptionKey(item) === getSalesTypeOptionKey(snapshot) ||
-          item.title === snapshot.title ||
-          (snapshot.sepidarCode !== null && item.sepidarCode === snapshot.sepidarCode) ||
-          (snapshot.internalCode !== null &&
-            item.internalCode !== null &&
-            String(item.internalCode) === String(snapshot.internalCode)),
-      ) || null;
-
-    const nextSelectedId =
-      getSalesTypeOptionKey(matchedSalesType) ||
-      (snapshot.sepidarCode !== null && snapshot.sepidarCode !== undefined
-        ? String(snapshot.sepidarCode)
-        : null) ||
-      (snapshot.internalCode !== null && snapshot.internalCode !== undefined
-        ? String(snapshot.internalCode)
-        : null) ||
-      orderSalesTypeOptionId;
-
-    if (nextSelectedId && nextSelectedId !== selectedSalesTypeId) {
-      setSelectedSalesTypeId(nextSelectedId);
-    }
-  }, [
-    initialOrder,
-    orderSalesTypeOptionId,
-    mergedSalesTypes,
-    orderSalesTypeTitle,
-    mode,
-    selectedSalesTypeId,
-  ]);
   const currentStockTitles = selectedCustomer
     ? getAllowedStockTitles(selectedCustomer)
     : initialOrder?.stockTitle
@@ -1315,7 +1277,8 @@ export function OrderForm({
               disabled={
                 lockCustomer ||
                 isLoadingCustomers ||
-                Boolean(customersError)
+                Boolean(customersError) ||
+                (mode === "edit" && !canEditCustomerFields)
               }
               invalid={Boolean(fieldErrors.selectedCustomerId)}
             />
@@ -1462,7 +1425,11 @@ export function OrderForm({
                   placeholder="انتخاب آدرس"
                   searchPlaceholder="جستجو در آدرس‌ها"
                   emptyMessage="آدرس تحویل موجود نیست"
-                  disabled={!selectedCustomerId || isLoadingAddresses}
+                  disabled={
+                    !selectedCustomerId ||
+                    isLoadingAddresses ||
+                    (mode === "edit" && !canEditCustomerFields)
+                  }
                   invalid={Boolean(fieldErrors.selectedAddressId)}
                 />
                 <FieldError message={fieldErrors.selectedAddressId} />
@@ -1520,6 +1487,8 @@ export function OrderForm({
                     recipientFirstName: "",
                   }));
                 }}
+                readOnly={isEditMode && !canEditRecipientFields}
+                disabled={isEditMode && !canEditRecipientFields}
                 aria-invalid={Boolean(fieldErrors.recipientFirstName)}
               />
               <FieldError message={fieldErrors.recipientFirstName} />
@@ -1536,6 +1505,8 @@ export function OrderForm({
                     recipientLastName: "",
                   }));
                 }}
+                readOnly={isEditMode && !canEditRecipientFields}
+                disabled={isEditMode && !canEditRecipientFields}
                 aria-invalid={Boolean(fieldErrors.recipientLastName)}
               />
               <FieldError message={fieldErrors.recipientLastName} />
@@ -1553,6 +1524,8 @@ export function OrderForm({
                     recipientNationalId: "",
                   }));
                 }}
+                readOnly={isEditMode && !canEditRecipientFields}
+                disabled={isEditMode && !canEditRecipientFields}
                 aria-invalid={Boolean(fieldErrors.recipientNationalId)}
               />
               <FieldError message={fieldErrors.recipientNationalId} />
@@ -1570,6 +1543,8 @@ export function OrderForm({
                     recipientMobile: "",
                   }));
                 }}
+                readOnly={isEditMode && !canEditRecipientFields}
+                disabled={isEditMode && !canEditRecipientFields}
                 aria-invalid={Boolean(fieldErrors.recipientMobile)}
               />
               <FieldError message={fieldErrors.recipientMobile} />
@@ -1705,6 +1680,7 @@ export function OrderForm({
             placeholder="انتخاب روش پرداخت"
             searchPlaceholder="جستجو در روش پرداخت"
             emptyMessage="روش پرداختی پیدا نشد"
+            disabled={isEditMode}
             invalid={Boolean(fieldErrors.salesTypeObjectId)}
           />
           <FieldError message={fieldErrors.salesTypeObjectId} />
@@ -1849,6 +1825,7 @@ export function OrderForm({
                           isLoadingAssignment ||
                           isLoadingProducts ||
                           Boolean(productsError))
+                        || (isEditMode && !canEditOrderItems)
                       }
                       invalid={Boolean(rowErrors[item.rowId]?.productId)}
                     />
@@ -1919,6 +1896,8 @@ export function OrderForm({
                           quantity: toNumber(event.target.value),
                         })
                       }
+                      readOnly={isEditMode && !canEditOrderItems}
+                      disabled={isEditMode && !canEditOrderItems}
                       className="h-10 w-24 px-2 text-center text-sm font-semibold"
                       aria-invalid={Boolean(rowErrors[item.rowId]?.quantity)}
                     />
@@ -1948,6 +1927,7 @@ export function OrderForm({
                     variant="outline"
                     size="icon"
                     aria-label="حذف آیتم"
+                    disabled={isEditMode && !canEditOrderItems}
                     className="size-10 self-start justify-self-start rounded-xl sm:justify-self-center"
                   >
                     <Trash2 className="size-4" />
@@ -1967,18 +1947,20 @@ export function OrderForm({
           </div>
         </div>
 
-        <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">
-          <span>یادداشت</span>
-          <Textarea
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="توضیحات داخلی سفارش"
-            rows={3}
-          />
-        </label>
+          <label className="mt-5 grid gap-2 text-sm font-medium text-[#334155]">
+            <span>یادداشت</span>
+            <Textarea
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="توضیحات داخلی سفارش"
+              rows={3}
+              readOnly={isEditMode && !canEditDescription}
+              disabled={isEditMode && !canEditDescription}
+            />
+          </label>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" onClick={addRow}>
+          <Button type="button" variant="outline" onClick={addRow} disabled={isEditMode && !canEditOrderItems}>
             افزودن آیتم
           </Button>
 

@@ -34,9 +34,16 @@ export function normalizeOrderEditPayload(
     customerName: trimOrUndefined(editPayload.customerName),
     createdByName: trimOrUndefined(editPayload.createdByName),
     expertUserId: trimOrUndefined(editPayload.expertUserId),
-    salesTypeObjectId: trimOrUndefined(
-      editPayload.salesTypeObjectId ?? editPayload.saleTypeObjectId,
-    ),
+    salesTypeObjectId:
+      trimOrUndefined(
+        editPayload.salesTypeObjectId ?? editPayload.saleTypeObjectId,
+      ) &&
+      !editPayload.salesTypeInternalCode &&
+      !editPayload.salesTypeSepidarCode
+        ? trimOrUndefined(
+            editPayload.salesTypeObjectId ?? editPayload.saleTypeObjectId,
+          )
+        : undefined,
     salesTypeTitle: trimOrNull(
       (editPayload as { salesTypeTitle?: string | null }).salesTypeTitle,
     ),

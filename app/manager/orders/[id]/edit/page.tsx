@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingState } from "@/components/shared/loading-state";
-import { PageErrorMessage } from "@/components/shared/page-error-message";
-import { SectionHeader } from "@/components/shared/section-header";
 import {
   OrderForm,
   type OrderFormSubmitPayload,
 } from "@/components/orders/order-form";
+import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingState } from "@/components/shared/loading-state";
+import { PageErrorMessage } from "@/components/shared/page-error-message";
+import { SectionHeader } from "@/components/shared/section-header";
 import { getErrorMessage } from "@/lib/api/api-error";
 import type { OrderEditData } from "@/lib/models/order.model";
 import {
@@ -20,7 +20,7 @@ import {
 } from "@/lib/services/order.service";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
-export default function EditExpertOrderPage() {
+export default function ManagerOrderEditPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [editData, setEditData] = useState<OrderEditData | null>(null);
@@ -36,6 +36,7 @@ export default function EditExpertOrderPage() {
       setError("");
       console.info("[ORDER_EDIT_LOADING]", {
         orderId: params.id,
+        role: "manager",
       });
       try {
         const orderData = await getOrderEditData(params.id);
@@ -44,7 +45,10 @@ export default function EditExpertOrderPage() {
           console.info("[ORDER_EDIT_INITIAL_VALUES]", {
             orderId: params.id,
             customerObjectId: orderData.order.customerObjectId,
-            salesTypeObjectId: orderData.order.salesTypeObjectId || orderData.order.saleTypeObjectId || null,
+            salesTypeObjectId:
+              orderData.order.salesTypeObjectId ||
+              orderData.order.saleTypeObjectId ||
+              null,
             priceListId: orderData.order.priceListId || null,
             itemCount: orderData.order.items.length,
           });
@@ -70,6 +74,7 @@ export default function EditExpertOrderPage() {
     try {
       console.info("[ORDER_EDIT_UPDATE_PAYLOAD]", {
         orderId: editData.order.objectId,
+        role: "manager",
         payload,
       });
       const updatedOrder = await updatePendingOrder(
@@ -82,10 +87,11 @@ export default function EditExpertOrderPage() {
         salesTypeObjectId: updatedOrder.salesTypeObjectId || null,
         priceListId: updatedOrder.priceListId || null,
       });
-      router.push(`/expert/orders/${updatedOrder.objectId}`);
+      router.push(`/manager/orders/${updatedOrder.objectId}`);
     } catch (submitError) {
       console.error("[ORDER_EDIT_SAVE_FAILED]", {
         orderId: editData.order.objectId,
+        role: "manager",
         error: submitError,
       });
       throw submitError;
@@ -95,7 +101,7 @@ export default function EditExpertOrderPage() {
   };
 
   return (
-    <DashboardLayout role="expert" title="ویرایش سفارش">
+    <DashboardLayout role="manager" title="ویرایش سفارش">
       {isLoading ? (
         <LoadingState
           title="در حال دریافت سفارش"
@@ -108,18 +114,18 @@ export default function EditExpertOrderPage() {
           title="سفارش یافت نشد"
           description="شناسه سفارش معتبر نیست یا رکوردی برای آن وجود ندارد."
         />
-      ) : !canExpertEdit(editData) ? (
+      ) : !canManagerEdit(editData) ? (
         <div className="space-y-4">
           <EmptyState
             title="این سفارش دیگر قابل ویرایش نیست."
             description={
               editData.editBlockedReason ||
-              "بعد از تأیید مدیر امکان ویرایش سفارش برای کارشناس وجود ندارد."
+              "بعد از ثبت نهایی یا خروج از انبار امکان ویرایش سفارش برای مدیر فروش وجود ندارد."
             }
           />
           <div className="flex justify-center">
             <Link
-              href={`/expert/orders/${editData.order.objectId}`}
+              href={`/manager/orders/${editData.order.objectId}`}
               className="rounded-xl bg-[#1F3A5F] px-4 py-2 text-sm font-semibold text-white"
             >
               بازگشت به جزئیات سفارش
@@ -130,10 +136,10 @@ export default function EditExpertOrderPage() {
         <>
           <SectionHeader
             title={`ویرایش ${formatFaDigits(editData.order.code)}`}
-            description="فیلدهای این فرم با ثبت سفارش جدید یکسان است."
+            description="مدیر فروش می‌تواند فیلدهای اصلی سفارش را با همان قواعد جاری ویرایش کند."
             actions={
               <Link
-                href={`/expert/orders/${editData.order.objectId}`}
+                href={`/manager/orders/${editData.order.objectId}`}
                 className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
               >
                 بازگشت به جزئیات
@@ -146,9 +152,7 @@ export default function EditExpertOrderPage() {
             initialOrder={editData.order}
             submitLabel="ذخیره تغییرات"
             isSubmitting={isSubmitting}
-            editScope="expert"
-            assignedCustomersOnly
-            sepidarProductsOnly
+            editScope="manager"
             initialProducts={editData.products}
             initialCustomers={editData.customers}
             onSubmit={handleSubmit}
@@ -159,6 +163,6 @@ export default function EditExpertOrderPage() {
   );
 }
 
-function canExpertEdit(editData: OrderEditData): boolean {
+function canManagerEdit(editData: OrderEditData): boolean {
   return editData.canEdit;
 }
