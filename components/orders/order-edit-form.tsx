@@ -201,6 +201,10 @@ export function OrderEditForm({
     salesTypes.find((item) => getSalesTypeKey(item.objectId) === resolvedSalesTypeKey) ||
     resolveOrderSalesTypeOption(order, salesTypes) ||
     getOrderSalesTypeSnapshot(order);
+  const selectedSalesTypeForSubmit =
+    selectedSalesType ||
+    resolveOrderSalesTypeOption(order, salesTypes) ||
+    getOrderSalesTypeSnapshot(order);
 
   const priceListOptions = useMemo(
     () => getCustomerPriceListOptions(selectedCustomer, order),
@@ -335,10 +339,10 @@ export function OrderEditForm({
         order.orderType === "naja" ? normalizeDigits(najaOrderNumber.trim()) || undefined : undefined,
       najaPurchaseDate: order.orderType === "naja" ? (najaPurchaseDate || null) : undefined,
       notes: trimOrUndefined(notes),
-      salesTypeObjectId: selectedSalesType?.objectId || undefined,
-      salesTypeTitle: selectedSalesType?.title || undefined,
-      salesTypeInternalCode: selectedSalesType?.internalCode ?? undefined,
-      salesTypeSepidarCode: selectedSalesType?.sepidarCode ?? undefined,
+      salesTypeObjectId: selectedSalesTypeForSubmit?.objectId || undefined,
+      salesTypeTitle: selectedSalesTypeForSubmit?.title || undefined,
+      salesTypeInternalCode: selectedSalesTypeForSubmit?.internalCode ?? undefined,
+      salesTypeSepidarCode: selectedSalesTypeForSubmit?.sepidarCode ?? undefined,
       priceListId: selectedPriceList?.objectId || undefined,
       ...addressPayload,
       items: items.map((item) => {
