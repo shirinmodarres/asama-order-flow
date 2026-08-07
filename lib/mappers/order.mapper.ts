@@ -170,12 +170,12 @@ export function mapOrderDto(dto: unknown): Order {
               record.saleTypeObjectId ?? record.salesTypeObjectId ?? saleTypeRecord.objectId,
             ),
             sepidarSaleTypeId:
-              record.sepidarSaleTypeId === undefined ||
-              record.sepidarSaleTypeId === null
-                ? (record.salesTypeSepidarCode === undefined || record.salesTypeSepidarCode === null
-                  ? null
-                  : toNumberValue(record.salesTypeSepidarCode))
-                : toNumberValue(record.sepidarSaleTypeId),
+            record.sepidarSaleTypeId === undefined ||
+            record.sepidarSaleTypeId === null
+              ? (record.salesTypeSepidarCode === undefined || record.salesTypeSepidarCode === null
+                ? null
+                : toNumberValue(record.salesTypeSepidarCode))
+              : toNumberValue(record.sepidarSaleTypeId),
             title: toNullableString(record.saleTypeTitle ?? record.salesTypeTitle ?? saleTypeRecord.title),
           }
       : null,

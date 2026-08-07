@@ -105,7 +105,9 @@ export function OrderEditForm({
     order.priceListId || order.priceList?.objectId || "",
   );
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    order.salesTypeObjectId || "",
+    order.salesTypeObjectId ||
+      order.saleTypeObjectId ||
+      "",
   );
   const [selectedAddressId, setSelectedAddressId] = useState(
     getOrderCustomerAddressKey(order) || "",
@@ -781,6 +783,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
   const objectId =
     order.salesTypeObjectId ||
+    order.saleTypeObjectId ||
     order.salesType?.objectId ||
     "";
   const title =
@@ -793,6 +796,7 @@ function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
     null;
   const sepidarCode =
     order.salesTypeSepidarCode ??
+    order.sepidarSaleTypeId ??
     order.salesType?.sepidarCode ??
     null;
 
@@ -819,8 +823,14 @@ function resolveOrderSalesTypeOption(
     (order.salesTypeObjectId
       ? salesTypes.find((item) => item.objectId === order.salesTypeObjectId)
       : null) ||
+    (order.saleTypeObjectId
+      ? salesTypes.find((item) => item.objectId === order.saleTypeObjectId)
+      : null) ||
     (order.salesTypeSepidarCode !== null && order.salesTypeSepidarCode !== undefined
       ? salesTypes.find((item) => item.sepidarCode === order.salesTypeSepidarCode)
+      : null) ||
+    (order.sepidarSaleTypeId !== null && order.sepidarSaleTypeId !== undefined
+      ? salesTypes.find((item) => item.sepidarCode === order.sepidarSaleTypeId)
       : null) ||
     (order.salesTypeInternalCode !== null && order.salesTypeInternalCode !== undefined
       ? salesTypes.find((item) => item.internalCode === order.salesTypeInternalCode)
