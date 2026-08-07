@@ -781,6 +781,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
+  const legacySaleTypeCode = (order as Order & { saleTypeCode?: number | null }).saleTypeCode ?? null;
   const objectId =
     order.salesTypeObjectId ||
     order.saleTypeObjectId ||
@@ -797,6 +798,7 @@ function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
   const sepidarCode =
     order.salesTypeSepidarCode ??
     order.sepidarSaleTypeId ??
+    legacySaleTypeCode ??
     order.salesType?.sepidarCode ??
     null;
 
@@ -818,6 +820,7 @@ function resolveOrderSalesTypeOption(
 ): SalesTypeOption | null {
   if (!salesTypes.length) return getOrderSalesTypeSnapshot(order);
 
+  const legacySaleTypeCode = (order as Order & { saleTypeCode?: number | null }).saleTypeCode ?? null;
   const snapshot = getOrderSalesTypeSnapshot(order);
   const matched =
     (order.salesTypeObjectId
@@ -831,6 +834,9 @@ function resolveOrderSalesTypeOption(
       : null) ||
     (order.sepidarSaleTypeId !== null && order.sepidarSaleTypeId !== undefined
       ? salesTypes.find((item) => item.sepidarCode === order.sepidarSaleTypeId)
+      : null) ||
+    (legacySaleTypeCode !== null && legacySaleTypeCode !== undefined
+      ? salesTypes.find((item) => item.sepidarCode === legacySaleTypeCode)
       : null) ||
     (order.salesTypeInternalCode !== null && order.salesTypeInternalCode !== undefined
       ? salesTypes.find((item) => item.internalCode === order.salesTypeInternalCode)

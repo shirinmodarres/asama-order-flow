@@ -213,6 +213,7 @@ function mergeOrderProducts(products: ReturnType<typeof mapProductOrderOptionLis
 }
 
 function mergeOrderEditSnapshot(order: Order, record: Record<string, unknown>): Order {
+  const legacyOrder = order as Order & { saleTypeCode?: number | null };
   const priceList = toRecord(record.priceList);
   const saleType = toRecord(record.saleType);
   const salesType = toRecord(record.salesType);
@@ -252,6 +253,7 @@ function mergeOrderEditSnapshot(order: Order, record: Record<string, unknown>): 
   const salesTypeSepidarCode =
     order.salesTypeSepidarCode ??
     order.sepidarSaleTypeId ??
+    legacyOrder.saleTypeCode ??
     toNumberSnapshot(salesType.sepidarCode) ??
     toNumberSnapshot(saleType.sepidarSaleTypeId) ??
     null;
