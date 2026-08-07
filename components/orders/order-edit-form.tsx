@@ -647,12 +647,12 @@ export function OrderEditForm({
                     <label className="grid gap-2 text-sm font-medium text-[#334155]">
                       <span>تعداد</span>
                         <Input
-                          type="number"
-                          min={1}
-                          step={1}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9۰-۹٠-٩]*"
                           value={item.quantity}
                           onChange={(event) =>
-                            updateRow(item.rowId, { quantity: toNumber(event.target.value) })
+                            updateRow(item.rowId, { quantity: toNumber(normalizeDigits(event.target.value)) })
                           }
                           disabled={!canEditItemQuantity}
                           readOnly={!canEditItemQuantity}
@@ -762,15 +762,23 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
-  const objectId = order.salesTypeObjectId || order.salesType?.objectId || "";
-  const title = order.salesTypeTitle || order.salesType?.title || "";
+  const objectId =
+    order.salesTypeObjectId ||
+    order.saleTypeObjectId ||
+    order.salesType?.objectId ||
+    order.saleType?.objectId ||
+    "";
+  const title = order.salesTypeTitle || order.saleTypeTitle || order.salesType?.title || order.saleType?.title || "";
   const internalCode =
     order.salesTypeInternalCode ??
+    order.saleType?.sepidarSaleTypeId ??
     order.salesType?.internalCode ??
     null;
   const sepidarCode =
     order.salesTypeSepidarCode ??
+    order.sepidarSaleTypeId ??
     order.salesType?.sepidarCode ??
+    order.saleType?.sepidarSaleTypeId ??
     null;
 
   if (!objectId && !title && internalCode === null && sepidarCode === null) {
@@ -778,7 +786,7 @@ function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
   }
 
   return {
-    objectId: objectId || title || String(internalCode ?? sepidarCode ?? ""),
+    objectId: objectId || "",
     title: title || "-",
     internalCode,
     sepidarCode,
@@ -787,7 +795,12 @@ function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
 
 function getOrderSalesTypeKey(order: Order): string {
   const fallback = getOrderSalesTypeSnapshot(order);
-  return fallback?.objectId || "";
+  return (
+    fallback?.objectId ||
+    fallback?.title ||
+    String(fallback?.internalCode ?? fallback?.sepidarCode ?? "") ||
+    ""
+  );
 }
 
 function getOrderPriceListSnapshot(order: Order): PriceListOption | null {

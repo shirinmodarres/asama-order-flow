@@ -46,6 +46,7 @@ export async function getOrderEditData(objectId: string): Promise<OrderEditData>
     record.productOptions ??
     record.availableProducts ??
     [];
+  const editItemSource = toArray((record.items ?? toRecord(orderSource).items) as unknown);
   const customerSource =
     record.customers ??
     record.assignedCustomers ??
@@ -69,7 +70,31 @@ export async function getOrderEditData(objectId: string): Promise<OrderEditData>
           ? record.reason
           : null,
     products: mergeOrderProducts(
-      mapProductOrderOptionListDto(toArray(productSource)),
+      mapProductOrderOptionListDto(
+        toArray(productSource).length
+          ? toArray(productSource)
+          : editItemSource.map((item) => {
+              const itemRecord = toRecord(item);
+              return {
+                objectId: itemRecord.productObjectId ?? itemRecord.productId ?? itemRecord.objectId ?? null,
+                id: itemRecord.productSku ?? itemRecord.sepidarCode ?? itemRecord.productObjectId ?? itemRecord.productId ?? null,
+                sku: itemRecord.productSku ?? itemRecord.sepidarCode ?? itemRecord.productObjectId ?? itemRecord.productId ?? null,
+                sepidarCode: itemRecord.sepidarCode ?? itemRecord.productSku ?? itemRecord.productObjectId ?? itemRecord.productId ?? null,
+                name: itemRecord.productName ?? itemRecord.name ?? "",
+                title: itemRecord.productName ?? itemRecord.name ?? "",
+                brand: itemRecord.brand ?? "",
+                brandName: itemRecord.brandName ?? itemRecord.brand ?? null,
+                unitPrice: itemRecord.unitPrice ?? 0,
+                availableForSale: itemRecord.availableForSale ?? itemRecord.availableSalesQuantity ?? 0,
+                availableSalesQuantity: itemRecord.availableForSale ?? itemRecord.availableSalesQuantity ?? 0,
+                salesCapacity: itemRecord.availableForSale ?? itemRecord.availableSalesQuantity ?? 0,
+                availableStocks: itemRecord.availableStocks ?? [],
+                priceListId: itemRecord.priceListId ?? null,
+                priceListItemId: itemRecord.priceListItemId ?? null,
+                pricingSource: itemRecord.pricingSource ?? null,
+              };
+            }),
+      ),
       mapOrderDto(orderSource),
     ),
     customers: mapCustomerListDto(toArray(customerSource)),
