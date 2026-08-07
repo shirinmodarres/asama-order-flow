@@ -72,6 +72,19 @@ export const roles: Role[] = [
     accent: "brand",
   },
   {
+    key: "finance-control",
+    title: "کارشناس کنترل مالی",
+    description:
+      "بررسی سفارش های در انتظار تایید مالی و بازگردانی موارد نیازمند اصلاح.",
+    path: "/finance-control",
+    userName: "مهدی شریفی",
+    team: "کنترل مالی سفارش ها",
+    icon: "shield-check",
+    entrySummary:
+      "تأیید مالی سفارش ها و بازگردانی موارد دارای مغایرت برای اصلاح.",
+    accent: "success",
+  },
+  {
     key: "support",
     title: "پشتیبان",
     description:
@@ -225,6 +238,20 @@ export const sidebarByRole: Record<RoleKey, SidebarItem[]> = {
       description: "فهرست اسناد مالی صادرشده",
     },
   ],
+  "finance-control": [
+    {
+      label: "داشبورد",
+      href: "/finance-control",
+      icon: "dashboard",
+      description: "سفارش های در انتظار تایید مالی",
+    },
+    {
+      label: "سفارش های مالی",
+      href: "/finance-control/orders",
+      icon: "clipboard-check",
+      description: "تأیید یا برگشت برای اصلاح",
+    },
+  ],
   support: [
     {
       label: "داشبورد",
@@ -356,6 +383,26 @@ export const statsByRole: Record<RoleKey, DashboardStat[]> = {
     { id: "2", label: "فاکتور صادرشده", value: "۲۳", hint: "در چرخه جاری ماه" },
     { id: "3", label: "مانده تسویه", value: "۸.۲ میلیارد", hint: "ریال" },
   ],
+  "finance-control": [
+    {
+      id: "1",
+      label: "در انتظار تایید مالی",
+      value: "۹",
+      hint: "سفارش های آماده بررسی کنترل مالی",
+    },
+    {
+      id: "2",
+      label: "برگشت برای اصلاح",
+      value: "۳",
+      hint: "نیازمند بازبینی کارشناس فروش",
+    },
+    {
+      id: "3",
+      label: "تایید شده امروز",
+      value: "۱۵",
+      hint: "منتقل شده به صف مدیر فروش",
+    },
+  ],
   support: [
     {
       id: "1",
@@ -462,6 +509,23 @@ export const activityByRole: Record<RoleKey, ActivityItem[]> = {
       id: "3",
       text: "گزارش فاکتورهای روزانه نهایی گردید.",
       time: "۱ ساعت پیش",
+    },
+  ],
+  "finance-control": [
+    {
+      id: "1",
+      text: "سفارش ORD-05-00000163 برای کنترل مالی ثبت شد.",
+      time: "۶ دقیقه پیش",
+    },
+    {
+      id: "2",
+      text: "سفارش ORD-05-00000141 برای اصلاح به کارشناس برگشت داده شد.",
+      time: "۲۱ دقیقه پیش",
+    },
+    {
+      id: "3",
+      text: "تأیید مالی سفارش های جدید با موفقیت انجام شد.",
+      time: "۴۵ دقیقه پیش",
     },
   ],
   support: [

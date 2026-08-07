@@ -174,6 +174,22 @@ export const sidebarByRole: Record<PanelRoleKey, SidebarItem[]> = {
       description: "آماده ثبت در حسابداری",
     },
   ],
+  "finance-control": [
+    {
+      label: "داشبورد",
+      href: "/finance-control",
+      icon: "dashboard",
+      description: "سفارش‌های در انتظار کنترل مالی",
+      group: "داشبورد",
+    },
+    {
+      label: "سفارش‌های مالی",
+      href: "/finance-control/orders",
+      icon: "clipboard-check",
+      description: "تأیید یا برگشت برای اصلاح",
+      group: "سفارش‌ها",
+    },
+  ],
   support: [
     {
       label: "داشبورد",

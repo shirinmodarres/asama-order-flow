@@ -111,6 +111,7 @@ function buildLocationLabel(role: RoleKey, sectionLabel: string): string {
 const PANEL_LOCATION_LABELS: Record<RoleKey, string> = {
   expert: "کارشناس",
   manager: "مدیریت",
+  "finance-control": "کنترل مالی",
   warehouse: "انبار",
   finance: "مالی",
   support: "پشتیبان",

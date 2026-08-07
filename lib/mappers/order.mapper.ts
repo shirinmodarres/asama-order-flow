@@ -350,6 +350,17 @@ export function mapOrderDto(dto: unknown): Order {
       record.reviewRemainingMs === undefined
         ? null
         : toNumberValue(record.reviewRemainingMs),
+    financialApprovalStatus: toNullableString(record.financialApprovalStatus) as
+      | "pending"
+      | "approved"
+      | "needs_correction"
+      | null,
+    financialApprovalStatusLabel: toNullableString(record.financialApprovalStatusLabel),
+    financialApprovedAt: toNullableString(record.financialApprovedAt),
+    financialApprovedBy: toNullableString(record.financialApprovedBy),
+    financialCorrectionReason: toNullableString(record.financialCorrectionReason),
+    financialReturnedAt: toNullableString(record.financialReturnedAt),
+    financialReturnedBy: toNullableString(record.financialReturnedBy),
     sourceLabel: toNullableString(record.sourceLabel),
     notes: toNullableString(record.notes),
     editedByUserId: toNullableString(record.editedByUserId),
