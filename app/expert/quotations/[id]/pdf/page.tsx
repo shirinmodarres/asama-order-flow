@@ -25,32 +25,13 @@ export default function SalesQuotationPdfPage() {
       setError("");
       try {
         const result = await getSalesQuotationPdfData(params.id);
-        if (!isMounted) return;
-
-        setQuotation(result);
-        if (new URLSearchParams(window.location.search).get("print") === "1") {
-          window.setTimeout(async () => {
-            try {
-              await document.fonts?.ready;
-              await Promise.all(
-                Array.from(document.images).map((image) =>
-                  image.complete
-                    ? Promise.resolve()
-                    : new Promise<void>((resolve) => {
-                        image.addEventListener("load", () => resolve(), {
-                          once: true,
-                        });
-                        image.addEventListener("error", () => resolve(), {
-                          once: true,
-                        });
-                      }),
-                ),
-              );
-            } catch {
-              // Print anyway.
-            }
-            if (isMounted) window.print();
-          }, 250);
+        if (isMounted) {
+          setQuotation(result);
+          if (
+            new URLSearchParams(window.location.search).get("print") === "1"
+          ) {
+            window.setTimeout(() => window.print(), 250);
+          }
         }
       } catch (loadError) {
         if (isMounted) setError(getErrorMessage(loadError));
@@ -68,7 +49,7 @@ export default function SalesQuotationPdfPage() {
   const itemRows = useMemo(
     () =>
       quotation?.items.map((item, index) => ({
-        key: String(item.rowNumber || `${item.productObjectId}-${index}`),
+        key: item.rowNumber || `${item.productObjectId}-${index}`,
         rowNumber: item.rowNumber || index + 1,
         sku: item.productSku || "-",
         name: item.productName || "-",
@@ -81,8 +62,8 @@ export default function SalesQuotationPdfPage() {
   const itemPages = useMemo(
     () =>
       chunkRowsByPage(itemRows, {
-        firstPageRows: 4,
-        nextPageRows: 6,
+        firstPageRows: 12,
+        nextPageRows: 12,
       }),
     [itemRows],
   );
@@ -272,16 +253,6 @@ export default function SalesQuotationPdfPage() {
   );
 }
 
-type QuotationItemRow = {
-  key: string;
-  rowNumber: number;
-  sku: string;
-  name: string;
-  qty: number;
-  unitPrice: number;
-  lineTotal: number;
-};
-
 function InlineInfo({
   label,
   value,
@@ -292,7 +263,7 @@ function InlineInfo({
   className?: string;
 }) {
   return (
-    <div className={`flex gap-2 leading-6 ${className ?? ""}`}>
+    <div className={`flex gap-2 leading-5 ${className ?? ""}`}>
       <span className="shrink-0 text-[#64748B]">{label}:</span>
       <strong className="font-semibold text-[#102034]">{value}</strong>
     </div>
@@ -362,6 +333,12 @@ function resolveQuotationAddress(quotation: SalesQuotation): string {
     selected?.fullAddress ||
     customer.sepidarAddress?.Address ||
     customer.sepidarAddress?.address ||
+    customer.addresses?.[0]?.Address ||
+    customer.addresses?.[0]?.address ||
+    customer.defaultAddress?.Address ||
+    customer.defaultAddress?.address ||
+    customer.sepidarAddress?.Address ||
+    customer.sepidarAddress?.address ||
     "-"
   );
 }
@@ -374,22 +351,4 @@ function formatQuotationDate(value: string): string {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
-}
-
-function paginateQuotationRows<T>(
-  rows: T[],
-  firstPageSize: number,
-  continuationSize: number,
-): T[][] {
-  if (rows.length <= firstPageSize) {
-    return [rows];
-  }
-
-  const pages: T[][] = [rows.slice(0, firstPageSize)];
-  let cursor = firstPageSize;
-  while (cursor < rows.length) {
-    pages.push(rows.slice(cursor, cursor + continuationSize));
-    cursor += continuationSize;
-  }
-  return pages;
 }
