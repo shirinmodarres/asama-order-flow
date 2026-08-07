@@ -155,11 +155,23 @@ export function OrderEditForm({
           merged.set(getSalesTypeKey(fallback.objectId), fallback);
         }
 
-        setSalesTypes(Array.from(merged.values()));
+        const nextSalesTypes = Array.from(merged.values());
+        setSalesTypes(nextSalesTypes);
+        setSelectedSalesTypeId((current) => {
+          if (current) return current;
+          const resolved = resolveOrderSalesTypeOption(order, nextSalesTypes);
+          return resolved?.objectId || current;
+        });
       } catch {
         if (!mounted) return;
         const fallback = getOrderSalesTypeSnapshot(order);
-        setSalesTypes(fallback ? [fallback] : []);
+        const nextSalesTypes = fallback ? [fallback] : [];
+        setSalesTypes(nextSalesTypes);
+        setSelectedSalesTypeId((current) => {
+          if (current) return current;
+          const resolved = resolveOrderSalesTypeOption(order, nextSalesTypes);
+          return resolved?.objectId || current;
+        });
       }
     }
 
@@ -184,9 +196,10 @@ export function OrderEditForm({
     resolveMainCustomerAddress(selectedCustomer) ||
     (selectedAddresses.length ? selectedAddresses[0] : null);
 
-  const resolvedSalesTypeKey = selectedSalesTypeId || getOrderSalesTypeKey(order);
+  const resolvedSalesTypeKey = selectedSalesTypeId || resolveOrderSalesTypeOption(order, salesTypes)?.objectId || "";
   const selectedSalesType =
     salesTypes.find((item) => getSalesTypeKey(item.objectId) === resolvedSalesTypeKey) ||
+    resolveOrderSalesTypeOption(order, salesTypes) ||
     getOrderSalesTypeSnapshot(order);
 
   const priceListOptions = useMemo(
@@ -791,8 +804,28 @@ function getOrderSalesTypeSnapshot(order: Order): SalesTypeOption | null {
   };
 }
 
-function getOrderSalesTypeKey(order: Order): string {
-  return order.salesTypeObjectId || order.salesType?.objectId || "";
+function resolveOrderSalesTypeOption(
+  order: Order,
+  salesTypes: SalesTypeOption[],
+): SalesTypeOption | null {
+  if (!salesTypes.length) return getOrderSalesTypeSnapshot(order);
+
+  const snapshot = getOrderSalesTypeSnapshot(order);
+  const matched =
+    (order.salesTypeObjectId
+      ? salesTypes.find((item) => item.objectId === order.salesTypeObjectId)
+      : null) ||
+    (order.salesTypeSepidarCode !== null && order.salesTypeSepidarCode !== undefined
+      ? salesTypes.find((item) => item.sepidarCode === order.salesTypeSepidarCode)
+      : null) ||
+    (order.salesTypeInternalCode !== null && order.salesTypeInternalCode !== undefined
+      ? salesTypes.find((item) => item.internalCode === order.salesTypeInternalCode)
+      : null) ||
+    (order.salesTypeTitle
+      ? salesTypes.find((item) => item.title === order.salesTypeTitle)
+      : null);
+
+  return matched || snapshot;
 }
 
 function getOrderPriceListSnapshot(order: Order): PriceListOption | null {
