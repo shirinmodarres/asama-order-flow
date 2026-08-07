@@ -87,7 +87,7 @@ export default function FinancialControlDashboardPage() {
           description={`${formatFaDigits(summary.pendingItemCount)} آیتم`}
         />
         <MetricCard
-          title="در انتظار اصلاح"
+          title="نیازمند اصلاح مالی"
           value={formatFaDigits(summary.correctionOrderCount)}
           icon={<AlertTriangle className="size-5" />}
           description={`${formatFaDigits(summary.correctionItemCount)} آیتم`}
@@ -104,7 +104,7 @@ export default function FinancialControlDashboardPage() {
           <div className="mt-4 flex flex-col gap-2">
             <Link
               href="/finance-control/orders"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#1F3A5F] px-4 py-2 text-sm font-semibold text-white hover:text-white"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#1F3A5F] px-4 py-2 text-sm font-semibold !text-white hover:text-white"
             >
               <RefreshCw className="size-4" />
               بررسی سفارش‌ها

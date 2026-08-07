@@ -14,6 +14,7 @@ import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getFinancialApprovalStatusLabel } from "@/lib/domain/statuses";
 import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDate, formatNumber } from "@/lib/expert/utils";
 import type { Order } from "@/lib/models/order.model";
@@ -107,25 +108,25 @@ export default function FinancialControlOrdersPage() {
     {
       key: "status",
       header: "وضعیت مالی",
-      render: (row) => (
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge
-            type="order"
-            status={row.financialApprovalStatus ?? "pending"}
-          />
-          <span className="text-sm text-[#334155]">
-            {row.financialApprovalStatusLabel || row.financialApprovalStatus || "-"}
-          </span>
-        </div>
-      ),
-    },
+        render: (row) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge
+              type="financial"
+              status={row.financialApprovalStatus ?? "pending"}
+            />
+            <span className="text-sm text-[#334155]">
+              {row.financialApprovalStatusLabel || getFinancialApprovalStatusLabel(row.financialApprovalStatus) || "-"}
+            </span>
+          </div>
+        ),
+      },
     {
       key: "actions",
       header: "عملیات",
       render: (row) => (
         <Link
           href={`/finance-control/orders/${row.objectId}`}
-          className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs text-white hover:text-white"
+          className="rounded-xl border border-[#1F3A5F] bg-[#1F3A5F] px-3 py-1.5 text-xs !text-white hover:text-white"
         >
           بررسی سفارش
         </Link>
@@ -144,12 +145,12 @@ export default function FinancialControlOrdersPage() {
 
       <section className="grid gap-4 md:grid-cols-3">
         <SummaryCard
-          title="در انتظار تأیید"
+          title="در انتظار تأیید مالی"
           value={formatFaDigits(pendingOrders.length)}
           description={`${formatFaDigits(pendingItemCount)} آیتم`}
         />
         <SummaryCard
-          title="نیازمند اصلاح"
+          title="نیازمند اصلاح مالی"
           value={formatFaDigits(returnedOrders.length)}
           description={`${formatFaDigits(returnedItemCount)} آیتم`}
         />

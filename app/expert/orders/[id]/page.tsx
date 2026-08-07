@@ -16,10 +16,15 @@ import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage } from "@/lib/api/api-error";
+import { getFinancialApprovalStatusLabel } from "@/lib/domain/statuses";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
 import type { Order } from "@/lib/models/order.model";
 import { getStoredCurrentUser } from "@/lib/services/auth.service";
-import { getOrder, resolveOrderReview } from "@/lib/services/order.service";
+import {
+  getOrder,
+  resolveOrderReview,
+  resubmitFinancialOrder,
+} from "@/lib/services/order.service";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
 export default function ExpertOrderDetailsPage() {
@@ -73,6 +78,7 @@ export default function ExpertOrderDetailsPage() {
     0,
   );
   const paymentMethodTitle = order?.salesTypeTitle ?? null;
+  const needsFinancialCorrection = order?.financialApprovalStatus === "needs_correction";
 
   const handleResolveReview = async () => {
     if (!order) return;
@@ -89,6 +95,24 @@ export default function ExpertOrderDetailsPage() {
       setActionMessage("سفارش برای تصمیم نهایی مدیر فروش ارسال شد.");
     } catch (resolveError) {
       setActionError(getErrorMessage(resolveError));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResubmitFinancialReview = async () => {
+    if (!order) return;
+
+    setIsSubmitting(true);
+    setActionError("");
+    setActionMessage("");
+
+    try {
+      const updated = await resubmitFinancialOrder(order.objectId);
+      setOrder(updated);
+      setActionMessage("سفارش برطرف شد و دوباره برای بررسی مالی ارسال شد.");
+    } catch (resubmitError) {
+      setActionError(getErrorMessage(resubmitError));
     } finally {
       setIsSubmitting(false);
     }
@@ -170,6 +194,45 @@ export default function ExpertOrderDetailsPage() {
               title="انجام عملیات سفارش ممکن نشد"
               message={actionError}
             />
+          ) : null}
+
+          {needsFinancialCorrection ? (
+            <div className="rounded-xl border border-[#F8D9A0] bg-[#FFF8E7] p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2 text-[#9A6C18]">
+                <AlertTriangle className="size-4" />
+                <h3 className="text-base font-semibold">
+                  این سفارش برای اصلاح از کنترل مالی برگشت خورده است.
+                </h3>
+                <StatusBadge
+                  type="financial"
+                  status={order.financialApprovalStatus ?? "needs_correction"}
+                />
+              </div>
+              <p className="mt-3 text-sm leading-7 text-[#5F4320]">
+                {order.financialCorrectionReason || "دلیل مشخصی ثبت نشده است."}
+                <span className="mt-2 block text-xs text-[#8A6A3A]">
+                  وضعیت فعلی: {getFinancialApprovalStatusLabel(order.financialApprovalStatus)}
+                </span>
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {order.canEdit ? (
+                  <Link
+                    href={`/expert/orders/${order.objectId}/edit`}
+                    className="rounded-xl border border-[#D9A441] bg-white px-4 py-2 text-sm font-medium text-[#9A6C18] visited:text-[#9A6C18] hover:bg-[#FFF1D6] hover:text-[#7A520F]"
+                  >
+                    اصلاح سفارش
+                  </Link>
+                ) : null}
+                <Button
+                  type="button"
+                  className="rounded-xl bg-[#1F3A5F] px-4 py-2 text-sm font-medium text-white hover:text-white"
+                  disabled={isSubmitting || !order.canEdit}
+                  onClick={handleResubmitFinancialReview}
+                >
+                  برطرف شد و ارسال مجدد برای بررسی مالی
+                </Button>
+              </div>
+            </div>
           ) : null}
 
           <section className="grid gap-6 lg:grid-cols-[1fr_320px]">

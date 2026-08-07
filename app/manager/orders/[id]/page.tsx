@@ -38,6 +38,7 @@ import {
   REVIEW_REASONS,
   SHIPMENT_STOP_REASONS,
 } from "@/lib/domain/order-action-reasons";
+import { getFinancialApprovalStatusLabel } from "@/lib/domain/statuses";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
 import type {
   Order,
@@ -532,9 +533,8 @@ export default function ManagerOrderReviewPage() {
                 label="وضعیت تأیید مالی"
                 value={
                   order.financialApprovalStatusLabel ||
-                  (order.financialApprovalStatus
-                    ? order.financialApprovalStatus
-                    : "-")
+                  getFinancialApprovalStatusLabel(order.financialApprovalStatus) ||
+                  "-"
                 }
               />
               {order.orderType === "naja" ? (
@@ -808,7 +808,7 @@ export default function ManagerOrderReviewPage() {
                 کنترل مالی
               </p>
               <p className="mt-2 text-sm leading-7 text-[#64748B]">
-                وضعیت فعلی: {order.financialApprovalStatusLabel || order.financialApprovalStatus || "-"}
+                وضعیت فعلی: {order.financialApprovalStatusLabel || getFinancialApprovalStatusLabel(order.financialApprovalStatus) || "-"}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button
