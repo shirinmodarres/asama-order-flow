@@ -44,6 +44,9 @@ export function mapOrderDto(dto: unknown): Order {
   const deliveryAddress = isObjectRecord(deliveryAddressSource)
     ? mapCustomerAddressDto(deliveryAddressSource, record.customer)
     : null;
+  const resolvedCustomerAddress = isObjectRecord(record.customerAddress)
+    ? mapCustomerAddressDto(record.customerAddress, record.customer)
+    : null;
 
   const shipmentStopReasonCode = toNullableString(
     record.shipmentStopReasonCode,
@@ -167,12 +170,12 @@ export function mapOrderDto(dto: unknown): Order {
               record.saleTypeObjectId ?? record.salesTypeObjectId ?? saleTypeRecord.objectId,
             ),
             sepidarSaleTypeId:
-              record.sepidarSaleTypeId === undefined ||
-              record.sepidarSaleTypeId === null
-                ? (record.salesTypeSepidarCode === undefined || record.salesTypeSepidarCode === null
-                  ? null
-                  : toNumberValue(record.salesTypeSepidarCode))
-                : toNumberValue(record.sepidarSaleTypeId),
+            record.sepidarSaleTypeId === undefined ||
+            record.sepidarSaleTypeId === null
+              ? (record.salesTypeSepidarCode === undefined || record.salesTypeSepidarCode === null
+                ? null
+                : toNumberValue(record.salesTypeSepidarCode))
+              : toNumberValue(record.sepidarSaleTypeId),
             title: toNullableString(record.saleTypeTitle ?? record.salesTypeTitle ?? saleTypeRecord.title),
           }
       : null,
@@ -255,7 +258,10 @@ export function mapOrderDto(dto: unknown): Order {
         customerRecord.mobile,
     ),
     customerAddress: toNullableString(
-      record.customerAddressSnapshot ??
+      resolvedCustomerAddress?.fullAddress ??
+        resolvedCustomerAddress?.address ??
+        resolvedCustomerAddress?.fullAddress ??
+        record.customerAddressSnapshot ??
         (typeof record.customerAddress === "string"
           ? record.customerAddress
           : undefined) ??
@@ -275,6 +281,8 @@ export function mapOrderDto(dto: unknown): Order {
     ),
     deliveryFullAddress: toNullableString(
       record.deliveryFullAddress ??
+        resolvedCustomerAddress?.fullAddress ??
+        resolvedCustomerAddress?.address ??
         record.customerAddressSnapshot ??
         (typeof record.customerAddress === "string"
           ? record.customerAddress

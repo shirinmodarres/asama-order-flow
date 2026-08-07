@@ -46,14 +46,19 @@ export async function getOrderEditData(objectId: string): Promise<OrderEditData>
     record.productOptions ??
     record.availableProducts ??
     [];
+  const editItemSource = toArray((record.items ?? toRecord(orderSource).items) as unknown);
   const customerSource =
     record.customers ??
     record.assignedCustomers ??
     record.customerOptions ??
     [];
+  const order = mergeOrderEditSnapshot(
+    mapOrderDto(orderSource),
+    record,
+  );
 
   return {
-    order: mapOrderDto(orderSource),
+    order,
     canEdit:
       record.canEdit === undefined || record.canEdit === null
         ? true
@@ -65,7 +70,31 @@ export async function getOrderEditData(objectId: string): Promise<OrderEditData>
           ? record.reason
           : null,
     products: mergeOrderProducts(
-      mapProductOrderOptionListDto(toArray(productSource)),
+      mapProductOrderOptionListDto(
+        toArray(productSource).length
+          ? toArray(productSource)
+          : editItemSource.map((item) => {
+              const itemRecord = toRecord(item);
+              return {
+                objectId: itemRecord.productObjectId ?? itemRecord.productId ?? itemRecord.objectId ?? null,
+                id: itemRecord.productSku ?? itemRecord.sepidarCode ?? itemRecord.productObjectId ?? itemRecord.productId ?? null,
+                sku: itemRecord.productSku ?? itemRecord.sepidarCode ?? itemRecord.productObjectId ?? itemRecord.productId ?? null,
+                sepidarCode: itemRecord.sepidarCode ?? itemRecord.productSku ?? itemRecord.productObjectId ?? itemRecord.productId ?? null,
+                name: itemRecord.productName ?? itemRecord.name ?? "",
+                title: itemRecord.productName ?? itemRecord.name ?? "",
+                brand: itemRecord.brand ?? "",
+                brandName: itemRecord.brandName ?? itemRecord.brand ?? null,
+                unitPrice: itemRecord.unitPrice ?? 0,
+                availableForSale: itemRecord.availableForSale ?? itemRecord.availableSalesQuantity ?? 0,
+                availableSalesQuantity: itemRecord.availableForSale ?? itemRecord.availableSalesQuantity ?? 0,
+                salesCapacity: itemRecord.availableForSale ?? itemRecord.availableSalesQuantity ?? 0,
+                availableStocks: itemRecord.availableStocks ?? [],
+                priceListId: itemRecord.priceListId ?? null,
+                priceListItemId: itemRecord.priceListItemId ?? null,
+                pricingSource: itemRecord.pricingSource ?? null,
+              };
+            }),
+      ),
       mapOrderDto(orderSource),
     ),
     customers: mapCustomerListDto(toArray(customerSource)),
@@ -181,6 +210,107 @@ function mergeOrderProducts(products: ReturnType<typeof mapProductOrderOptionLis
     );
   });
   return Array.from(productMap.values());
+}
+
+function mergeOrderEditSnapshot(order: Order, record: Record<string, unknown>): Order {
+  const legacyOrder = order as Order & { saleTypeCode?: number | null };
+  const priceList = toRecord(record.priceList);
+  const saleType = toRecord(record.saleType);
+  const salesType = toRecord(record.salesType);
+  const fallbackPriceListId =
+    record.priceListId === undefined || record.priceListId === null
+      ? order.priceListId
+      : String(record.priceListId);
+  const fallbackPriceListTitle =
+    record.priceListTitle === undefined || record.priceListTitle === null
+      ? order.priceListTitle
+      : String(record.priceListTitle);
+  const fallbackPriceListType =
+    record.priceListType === undefined || record.priceListType === null
+      ? order.priceListType
+      : String(record.priceListType);
+  const fallbackPriceListBrand =
+    record.priceListBrand === undefined || record.priceListBrand === null
+      ? order.priceListBrand
+      : String(record.priceListBrand);
+  const salesTypeObjectId =
+    order.salesTypeObjectId ||
+    order.saleTypeObjectId ||
+    toStringSnapshot(salesType.objectId) ||
+    toStringSnapshot(saleType.objectId) ||
+    null;
+  const salesTypeTitle =
+    order.salesTypeTitle ||
+    order.saleTypeTitle ||
+    toStringSnapshot(salesType.title) ||
+    toStringSnapshot(saleType.title) ||
+    null;
+  const salesTypeInternalCode =
+    order.salesTypeInternalCode ??
+    toNumberSnapshot(salesType.internalCode) ??
+    toNumberSnapshot(saleType.internalCode) ??
+    null;
+  const salesTypeSepidarCode =
+    order.salesTypeSepidarCode ??
+    order.sepidarSaleTypeId ??
+    legacyOrder.saleTypeCode ??
+    toNumberSnapshot(salesType.sepidarCode) ??
+    toNumberSnapshot(saleType.sepidarSaleTypeId) ??
+    null;
+
+  return {
+    ...order,
+    priceListId: fallbackPriceListId ?? order.priceListId,
+    priceListTitle: fallbackPriceListTitle ?? order.priceListTitle,
+    priceListType: fallbackPriceListType ?? order.priceListType,
+    priceListBrand: fallbackPriceListBrand ?? order.priceListBrand,
+    priceList:
+      priceList.objectId || fallbackPriceListId || order.priceList
+        ? {
+            ...(order.priceList ?? {}),
+            objectId: toStringSnapshot(priceList.objectId) || fallbackPriceListId || order.priceList?.objectId || null,
+            id: toStringSnapshot(priceList.id) || fallbackPriceListId || order.priceList?.id || null,
+            title: toStringSnapshot(priceList.title) || fallbackPriceListTitle || order.priceList?.title || null,
+            name: toStringSnapshot(priceList.name) || fallbackPriceListTitle || order.priceList?.name || null,
+            typeCode: toStringSnapshot(priceList.typeCode) || fallbackPriceListType || order.priceList?.typeCode || null,
+            brandName: toStringSnapshot(priceList.brandName) || fallbackPriceListBrand || order.priceList?.brandName || null,
+          }
+        : order.priceList,
+    salesTypeObjectId,
+    saleTypeObjectId: salesTypeObjectId,
+    salesTypeTitle,
+    saleTypeTitle: salesTypeTitle,
+    salesTypeInternalCode,
+    salesTypeSepidarCode,
+    sepidarSaleTypeId: salesTypeSepidarCode,
+    salesType: salesTypeObjectId || salesTypeTitle || salesTypeInternalCode !== null || salesTypeSepidarCode !== null
+      ? {
+          objectId: salesTypeObjectId,
+          title: salesTypeTitle,
+          internalCode: salesTypeInternalCode,
+          sepidarCode: salesTypeSepidarCode,
+        }
+      : order.salesType,
+    saleType: salesTypeObjectId || salesTypeTitle || salesTypeInternalCode !== null || salesTypeSepidarCode !== null
+      ? {
+          objectId: salesTypeObjectId,
+          sepidarSaleTypeId: salesTypeSepidarCode,
+          title: salesTypeTitle,
+        }
+      : order.saleType,
+  };
+}
+
+function toStringSnapshot(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim();
+  return text || null;
+}
+
+function toNumberSnapshot(value: unknown): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 export interface ApproveOrderPayload {

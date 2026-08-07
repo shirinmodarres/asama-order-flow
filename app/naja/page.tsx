@@ -131,9 +131,9 @@ export default function NajaDashboardPage() {
                       <p className="mt-1 text-sm text-[#6B7280]">
                         {order.customerName ?? "-"}
                       </p>
-                      {order.saleTypeTitle ? (
+                      {order.salesTypeTitle ? (
                         <p className="mt-1 text-xs text-[#7C8A9C]">
-                          {(order.salesTypeTitle || order.saleTypeTitle || order.saleType?.title) ? `روش پرداخت: ${order.salesTypeTitle || order.saleTypeTitle || order.saleType?.title}` : null}
+                          {`روش پرداخت: ${order.salesTypeTitle}`}
                         </p>
                       ) : null}
                     </div>
