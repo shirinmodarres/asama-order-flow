@@ -701,10 +701,7 @@ function getPaymentMethodTitle(customer: Customer | null | undefined): string | 
   if (!customer) return null;
   return (
     customer.priceListTitle ||
-    (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
     customer.saleType?.title ||
-    (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
-    (customer as Customer & { saleTypeTitle?: string | null }).saleTypeTitle ||
     customer.priceLists?.[0]?.name ||
     customer.priceLists?.[0]?.title ||
     null
@@ -717,22 +714,10 @@ function getCustomerPaymentMethodSnapshot(
 ): PaymentMethodSnapshot | null {
   if (!customer) return null;
   const saleType = customer.saleType;
-  const salesTypeObjectId =
-    (customer as Customer & { salesTypeObjectId?: string | null }).salesTypeObjectId ||
-    null;
-  const salesTypeTitle =
-    (customer as Customer & { salesTypeTitle?: string | null }).salesTypeTitle ||
-    (customer as Customer & { saleTypeTitle?: string | null }).saleTypeTitle ||
-    saleType?.title ||
-    null;
-  const salesTypeInternalCode =
-    (customer as Customer & { salesTypeInternalCode?: number | null }).salesTypeInternalCode ??
-    (customer as Customer & { saleTypeCode?: number | null }).saleTypeCode ??
-    null;
-  const salesTypeSepidarCode =
-    (customer as Customer & { salesTypeSepidarCode?: number | null }).salesTypeSepidarCode ??
-    saleType?.sepidarSaleTypeId ??
-    null;
+  const salesTypeObjectId = saleType?.objectId ?? null;
+  const salesTypeTitle = saleType?.title ?? null;
+  const salesTypeInternalCode = null;
+  const salesTypeSepidarCode = saleType?.sepidarSaleTypeId ?? null;
 
   const matchedSalesType =
     salesTypes.find((item) => item.objectId === salesTypeObjectId) ||

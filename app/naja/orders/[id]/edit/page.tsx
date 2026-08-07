@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import {
-  OrderForm,
-  type OrderFormSubmitPayload,
-} from "@/components/orders/order-form";
+import { OrderEditForm, type OrderEditFormSubmitPayload } from "@/components/orders/order-edit-form";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { PageErrorMessage } from "@/components/shared/page-error-message";
@@ -50,7 +47,7 @@ export default function NajaOrderEditPage() {
     };
   }, [params.id]);
 
-  const handleSubmit = async (payload: OrderFormSubmitPayload) => {
+  const handleSubmit = async (payload: OrderEditFormSubmitPayload) => {
     if (!editData?.order) return;
     setIsSubmitting(true);
     try {
@@ -108,13 +105,10 @@ export default function NajaOrderEditPage() {
             }
           />
 
-          <OrderForm
-            mode="edit"
-            initialOrder={editData.order}
+          <OrderEditForm
+            order={editData.order}
             submitLabel="ذخیره تغییرات"
             isSubmitting={isSubmitting}
-            assignedCustomersOnly
-            sepidarProductsOnly
             initialProducts={editData.products}
             initialCustomers={editData.customers}
             lockCustomer={Boolean(editData.order.customerObjectId)}

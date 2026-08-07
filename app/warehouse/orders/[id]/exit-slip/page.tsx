@@ -418,7 +418,7 @@ export default function ExitSlipCreatePage() {
               />
               <InfoItem
                 label="روش پرداخت"
-                value={order.salesTypeTitle || order.saleTypeTitle || order.saleType?.title || ""}
+                value={order.salesTypeTitle || ""}
               />
             </div>
             {!order.stockTitle && !order.warehouseName ? (

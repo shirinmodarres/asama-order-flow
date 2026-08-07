@@ -94,9 +94,7 @@ function getOrderSalesTypeOptionKey(order?: Order | null): string {
   if (!order) return "";
   const sepidarCode =
     order.salesTypeSepidarCode ??
-    order.sepidarSaleTypeId ??
     order.salesType?.sepidarCode ??
-    order.saleType?.sepidarSaleTypeId ??
     null;
   if (sepidarCode !== null && sepidarCode !== undefined) {
     return String(sepidarCode);
@@ -105,30 +103,24 @@ function getOrderSalesTypeOptionKey(order?: Order | null): string {
   if (internalCode !== null && internalCode !== undefined) {
     return String(internalCode);
   }
-  return order.salesTypeObjectId || order.saleTypeObjectId || order.salesType?.objectId || order.saleType?.objectId || "";
+  return order.salesTypeObjectId || order.salesType?.objectId || "";
 }
 
 function getOrderSalesTypeSnapshot(order?: Order | null) {
   if (!order) return null;
   const objectId =
     order.salesTypeObjectId ||
-    order.saleTypeObjectId ||
     order.salesType?.objectId ||
-    order.saleType?.objectId ||
     "";
   const title =
     order.salesTypeTitle ||
-    order.saleTypeTitle ||
     order.salesType?.title ||
-    order.saleType?.title ||
     "";
   const internalCode =
     order.salesTypeInternalCode ?? null;
   const sepidarCode =
     order.salesTypeSepidarCode ??
-    order.sepidarSaleTypeId ??
     order.salesType?.sepidarCode ??
-    order.saleType?.sepidarSaleTypeId ??
     null;
 
   if (!objectId && !title && !internalCode && sepidarCode == null) {
@@ -268,14 +260,18 @@ export function OrderForm({
   );
   const [notes, setNotes] = useState(initialOrder?.notes ?? "");
   const [selectedCustomerId, setSelectedCustomerId] = useState(
-    initialOrder?.customerObjectId ?? initialOrder?.customer?.objectId ?? "",
+    initialOrder?.customerObjectId ??
+      initialOrder?.customer?.objectId ??
+      "",
   );
   const [selectedPriceListId, setSelectedPriceListId] = useState(
-    initialOrder?.priceListId ?? initialOrder?.priceList?.objectId ?? "",
+    initialOrder?.priceListId ??
+      initialOrder?.priceList?.objectId ??
+      "",
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
-    mode === "edit" ? getOrderSalesTypeOptionKey(initialOrder) : "",
+    "",
   );
   const [selectedAddressId, setSelectedAddressId] = useState(
     initialOrder?.selectedCustomerAddressId
@@ -289,9 +285,10 @@ export function OrderForm({
   const [rowErrors, setRowErrors] = useState<
     Record<string, { productId?: string; quantity?: string }>
   >({});
+  const isEditMode = mode === "edit";
   const orderSalesTypeFallback = useMemo(
     () => (mode === "edit" ? buildOrderSalesTypeFallback(initialOrder) : null),
-    [initialOrder],
+    [initialOrder, mode],
   );
   const canEditCustomerFields = mode !== "edit" || editScope !== "expert";
   const canEditItemSelection = mode !== "edit" || editScope !== "expert";
@@ -484,6 +481,7 @@ export function OrderForm({
     initialOrder,
     selectedAssignment,
     selectedCustomerId,
+    mode,
     sepidarProductsOnly,
   ]);
 
@@ -617,6 +615,7 @@ export function OrderForm({
     selectedAssignment,
     selectedCustomerId,
     selectedPriceListId,
+    isEditMode,
     sepidarProductsOnly,
   ]);
 
@@ -781,7 +780,6 @@ export function OrderForm({
   const requiresPriceListSelection =
     sepidarProductsOnly && Boolean(selectedCustomerId) && hasGeneratedPriceList;
   const isNajaOrder = initialOrder?.orderType === "naja";
-  const isEditMode = mode === "edit";
   const selectedSalesType =
     mergedSalesTypes.find((item) => getSalesTypeOptionKey(item) === selectedSalesTypeId) ||
     (mode === "edit" ? orderSalesTypeFallback : null) ||
@@ -813,7 +811,6 @@ export function OrderForm({
   const currentSaleTypeTitle =
     resolvedSelectedSalesType?.title ??
     orderSalesTypeTitle ??
-    orderSalesTypeFallback?.title ??
     null;
   const selectedSalesTypeOption = selectedSalesType
     ? {
@@ -1131,23 +1128,27 @@ export function OrderForm({
         selectedCustomerAddressId: finalCustomerAddressId ?? null,
         itemCount: normalizedItems.length,
       });
+      const addressPayload = effectiveSelectedAddress
+        ? {
+            customerAddressId: finalCustomerAddressId,
+            selectedCustomerAddressId: finalCustomerAddressId,
+            customerAddressTitle: effectiveSelectedAddress?.title ?? resolvedMainAddress?.title ?? null,
+            customerAddressText:
+              effectiveSelectedAddress?.Address ?? effectiveSelectedAddress?.address ?? effectiveSelectedAddress?.fullAddress ?? resolvedMainAddress?.Address ?? resolvedMainAddress?.address ?? resolvedMainAddress?.fullAddress ?? null,
+            customerAddressZipCode:
+              effectiveSelectedAddress?.ZipCode ?? effectiveSelectedAddress?.zipCode ?? effectiveSelectedAddress?.postalCode ?? resolvedMainAddress?.ZipCode ?? resolvedMainAddress?.zipCode ?? resolvedMainAddress?.postalCode ?? null,
+            customerAddressCityRef:
+              effectiveSelectedAddress?.cityRef ?? resolvedMainAddress?.cityRef ?? null,
+            customerAddressPathRef:
+              effectiveSelectedAddress?.pathRef ?? resolvedMainAddress?.pathRef ?? null,
+            customerAddressIsMain:
+              effectiveSelectedAddress?.isMain ?? resolvedMainAddress?.isMain ?? false,
+          }
+        : {};
+
       await onSubmit({
         customerName: selectedCustomerId ? undefined : customerName.trim(),
         customerObjectId: selectedCustomerId || undefined,
-        customerAddressId: finalCustomerAddressId,
-        selectedCustomerAddressId:
-          finalCustomerAddressId,
-        customerAddressTitle: effectiveSelectedAddress?.title ?? resolvedMainAddress?.title ?? null,
-        customerAddressText:
-          effectiveSelectedAddress?.Address ?? effectiveSelectedAddress?.address ?? effectiveSelectedAddress?.fullAddress ?? resolvedMainAddress?.Address ?? resolvedMainAddress?.address ?? resolvedMainAddress?.fullAddress ?? null,
-        customerAddressZipCode:
-          effectiveSelectedAddress?.ZipCode ?? effectiveSelectedAddress?.zipCode ?? effectiveSelectedAddress?.postalCode ?? resolvedMainAddress?.ZipCode ?? resolvedMainAddress?.zipCode ?? resolvedMainAddress?.postalCode ?? null,
-        customerAddressCityRef:
-          effectiveSelectedAddress?.cityRef ?? resolvedMainAddress?.cityRef ?? null,
-        customerAddressPathRef:
-          effectiveSelectedAddress?.pathRef ?? resolvedMainAddress?.pathRef ?? null,
-        customerAddressIsMain:
-          effectiveSelectedAddress?.isMain ?? resolvedMainAddress?.isMain ?? false,
         recipientFirstName: recipientFirstName.trim(),
         recipientLastName: recipientLastName.trim(),
         recipientNationalId: normalizeDigits(
@@ -1177,6 +1178,7 @@ export function OrderForm({
           selectedCustomer?.priceListId ||
           undefined,
         notes: notes.trim(),
+        ...addressPayload,
         items: normalizedItems.map((item) => ({
           productObjectId:
             productsById[item.productId]?.productObjectId || item.productId,

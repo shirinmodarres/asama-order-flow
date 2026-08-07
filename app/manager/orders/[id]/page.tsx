@@ -460,7 +460,7 @@ export default function ManagerOrderReviewPage() {
               <InfoItem label="مشتری" value={order.customerName ?? "-"} />
               <InfoItem
                 label="روش پرداخت"
-                value={order.salesTypeTitle || order.saleType?.title || "-"}
+                value={order.salesTypeTitle || "-"}
               />
               <InfoItem
                 label="لیست قیمت"
@@ -476,9 +476,9 @@ export default function ManagerOrderReviewPage() {
                         : "-"
                     }
                   />
-                  {order.salesTypeTitle || order.saleType?.title ? (
+                  {order.salesTypeTitle ? (
                     <div className="sm:col-span-2 rounded-xl border border-[#D7E5F0] bg-[#F8FBFF] px-4 py-3 text-sm leading-7 text-[#1F3A5F]">
-                      این سفارش با روش پرداخت <strong>{order.salesTypeTitle || order.saleType?.title}</strong> ثبت شده است.
+                      این سفارش با روش پرداخت <strong>{order.salesTypeTitle}</strong> ثبت شده است.
                     </div>
                   ) : null}
                   {hasRecipientInfo(order) ? (
@@ -722,7 +722,7 @@ export default function ManagerOrderReviewPage() {
             <div className="mt-3 space-y-3 text-sm">
               <InfoItem
                 label="روش پرداخت"
-                value={order.salesTypeTitle || order.saleType?.title || "-"}
+                value={order.salesTypeTitle || "-"}
               />
               <InfoItem
                 label="لیست قیمت"
