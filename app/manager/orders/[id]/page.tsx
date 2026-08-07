@@ -173,6 +173,15 @@ export default function ManagerOrderReviewPage() {
   const isNeedsReview = order.orderStatus === "needs_review";
   const isReviewResolved = order.orderStatus === "review_resolved";
   const isVoided = order.orderStatus === "voided";
+  const pageTitle = isFinancialControlUser
+    ? "بررسی سفارش مالی"
+    : "بررسی جزئیات سفارش";
+  const pageDescription = isFinancialControlUser
+    ? "ثبت تأیید یا برگشت سفارش برای اصلاح"
+    : "ثبت تصمیم نهایی مدیر فروش برای شروع یا توقف فرآیند انبار";
+  const managerActionVisible = !isFinancialControlUser;
+  const reviewSectionVisible = !isFinancialControlUser && (isNeedsReview || isReviewResolved);
+  const shipmentControlVisible = !isFinancialControlUser;
 
   const columns: DataTableColumn<OrderItem>[] = [
     {
@@ -457,13 +466,13 @@ export default function ManagerOrderReviewPage() {
   };
 
   return (
-    <DashboardLayout role={layoutRole} title="سفارش‌ها">
+    <DashboardLayout role={layoutRole} title={isFinancialControlUser ? "کنترل مالی" : "سفارش‌ها"}>
       <SectionHeader
-        title="بررسی جزئیات سفارش"
-        description="ثبت تصمیم نهایی مدیر فروش برای شروع یا توقف فرآیند انبار"
+        title={pageTitle}
+        description={pageDescription}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {order.canEdit ? (
+            {order.canEdit && !isFinancialControlUser ? (
               <Link
                 href={`/manager/orders/${order.objectId}/edit`}
                 className="rounded-xl bg-[#1F3A5F] px-4 py-2 text-sm font-semibold text-white hover:text-white"
@@ -472,7 +481,7 @@ export default function ManagerOrderReviewPage() {
               </Link>
             ) : null}
             <Link
-              href="/manager/pending-orders"
+              href={isFinancialControlUser ? "/finance-control/orders" : "/manager/pending-orders"}
               className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
             >
               بازگشت به لیست
@@ -617,7 +626,7 @@ export default function ManagerOrderReviewPage() {
             </dl>
           </div>
 
-          {isNeedsReview || isReviewResolved ? (
+          {reviewSectionVisible ? (
             <div className="rounded-xl border border-[#F1D7AA] bg-[#FFF8EB] p-5 shadow-sm">
               <div className="flex items-center gap-2 text-[#9A6C18]">
                 <AlertTriangle className="size-4" />
@@ -684,7 +693,7 @@ export default function ManagerOrderReviewPage() {
             </div>
           ) : null}
 
-          {isShipmentStopped ? (
+          {shipmentControlVisible && isShipmentStopped ? (
             <div className="rounded-xl border border-[#F1D7AA] bg-[#FFF8EB] p-5 shadow-sm">
               <div className="flex items-center gap-2 text-[#9A6C18]">
                 <Lock className="size-4" />
@@ -709,7 +718,7 @@ export default function ManagerOrderReviewPage() {
             </div>
           ) : null}
 
-          {isCancelled ? (
+          {shipmentControlVisible && isCancelled ? (
             <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-5 shadow-sm">
               <div className="flex items-center gap-2 text-[#B91C1C]">
                 <XCircle className="size-4" />
@@ -829,6 +838,7 @@ export default function ManagerOrderReviewPage() {
             </div>
           ) : null}
 
+          {managerActionVisible ? (
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
             <p className="text-sm leading-7 text-[#6B7280]">
               {isFinancialControlUser
@@ -886,7 +896,9 @@ export default function ManagerOrderReviewPage() {
               ) : null}
             </div>
           </div>
+          ) : null}
 
+          {shipmentControlVisible ? (
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -935,6 +947,7 @@ export default function ManagerOrderReviewPage() {
               )}
             </div>
           </div>
+          ) : null}
         </div>
       </section>
 

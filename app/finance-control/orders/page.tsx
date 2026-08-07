@@ -164,7 +164,7 @@ export default function FinancialControlOrdersPage() {
         <div className="flex flex-wrap gap-2 border-b border-[#E2E8F0] pb-4">
           <TabButton
             active={activeTab === "pending"}
-            label={`در انتظار تأیید (${formatFaDigits(pendingOrders.length)})`}
+            label={`در انتظار تأیید مالی (${formatFaDigits(pendingOrders.length)})`}
             onClick={() => setActiveTab("pending")}
           />
           <TabButton

@@ -81,7 +81,7 @@ export default function FinancialControlDashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          title="سفارش‌های در انتظار"
+          title="سفارش‌های در انتظار تأیید مالی"
           value={formatFaDigits(summary.pendingOrderCount)}
           icon={<ClipboardList className="size-5" />}
           description={`${formatFaDigits(summary.pendingItemCount)} آیتم`}
@@ -116,20 +116,6 @@ export default function FinancialControlDashboardPage() {
         </Card>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border-[#E5E7EB] p-5">
-          <h3 className="text-base font-semibold text-[#1F3A5F]">سفارش‌ها</h3>
-          <p className="mt-2 text-sm leading-7 text-[#64748B]">
-            سفارش‌های منتظر تأیید مالی را بررسی کنید و در صورت نیاز برای اصلاح برگردانید.
-          </p>
-          <Link
-            href="/finance-control/orders"
-            className="mt-4 inline-flex rounded-xl bg-[#1F3A5F] px-4 py-2 text-sm font-semibold text-white hover:text-white"
-          >
-            مشاهده سفارش‌ها
-          </Link>
-        </Card>
-      </div>
     </DashboardLayout>
   );
 }

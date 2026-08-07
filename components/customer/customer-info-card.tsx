@@ -10,6 +10,9 @@ interface CustomerInfoCardProps {
     | "customerName"
     | "customerPhone"
     | "customerNationalId"
+    | "customerAddressTitle"
+    | "customerAddress"
+    | "customerAddressText"
     | "recipientFirstName"
     | "recipientLastName"
     | "recipientNationalId"
@@ -32,6 +35,8 @@ export function CustomerInfoCard({ order, hideDeliveryInfo = false }: CustomerIn
     order.customerName ||
       order.customerPhone ||
       order.customerNationalId ||
+      order.customerAddressText ||
+      order.customerAddress ||
       (!hideDeliveryInfo &&
         (order.deliveryFullAddress ||
           order.receiverFullName ||
