@@ -606,10 +606,13 @@ export function OrderEditForm({
           <div className="mt-5 grid gap-4">
             {items.map((item, index) => {
               const product = productMap[item.productObjectId];
+              const originalQuantity =
+                originalQuantityByProductId.get(item.productObjectId) ?? item.quantity;
               const editableAvailableQuantity = product
                 ? Math.max(
                     0,
-                    product.availableForSale ?? product.availableSalesQuantity ?? 0,
+                    (product.availableForSale ?? product.availableSalesQuantity ?? 0) +
+                      originalQuantity,
                   )
                 : 0;
               return (
