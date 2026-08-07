@@ -23,7 +23,7 @@ import {
 import type { Customer, CustomerAddress } from "@/lib/models/customer.model";
 import type { Order, OrderItem } from "@/lib/models/order.model";
 import type { Product } from "@/lib/models/product.model";
-import { listCustomers } from "@/lib/services/customer.service";
+import { listCustomers, listCustomerAddresses } from "@/lib/services/customer.service";
 import { getStoredCurrentUser } from "@/lib/services/auth.service";
 import { listActiveSalesTypes } from "@/lib/services/sales-type.service";
 import {
@@ -638,10 +638,12 @@ export function OrderForm({
 
       try {
         if (!isMounted) return;
-        const normalizedAddresses = getResolvedSepidarAddresses(customer).map(
-          normalizeOrderCustomerAddress,
-        );
-        const uniqueAddresses = dedupeCustomerAddresses(normalizedAddresses);
+        const apiAddresses = await listCustomerAddresses(selectedCustomerId).catch(() => []);
+        const normalizedAddresses = dedupeCustomerAddresses([
+          ...apiAddresses.map(normalizeOrderCustomerAddress),
+          ...getResolvedSepidarAddresses(customer).map(normalizeOrderCustomerAddress),
+        ]);
+        const uniqueAddresses = normalizedAddresses;
         setAddresses(uniqueAddresses);
         if (process.env.NODE_ENV === "development") {
           console.log("[CUSTOMER_DELIVERY_ADDRESS_DEBUG]", {
@@ -649,6 +651,7 @@ export function OrderForm({
             customerId: customer?.objectId ?? selectedCustomerId,
             sepidarAddress: customer?.sepidarAddress ?? null,
             sepidarAddresses: customer?.sepidarAddresses ?? [],
+            apiAddresses,
             selectedAddressId:
               customer?.sepidarAddress?.customerAddressId ??
               customer?.sepidarAddress?.sepidarAddressId ??
@@ -676,9 +679,12 @@ export function OrderForm({
           ) {
             return current;
           }
-          const mainAddress = customer?.sepidarAddress
-            ? normalizeOrderCustomerAddress(customer.sepidarAddress)
-            : resolveMainCustomerAddress({ ...customer, sepidarAddresses: uniqueAddresses } as Customer);
+          const mainAddress =
+            normalizedAddresses.find((address) => address.isMain) ||
+            (customer?.sepidarAddress
+              ? normalizeOrderCustomerAddress(customer.sepidarAddress)
+              : null) ||
+            resolveMainCustomerAddress({ ...customer, sepidarAddresses: uniqueAddresses } as Customer);
           return mainAddress
             ? getCustomerAddressKey(mainAddress)
             : getCustomerAddressKey(uniqueAddresses[0]);
