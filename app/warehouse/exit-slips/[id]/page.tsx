@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Copy, FileText } from "lucide-react";
+import { Copy, FileText, Printer } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { PageErrorMessage } from "@/components/shared/page-error-message";
-import { ExitSlipProductGroups } from "@/components/warehouse/exit-slip-product-groups";
 import { SlipDetailsCard } from "@/components/warehouse/slip-details-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,13 +124,32 @@ export default function ExitSlipDetailsPage() {
             notes={slip.notes ?? ""}
           />
           <section className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-[#1F3A5F]">
+                  تعداد کل اقلام
+                </h3>
+                <p className="text-sm text-[#64748B]">
+                  مجموع تعداد همه کالاهای ثبت‌شده در این حواله
+                </p>
+              </div>
+              <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-4 py-3 text-sm font-semibold text-[#1F3A5F]">
+                {formatNumber(totalQuantity)}
+              </div>
+            </div>
+          </section>
+          <section className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="outline" className="gap-2">
-                <Link
-                  href={`/warehouse/exit-slips/${slip.objectId || slip.id}/pdf`}
-                >
+                <Link href={`/warehouse/exit-slips/${slip.objectId || slip.id}/pdf`}>
+                  <Printer className="size-4" />
+                  خروجی PDF حواله
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="gap-2">
+                <Link href={`/warehouse/exit-slips/${slip.objectId || slip.id}/pdf?print=1`}>
                   <FileText className="size-4" />
-                  مشاهده حواله خروج
+                  مشاهده PDF
                 </Link>
               </Button>
             </div>
@@ -278,9 +296,6 @@ export default function ExitSlipDetailsPage() {
                 </div>
               </dl>
             </section>
-          ) : null}
-          {slip.items.length > 0 ? (
-            <ExitSlipProductGroups items={slip.items} />
           ) : null}
         </>
       )}
