@@ -57,10 +57,13 @@ export const PDF_PAGE_STYLES = String.raw`
       overflow: visible !important;
       box-sizing: border-box !important;
     }
-    .print-section,
-    .print-table-row {
+    .print-section {
       break-inside: avoid;
       page-break-inside: avoid;
+    }
+    .print-table-section {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
     }
     .items-table thead {
       display: table-header-group;

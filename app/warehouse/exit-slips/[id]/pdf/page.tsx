@@ -91,6 +91,7 @@ export default function ExitSlipPdfPage() {
       productName: item.productName,
       quantity: item.quantity,
     })) ?? [];
+  const totalItemCount = summaryRows.reduce((sum, row) => sum + row.quantity, 0);
   const detailRows =
     data?.items.flatMap((item) => {
       if (!item.units.length) {
@@ -158,6 +159,7 @@ export default function ExitSlipPdfPage() {
                     ) : hasText(data.receiver.fullName) ? (
                       <DeliveryBlock data={data} />
                     ) : null}
+                    <SummaryMeta totalItemCount={totalItemCount} />
                   </>
                 ) : null}
                 <SummaryTable
@@ -332,7 +334,7 @@ function SummaryTable({
   startIndex?: number;
 }) {
   return (
-    <section className="print-section rounded-md border border-[#94A3B8] bg-white/95">
+    <section className="print-section print-table-section rounded-md border border-[#94A3B8] bg-white/95">
       <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10.5px] font-bold text-[#1F3A5F]">
         خلاصه کالاها
       </h2>
@@ -373,7 +375,7 @@ function DetailTable({
   startIndex?: number;
 }) {
   return (
-    <section className="print-section rounded-md border border-[#94A3B8] bg-white/95">
+    <section className="print-section print-table-section rounded-md border border-[#94A3B8] bg-white/95">
       <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10.5px] font-bold text-[#1F3A5F]">
         جزئیات اقلام
       </h2>
@@ -382,10 +384,10 @@ function DetailTable({
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
             <TableHeader className="w-10">ردیف</TableHeader>
             <TableHeader className="w-[28%]">نام کالا</TableHeader>
-            <TableHeader className="w-[16%]">کد کالا</TableHeader>
-            <TableHeader className="w-[22%]">سریال</TableHeader>
-            <TableHeader className="w-[22%]">کد رهگیری</TableHeader>
-            <TableHeader className="w-[12%]">شناسه</TableHeader>
+            <TableHeader className="w-[15%]">کد کالا</TableHeader>
+            <TableHeader className="w-[20%]">سریال</TableHeader>
+            <TableHeader className="w-[14%]">کد رهگیری</TableHeader>
+            <TableHeader className="w-[13%]">شناسه</TableHeader>
           </tr>
         </thead>
         <tbody>
@@ -394,13 +396,13 @@ function DetailTable({
               <TableCell>{formatNumber(startIndex + index + 1)}</TableCell>
               <TableCell>{row.productName || "-"}</TableCell>
               <TableCell>{row.productSku ? formatFaDigits(row.productSku) : "-"}</TableCell>
-              <TableCell className="serial-cell">
+              <TableCell className="serial-cell whitespace-nowrap text-[9px]">
                 {row.serialNumber ? formatFaDigits(row.serialNumber) : "-"}
               </TableCell>
-              <TableCell className="tracking-cell">
+              <TableCell className="tracking-cell whitespace-nowrap text-[9px]">
                 {row.trackingCode ? formatFaDigits(row.trackingCode) : "-"}
               </TableCell>
-              <TableCell>
+              <TableCell className="whitespace-nowrap text-[9px]">
                 {row.productIdentifier ? formatFaDigits(row.productIdentifier) : "-"}
               </TableCell>
             </tr>
@@ -429,6 +431,19 @@ function NotesBlock({
         ) : null}
         {hasText(notes) ? <InlineInfo label="توضیحات" value={notes || ""} /> : null}
       </dl>
+    </section>
+  );
+}
+
+function SummaryMeta({ totalItemCount }: { totalItemCount: number }) {
+  return (
+    <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+      <div className="flex items-center justify-between gap-3 text-[9.5px]">
+        <span className="font-medium text-[#64748B]">تعداد کل اقلام</span>
+        <span className="font-semibold text-[#102034]">
+          {formatNumber(totalItemCount)}
+        </span>
+      </div>
     </section>
   );
 }
