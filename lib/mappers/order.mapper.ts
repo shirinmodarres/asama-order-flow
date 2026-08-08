@@ -111,6 +111,9 @@ export function mapOrderDto(dto: unknown): Order {
         : toNumberValue(record.selectedCustomerAddressId),
     customerAddressTitle: toNullableString(record.customerAddressTitle),
     customerAddressText: toNullableString(record.customerAddressText),
+    selectedCustomerAddressText: toNullableString(
+      record.selectedCustomerAddressText ?? record.customerAddressText,
+    ),
     customerAddressZipCode: toNullableString(record.customerAddressZipCode),
     customerAddressCityRef:
       record.customerAddressCityRef === undefined ||
