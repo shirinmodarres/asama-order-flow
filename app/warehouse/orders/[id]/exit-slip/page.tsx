@@ -382,6 +382,34 @@ export default function ExitSlipCreatePage() {
 
   return (
     <DashboardLayout role="warehouse" title="صدور حواله خروج">
+      <style jsx global>{`
+        @media print {
+          body {
+            background: #ffffff !important;
+          }
+
+          body * {
+            visibility: hidden !important;
+          }
+
+          .print-export-area,
+          .print-export-area * {
+            visibility: visible !important;
+          }
+
+          .print-export-area {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          .print-export-area .print-hide {
+            display: none !important;
+          }
+        }
+      `}</style>
       {isLoading ? (
         <LoadingState title="در حال دریافت سفارش" />
       ) : error && !order ? (
@@ -452,11 +480,28 @@ export default function ExitSlipCreatePage() {
             ) : null}
           </Card>
 
-          <DataTable
-            columns={expectedColumns}
-            rows={expectedRows}
-            rowKey={(row) => row.item.objectId || row.item.productId}
-          />
+          <section className="print-export-area">
+            <Card className="p-5 print-hide">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-[#1F3A5F]">
+                    جدول کالاها
+                  </h3>
+                  <p className="text-sm text-[#64748B]">
+                    خلاصه آیتم‌های سفارش برای خروجی PDF
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-4 py-3 text-sm font-semibold text-[#1F3A5F]">
+                  {formatFaDigits(order.code || order.id)}
+                </div>
+              </div>
+            </Card>
+            <DataTable
+              columns={expectedColumns}
+              rows={expectedRows}
+              rowKey={(row) => row.item.objectId || row.item.productId}
+            />
+          </section>
 
           <Card className="p-5">
             <div className="grid gap-4 md:grid-cols-3">
