@@ -93,6 +93,24 @@ function getAddressValue(
     return "customerAddressText" in address
       ? address.customerAddressText || address.selectedCustomerAddressText || ""
       : "";
+  const source = address as
+    | {
+        province?: string | null;
+        county?: string | null;
+        city?: string | null;
+        fullAddress?: string | null;
+        customerAddressText?: string | null;
+        customerAddress?: string | null;
+        plaque?: string | number | null;
+        unit?: string | number | null;
+        deliveryProvince?: string | null;
+        deliveryCounty?: string | null;
+        deliveryCity?: string | null;
+        deliveryFullAddress?: string | null;
+        deliveryPlaque?: string | number | null;
+        deliveryUnit?: string | number | null;
+      }
+    | undefined;
   if (key === "province")
     return source?.province || source?.deliveryProvince || "";
   if (key === "county")
@@ -108,8 +126,8 @@ function getAddressValue(
       ""
     );
   if (key === "plaque")
-    return source?.plaque || source?.deliveryPlaque || "";
-  return source?.unit || source?.deliveryUnit || "";
+    return String(source?.plaque || source?.deliveryPlaque || "");
+  return String(source?.unit || source?.deliveryUnit || "");
 }
 
 function getAddressPostalCode(address: NonNullable<AddressLike>): string {
