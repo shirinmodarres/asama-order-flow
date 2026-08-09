@@ -218,7 +218,6 @@ export function OrderEditForm({
     "";
   const selectedPriceList =
     priceListOptions.find((item) => item.objectId === resolvedPriceListKey) ||
-    priceListOptions[0] ||
     null;
 
   const productMap = useMemo(
