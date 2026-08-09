@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Trash2 } from "lucide-react";
+import { CheckCircle2, Printer, Trash2 } from "lucide-react";
 import { CustomerInfoCard } from "@/components/customer/customer-info-card";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import type { DataTableColumn } from "@/components/shared/data-table";
@@ -19,7 +19,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getErrorMessage } from "@/lib/api/api-error";
-import { formatNumber } from "@/lib/expert/utils";
+import { formatDateTime, formatNumber } from "@/lib/expert/utils";
 import type { Order, OrderItem } from "@/lib/models/order.model";
 import type {
   ExitSlip,
@@ -111,6 +111,11 @@ export default function ExitSlipCreatePage() {
       };
     });
   }, [order, scannedUnits]);
+  const totalItemCount = useMemo(
+    () => expectedRows.reduce((sum, row) => sum + row.item.quantity, 0),
+    [expectedRows],
+  );
+  const lastUpdatedAt = order?.updatedAt  || null;
 
   const canSubmit =
     scannedUnits.length > 0 &&
@@ -377,6 +382,34 @@ export default function ExitSlipCreatePage() {
 
   return (
     <DashboardLayout role="warehouse" title="صدور حواله خروج">
+      <style jsx global>{`
+        @media print {
+          body {
+            background: #ffffff !important;
+          }
+
+          body * {
+            visibility: hidden !important;
+          }
+
+          .print-export-area,
+          .print-export-area * {
+            visibility: visible !important;
+          }
+
+          .print-export-area {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          .print-export-area .print-hide {
+            display: none !important;
+          }
+        }
+      `}</style>
       {isLoading ? (
         <LoadingState title="در حال دریافت سفارش" />
       ) : error && !order ? (
@@ -392,6 +425,21 @@ export default function ExitSlipCreatePage() {
             title={`صدور حواله ${formatFaDigits(order.code || order.id)}`}
             description="برای صدور حواله، کالاهای فیزیکی سفارش را اسکن کنید."
           />
+          <Card className="p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-[#1F3A5F]">
+                  تعداد کل اقلام
+                </h3>
+                <p className="text-sm text-[#64748B]">
+                  مجموع تعداد کالاهای ثبت‌شده در این سفارش
+                </p>
+              </div>
+              <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-4 py-3 text-sm font-semibold text-[#1F3A5F]">
+                {formatNumber(totalItemCount)}
+              </div>
+            </div>
+          </Card>
           {message ? (
             <div className="asama-banner px-4 py-3 text-sm">{message}</div>
           ) : null}
@@ -420,6 +468,10 @@ export default function ExitSlipCreatePage() {
                 label="روش پرداخت"
                 value={order.salesTypeTitle || ""}
               />
+              <InfoItem
+                label="تاریخ آخرین تغییر"
+                value={lastUpdatedAt ? formatDateTime(lastUpdatedAt) : "-"}
+              />
             </div>
             {!order.stockTitle && !order.warehouseName ? (
               <p className="mt-3 text-xs font-medium text-red-600">
@@ -428,11 +480,28 @@ export default function ExitSlipCreatePage() {
             ) : null}
           </Card>
 
-          <DataTable
-            columns={expectedColumns}
-            rows={expectedRows}
-            rowKey={(row) => row.item.objectId || row.item.productId}
-          />
+          <section className="print-export-area">
+            <Card className="p-5 print-hide">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-[#1F3A5F]">
+                    جدول کالاها
+                  </h3>
+                  <p className="text-sm text-[#64748B]">
+                    خلاصه آیتم‌های سفارش برای خروجی PDF
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-4 py-3 text-sm font-semibold text-[#1F3A5F]">
+                  {formatFaDigits(order.code || order.id)}
+                </div>
+              </div>
+            </Card>
+            <DataTable
+              columns={expectedColumns}
+              rows={expectedRows}
+              rowKey={(row) => row.item.objectId || row.item.productId}
+            />
+          </section>
 
           <Card className="p-5">
             <div className="grid gap-4 md:grid-cols-3">
@@ -514,14 +583,24 @@ export default function ExitSlipCreatePage() {
                 onChange={(event) => setNotes(event.target.value)}
               />
             </label>
-            <Button
-              type="button"
-              className="mt-4"
-              onClick={handleSubmit}
-              disabled={!canSubmit || isSubmitting || Boolean(createdSlip)}
-            >
-              {isSubmitting ? "در حال ثبت..." : "ثبت حواله خروج"}
-            </Button>
+            <div className="mt-4 flex flex-wrap gap-2 print:hidden">
+              <Button
+                type="button"
+                onClick={() => window.print()}
+                variant="outline"
+                className="gap-2"
+              >
+                <Printer className="size-4" />
+                خروجی PDF جدول
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canSubmit || isSubmitting || Boolean(createdSlip)}
+              >
+                {isSubmitting ? "در حال ثبت..." : "ثبت حواله خروج"}
+              </Button>
+            </div>
             {!canSubmit ? (
               <p className="mt-3 text-xs leading-6 text-[#8A5A00]">
                 تعداد کالاهای ثبت‌شده کمتر از سفارش است.

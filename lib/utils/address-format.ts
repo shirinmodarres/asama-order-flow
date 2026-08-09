@@ -30,6 +30,8 @@ type AddressLike =
       | "customerAddressText"
       | "customerAddress"
       | "receiverFullName"
+      | "customerAddressText"
+      | "selectedCustomerAddressText"
     >
   | null
   | undefined;
@@ -51,6 +53,7 @@ export function formatDeliveryAddress(address: AddressLike): string {
   if (!address) return "آدرس ثبت نشده است.";
 
   const parts = [
+    getAddressValue(address, "addressText"),
     getAddressValue(address, "province"),
     getAddressValue(address, "county"),
     getAddressValue(address, "city"),
@@ -78,6 +81,7 @@ export function formatPlaqueUnit(address: AddressLike): string {
 function getAddressValue(
   address: NonNullable<AddressLike>,
   key:
+    | "addressText"
     | "province"
     | "county"
     | "city"
@@ -85,26 +89,10 @@ function getAddressValue(
     | "plaque"
     | "unit",
 ): string {
-  const source = address as
-    | {
-        province?: string;
-        county?: string | null;
-        city?: string;
-        fullAddress?: string;
-        plaque?: string | null;
-        unit?: string | null;
-        deliveryProvince?: string | null;
-        deliveryCounty?: string | null;
-        deliveryCity?: string | null;
-        deliveryFullAddress?: string | null;
-        deliveryPlaque?: string | null;
-        deliveryUnit?: string | null;
-        customerAddressTitle?: string | null;
-        customerAddressText?: string | null;
-        customerAddress?: string | null;
-      }
-    | undefined;
-
+  if (key === "addressText")
+    return "customerAddressText" in address
+      ? address.customerAddressText || address.selectedCustomerAddressText || ""
+      : "";
   if (key === "province")
     return source?.province || source?.deliveryProvince || "";
   if (key === "county")

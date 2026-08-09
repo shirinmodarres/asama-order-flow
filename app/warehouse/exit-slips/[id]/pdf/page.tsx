@@ -18,8 +18,10 @@ function hasText(value: string | null | undefined): boolean {
   return Boolean(value && value.trim());
 }
 
-const SUMMARY_ROWS_PER_PAGE = 12;
-const DETAIL_ROWS_PER_PAGE = 16;
+const SUMMARY_ROWS_FIRST_PAGE = 16;
+const SUMMARY_ROWS_NEXT_PAGE = 22;
+const DETAIL_ROWS_FIRST_PAGE = 16;
+const DETAIL_ROWS_NEXT_PAGE = 22;
 
 export default function ExitSlipPdfPage() {
   const params = useParams<{ id: string }>();
@@ -89,6 +91,7 @@ export default function ExitSlipPdfPage() {
       productName: item.productName,
       quantity: item.quantity,
     })) ?? [];
+  const totalItemCount = summaryRows.reduce((sum, row) => sum + row.quantity, 0);
   const detailRows =
     data?.items.flatMap((item) => {
       if (!item.units.length) {
@@ -115,8 +118,8 @@ export default function ExitSlipPdfPage() {
         trackingCode: unit.trackingCode,
       }));
     }) ?? [];
-  const summaryPages = paginateRows(summaryRows, SUMMARY_ROWS_PER_PAGE);
-  const detailPages = paginateRows(detailRows, DETAIL_ROWS_PER_PAGE);
+  const summaryPages = paginateRows(summaryRows, SUMMARY_ROWS_FIRST_PAGE, SUMMARY_ROWS_NEXT_PAGE);
+  const detailPages = paginateRows(detailRows, DETAIL_ROWS_FIRST_PAGE, DETAIL_ROWS_NEXT_PAGE);
   const hasDetailPages = detailPages.length > 0;
 
   return (
@@ -145,7 +148,7 @@ export default function ExitSlipPdfPage() {
               key={`summary-${index}`}
               pageBreakAfter={index < summaryPages.length - 1 || hasDetailPages}
             >
-              <div className="space-y-3 text-[10px] leading-5">
+              <div className="space-y-3 text-[10.5px] leading-5.5">
                 <HeaderBlock data={data} />
                 <TitleBlock />
                 {index === 0 ? (
@@ -156,9 +159,18 @@ export default function ExitSlipPdfPage() {
                     ) : hasText(data.receiver.fullName) ? (
                       <DeliveryBlock data={data} />
                     ) : null}
+                    <SummaryMeta totalItemCount={totalItemCount} />
                   </>
                 ) : null}
-                <SummaryTable rows={rows} />
+                <SummaryTable
+                  rows={rows}
+                  startIndex={
+                    index === 0
+                      ? 0
+                      : SUMMARY_ROWS_FIRST_PAGE +
+                        (index - 1) * SUMMARY_ROWS_NEXT_PAGE
+                  }
+                />
                 {index === summaryPages.length - 1 && !hasDetailPages ? (
                   <>
                     {hasText(data.deliveryCode) || hasText(data.notes) ? (
@@ -179,10 +191,18 @@ export default function ExitSlipPdfPage() {
               key={`detail-${index}`}
               pageBreakAfter={index < detailPages.length - 1}
             >
-              <div className="space-y-3 text-[10px] leading-5">
+              <div className="space-y-3 text-[10.5px] leading-5.5">
                 <HeaderBlock data={data} />
                 <TitleBlock />
-                <DetailTable rows={rows} />
+                <DetailTable
+                  rows={rows}
+                  startIndex={
+                    index === 0
+                      ? 0
+                      : DETAIL_ROWS_FIRST_PAGE +
+                        (index - 1) * DETAIL_ROWS_NEXT_PAGE
+                  }
+                />
                 {index === detailPages.length - 1 ? (
                   <footer className="grid grid-cols-2 gap-8 pt-7">
                     <Signature label="امضای انباردار" />
@@ -230,10 +250,10 @@ function CustomerBlock({
 }) {
   return (
     <section className="print-section customer-info rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
+      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10.5px] font-bold text-[#1F3A5F]">
         اطلاعات مرکز / مشتری سپیدار
       </h2>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9.5px]">
         <InlineInfo label="نام مشتری/مرکز" value={customer?.name || "-"} />
         <InlineInfo
           label="کد دریافت"
@@ -260,10 +280,10 @@ function RecipientBlock({
 }) {
   return (
     <section className="print-section recipient-info rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
+      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10.5px] font-bold text-[#1F3A5F]">
         اطلاعات تحویل‌گیرنده ناجا
       </h2>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9.5px]">
         <InlineInfo label="نام و نام خانوادگی" value={recipient?.fullName || "-"} />
         <InlineInfo
           label="کد ملی"
@@ -287,10 +307,10 @@ function RecipientBlock({
 function DeliveryBlock({ data }: { data: ExitSlipPdfData }) {
   return (
     <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
-      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10px] font-bold text-[#1F3A5F]">
+      <h2 className="mb-1.5 border-b border-[#E2E8F0] pb-1 text-[10.5px] font-bold text-[#1F3A5F]">
         اطلاعات تحویل
       </h2>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9.5px]">
         <InlineInfo label="گیرنده بار" value={data.receiver.fullName || "-"} />
         <InlineInfo
           label="موبایل گیرنده"
@@ -308,15 +328,17 @@ function DeliveryBlock({ data }: { data: ExitSlipPdfData }) {
 
 function SummaryTable({
   rows,
+  startIndex = 0,
 }: {
   rows: Array<{ key: string; productName: string; quantity: number }>;
+  startIndex?: number;
 }) {
   return (
-    <section className="print-section rounded-md border border-[#94A3B8] bg-white/95">
-      <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
+    <section className="print-section print-table-section rounded-md border border-[#94A3B8] bg-white/95">
+      <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10.5px] font-bold text-[#1F3A5F]">
         خلاصه کالاها
       </h2>
-      <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
+      <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[9.5px] leading-4">
         <thead>
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
             <TableHeader className="w-10">ردیف</TableHeader>
@@ -327,7 +349,7 @@ function SummaryTable({
         <tbody>
           {rows.map((row, index) => (
             <tr key={row.key} className="print-table-row border-t border-[#CBD5E1]">
-              <TableCell>{formatNumber(index + 1)}</TableCell>
+              <TableCell>{formatNumber(startIndex + index + 1)}</TableCell>
               <TableCell>{row.productName || "-"}</TableCell>
               <TableCell>{formatNumber(row.quantity)}</TableCell>
             </tr>
@@ -340,6 +362,7 @@ function SummaryTable({
 
 function DetailTable({
   rows,
+  startIndex = 0,
 }: {
   rows: Array<{
     key: string;
@@ -349,36 +372,37 @@ function DetailTable({
     serialNumber: string;
     trackingCode: string;
   }>;
+  startIndex?: number;
 }) {
   return (
-    <section className="print-section rounded-md border border-[#94A3B8] bg-white/95">
-      <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10px] font-bold text-[#1F3A5F]">
+    <section className="print-section print-table-section rounded-md border border-[#94A3B8] bg-white/95">
+      <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10.5px] font-bold text-[#1F3A5F]">
         جزئیات اقلام
       </h2>
-      <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[9px] leading-4">
+      <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[9.5px] leading-4">
         <thead>
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
             <TableHeader className="w-10">ردیف</TableHeader>
             <TableHeader className="w-[28%]">نام کالا</TableHeader>
-            <TableHeader className="w-[16%]">کد کالا</TableHeader>
-            <TableHeader className="w-[22%]">سریال</TableHeader>
-            <TableHeader className="w-[22%]">کد رهگیری</TableHeader>
-            <TableHeader className="w-[12%]">شناسه</TableHeader>
+            <TableHeader className="w-[15%]">کد کالا</TableHeader>
+            <TableHeader className="w-[20%]">سریال</TableHeader>
+            <TableHeader className="w-[14%]">کد رهگیری</TableHeader>
+            <TableHeader className="w-[13%]">شناسه</TableHeader>
           </tr>
         </thead>
         <tbody>
           {rows.map((row, index) => (
             <tr key={row.key} className="print-table-row border-t border-[#CBD5E1]">
-              <TableCell>{formatNumber(index + 1)}</TableCell>
+              <TableCell>{formatNumber(startIndex + index + 1)}</TableCell>
               <TableCell>{row.productName || "-"}</TableCell>
               <TableCell>{row.productSku ? formatFaDigits(row.productSku) : "-"}</TableCell>
-              <TableCell className="serial-cell">
+              <TableCell className="serial-cell whitespace-nowrap text-[9px]">
                 {row.serialNumber ? formatFaDigits(row.serialNumber) : "-"}
               </TableCell>
-              <TableCell className="tracking-cell">
+              <TableCell className="tracking-cell whitespace-nowrap text-[9px]">
                 {row.trackingCode ? formatFaDigits(row.trackingCode) : "-"}
               </TableCell>
-              <TableCell>
+              <TableCell className="whitespace-nowrap text-[9px]">
                 {row.productIdentifier ? formatFaDigits(row.productIdentifier) : "-"}
               </TableCell>
             </tr>
@@ -407,6 +431,19 @@ function NotesBlock({
         ) : null}
         {hasText(notes) ? <InlineInfo label="توضیحات" value={notes || ""} /> : null}
       </dl>
+    </section>
+  );
+}
+
+function SummaryMeta({ totalItemCount }: { totalItemCount: number }) {
+  return (
+    <section className="print-section rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2">
+      <div className="flex items-center justify-between gap-3 text-[9.5px]">
+        <span className="font-medium text-[#64748B]">تعداد کل اقلام</span>
+        <span className="font-semibold text-[#102034]">
+          {formatNumber(totalItemCount)}
+        </span>
+      </div>
     </section>
   );
 }
@@ -463,19 +500,20 @@ function TableCell({
 function Signature({ label }: { label: string }) {
   return (
     <div className="pt-6">
-      <div className="border-t border-[#94A3B8] pt-1.5 text-center text-[9px] font-semibold">
+      <div className="border-t border-[#94A3B8] pt-1.5 text-center text-[9.5px] font-semibold">
         {label}
       </div>
     </div>
   );
 }
 
-function paginateRows<T>(rows: T[], size: number): T[][] {
+function paginateRows<T>(rows: T[], firstPageSize: number, nextPageSize: number): T[][] {
   if (!rows.length) return [];
-  if (size <= 0) return [rows];
+  if (firstPageSize <= 0 || nextPageSize <= 0) return [rows];
   const chunks: T[][] = [];
-  for (let index = 0; index < rows.length; index += size) {
-    chunks.push(rows.slice(index, index + size));
+  chunks.push(rows.slice(0, firstPageSize));
+  for (let index = firstPageSize; index < rows.length; index += nextPageSize) {
+    chunks.push(rows.slice(index, index + nextPageSize));
   }
   return chunks;
 }

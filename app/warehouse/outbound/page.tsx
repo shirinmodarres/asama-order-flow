@@ -116,17 +116,7 @@ export default function WarehouseOutboundPage() {
       header: "گیرنده بار",
       render: (row) => row.receiverFullName || row.customerName || "-",
     },
-    {
-      key: "products",
-      header: "کالا",
-      cellClassName: "max-w-[320px] whitespace-normal leading-7",
-      render: (row) =>
-        row.items
-          .map((item) =>
-            formatFaDigits(item.productName || item.productSku || "-"),
-          )
-          .join("، "),
-    },
+
     {
       key: "quantity",
       header: "تعداد",

@@ -27,6 +27,8 @@ interface CustomerInfoCardProps {
     | "deliveryUnit"
     | "receiverFullName"
     | "receiverPhone"
+    | "customerAddressText"
+    | "selectedCustomerAddressText"
   >;
 }
 

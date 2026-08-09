@@ -54,6 +54,7 @@ export interface Order {
   customerAddressCityRef: number | null;
   customerAddressPathRef: number | null;
   customerAddressIsMain: boolean | null;
+  selectedCustomerAddressText: string | null;
   saleTypeObjectId: string | null;
   sepidarSaleTypeId: number | null;
   saleTypeTitle: string | null;
