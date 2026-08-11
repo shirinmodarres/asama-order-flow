@@ -55,6 +55,8 @@ type SalesTypeOption = {
   sepidarCode: number | null;
 };
 
+const NAJA_PAYMENT_METHOD_CODES = new Set([22003, 22004]);
+
 export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -85,6 +87,15 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const [error, setError] = useState("");
   const [assignmentError, setAssignmentError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const najaSalesTypes = useMemo(
+    () =>
+      salesTypes.filter((salesType) =>
+        salesType.internalCode !== null &&
+        NAJA_PAYMENT_METHOD_CODES.has(salesType.internalCode),
+      ),
+    [salesTypes],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -470,7 +481,7 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
                     : null
                 }
                 onValueChange={(value) => setSelectedSalesTypeId(value)}
-                options={salesTypes.map((salesType) => ({
+                options={najaSalesTypes.map((salesType) => ({
                   value: salesType.objectId,
                   label: salesType.title,
                   searchText: [salesType.title, salesType.internalCode, salesType.sepidarCode]
