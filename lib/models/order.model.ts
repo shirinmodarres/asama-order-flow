@@ -125,6 +125,13 @@ export interface Order {
   reviewResolvedAt: string | null;
   reviewExpiresAt: string | null;
   reviewRemainingMs: number | null;
+  financialApprovalStatus: "pending" | "approved" | "needs_correction" | null;
+  financialApprovalStatusLabel: string | null;
+  financialApprovedAt: string | null;
+  financialApprovedBy: string | null;
+  financialCorrectionReason: string | null;
+  financialReturnedAt: string | null;
+  financialReturnedBy: string | null;
   sourceLabel: string | null;
   notes: string | null;
   editedByUserId: string | null;
@@ -157,6 +164,7 @@ export interface Order {
 export interface OrderFilters {
   status?: string;
   orderType?: OrderType;
+  financialApprovalStatus?: "pending" | "approved" | "needs_correction";
 }
 
 export interface CreateOrderPayload {

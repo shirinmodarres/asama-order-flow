@@ -48,13 +48,23 @@ type PaymentMethodSnapshot = {
   sepidarCode: number | null;
 };
 
+type SalesTypeOption = {
+  objectId: string;
+  title: string;
+  internalCode: number | null;
+  sepidarCode: number | null;
+};
+
+const NAJA_PAYMENT_METHOD_CODES = new Set([22003, 22004]);
+
 export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [salesTypes, setSalesTypes] = useState<
-    Array<{ objectId: string; title: string; internalCode: number | null; sepidarCode: number | null }>
+    Array<SalesTypeOption>
   >([]);
+  const [selectedSalesTypeId, setSelectedSalesTypeId] = useState("");
   const [selectedAssignment, setSelectedAssignment] =
     useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,6 +87,15 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const [error, setError] = useState("");
   const [assignmentError, setAssignmentError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const najaSalesTypes = useMemo(
+    () =>
+      salesTypes.filter((salesType) =>
+        salesType.internalCode !== null &&
+        NAJA_PAYMENT_METHOD_CODES.has(salesType.internalCode),
+      ),
+    [salesTypes],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -116,8 +135,32 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
   const selectedProduct =
     products.find((product) => product.objectId === productId) ?? null;
   const totalAmount = selectedProduct ? selectedProduct.unitPrice * quantity : 0;
-  const paymentMethodSnapshot = getCustomerPaymentMethodSnapshot(selectedCustomer, salesTypes);
+  const paymentMethodSnapshot = getCustomerPaymentMethodSnapshot(
+    selectedCustomer,
+    salesTypes,
+    selectedSalesTypeId,
+  );
   const paymentMethodTitle = paymentMethodSnapshot?.title || getPaymentMethodTitle(selectedCustomer);
+
+  useEffect(() => {
+    if (!selectedCustomer || selectedSalesTypeId) return;
+    const fallback = getCustomerPaymentMethodSnapshot(selectedCustomer, salesTypes);
+    if (fallback?.objectId) {
+      setSelectedSalesTypeId(fallback.objectId);
+      return;
+    }
+    const titleMatch =
+      salesTypes.find((item) => item.title === selectedCustomer.saleType?.title) ||
+      salesTypes.find(
+        (item) =>
+          selectedCustomer.saleType?.sepidarSaleTypeId !== undefined &&
+          selectedCustomer.saleType?.sepidarSaleTypeId !== null &&
+          item.sepidarCode === selectedCustomer.saleType.sepidarSaleTypeId,
+      );
+    if (titleMatch?.objectId) {
+      setSelectedSalesTypeId(titleMatch.objectId);
+    }
+  }, [selectedCustomer, salesTypes, selectedSalesTypeId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -418,6 +461,40 @@ export function NajaOrderPage({ role = "naja" }: NajaOrderPageProps) {
               </div>
             ) : null}
 
+            <label className="grid gap-2 text-sm font-medium text-[#334155] md:col-span-2">
+              <span>روش پرداخت</span>
+              <SearchableSelect
+                value={selectedSalesTypeId || undefined}
+                selectedOption={
+                  paymentMethodSnapshot?.objectId
+                    ? {
+                        value: paymentMethodSnapshot.objectId,
+                        label: paymentMethodSnapshot.title || "",
+                        searchText: [
+                          paymentMethodSnapshot.title,
+                          paymentMethodSnapshot.internalCode,
+                          paymentMethodSnapshot.sepidarCode,
+                        ]
+                          .filter(Boolean)
+                          .join(" "),
+                      }
+                    : null
+                }
+                onValueChange={(value) => setSelectedSalesTypeId(value)}
+                options={najaSalesTypes.map((salesType) => ({
+                  value: salesType.objectId,
+                  label: salesType.title,
+                  searchText: [salesType.title, salesType.internalCode, salesType.sepidarCode]
+                    .filter(Boolean)
+                    .join(" "),
+                }))}
+                placeholder="انتخاب روش پرداخت"
+                searchPlaceholder="جستجو در روش پرداخت"
+                emptyMessage="روش پرداختی پیدا نشد"
+                disabled={isLoading || isLoadingAssignment}
+              />
+            </label>
+
             <div className="rounded-[18px] border border-[#DDEAE0] bg-[#F3FAF4] p-4 text-sm leading-7 text-[#2F6B3A] md:col-span-2">
               موجودی قابل فروش بر اساس انبارهای مجاز تخصیص این مرکز از سرور
               دریافت می‌شود.
@@ -711,6 +788,7 @@ function getPaymentMethodTitle(customer: Customer | null | undefined): string | 
 function getCustomerPaymentMethodSnapshot(
   customer: Customer | null | undefined,
   salesTypes: Array<{ objectId: string; title: string; internalCode: number | null; sepidarCode: number | null }>,
+  selectedSalesTypeId?: string,
 ): PaymentMethodSnapshot | null {
   if (!customer) return null;
   const saleType = customer.saleType;
@@ -719,7 +797,13 @@ function getCustomerPaymentMethodSnapshot(
   const salesTypeInternalCode = null;
   const salesTypeSepidarCode = saleType?.sepidarSaleTypeId ?? null;
 
+  const selectedSalesType =
+    selectedSalesTypeId
+      ? salesTypes.find((item) => item.objectId === selectedSalesTypeId) || null
+      : null;
+
   const matchedSalesType =
+    selectedSalesType ||
     salesTypes.find((item) => item.objectId === salesTypeObjectId) ||
     salesTypes.find((item) => salesTypeInternalCode !== null && item.internalCode === salesTypeInternalCode) ||
     salesTypes.find((item) => salesTypeSepidarCode !== null && item.sepidarCode === salesTypeSepidarCode) ||

@@ -1,6 +1,7 @@
 export type BackendRoleKey =
   | "expert"
   | "sales_manager"
+  | "financial_control"
   | "warehouse"
   | "finance"
   | "support"
@@ -9,6 +10,7 @@ export type BackendRoleKey =
 export type PanelRoleKey =
   | "expert"
   | "manager"
+  | "finance-control"
   | "warehouse"
   | "finance"
   | "support"
@@ -17,6 +19,7 @@ export type PanelRoleKey =
 export const ROLE_LABELS: Record<BackendRoleKey, string> = {
   expert: "کارشناس",
   sales_manager: "مدیر فروش",
+  financial_control: "کارشناس کنترل مالی",
   warehouse: "انباردار",
   finance: "حسابداری",
   support: "پشتیبان",
@@ -26,6 +29,7 @@ export const ROLE_LABELS: Record<BackendRoleKey, string> = {
 export const PANEL_ROUTE_BY_ROLE: Record<BackendRoleKey, `/${PanelRoleKey}`> = {
   expert: "/expert",
   sales_manager: "/manager",
+  financial_control: "/finance-control",
   warehouse: "/warehouse",
   finance: "/finance",
   support: "/support",
@@ -35,6 +39,7 @@ export const PANEL_ROUTE_BY_ROLE: Record<BackendRoleKey, `/${PanelRoleKey}`> = {
 export const PANEL_ROLE_BY_BACKEND_ROLE: Record<BackendRoleKey, PanelRoleKey> = {
   expert: "expert",
   sales_manager: "manager",
+  financial_control: "finance-control",
   warehouse: "warehouse",
   finance: "finance",
   support: "support",
@@ -44,6 +49,7 @@ export const PANEL_ROLE_BY_BACKEND_ROLE: Record<BackendRoleKey, PanelRoleKey> = 
 export const BACKEND_ROLE_BY_PANEL_ROLE: Record<PanelRoleKey, BackendRoleKey> = {
   expert: "expert",
   manager: "sales_manager",
+  "finance-control": "financial_control",
   warehouse: "warehouse",
   finance: "finance",
   support: "support",

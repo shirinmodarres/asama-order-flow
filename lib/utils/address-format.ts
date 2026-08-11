@@ -26,6 +26,9 @@ type AddressLike =
       | "deliveryFullAddress"
       | "deliveryPlaque"
       | "deliveryUnit"
+      | "customerAddressTitle"
+      | "customerAddressText"
+      | "customerAddress"
       | "receiverFullName"
       | "customerAddressText"
       | "selectedCustomerAddressText"
@@ -55,6 +58,7 @@ export function formatDeliveryAddress(address: AddressLike): string {
     getAddressValue(address, "county"),
     getAddressValue(address, "city"),
     getAddressValue(address, "fullAddress"),
+    getAddressPostalCode(address),
     formatPlaqueUnit(address),
   ].filter(Boolean);
 
@@ -89,23 +93,43 @@ function getAddressValue(
     return "customerAddressText" in address
       ? address.customerAddressText || address.selectedCustomerAddressText || ""
       : "";
+  const source = address as
+    | {
+        province?: string | null;
+        county?: string | null;
+        city?: string | null;
+        fullAddress?: string | null;
+        customerAddressText?: string | null;
+        customerAddress?: string | null;
+        plaque?: string | number | null;
+        unit?: string | number | null;
+        deliveryProvince?: string | null;
+        deliveryCounty?: string | null;
+        deliveryCity?: string | null;
+        deliveryFullAddress?: string | null;
+        deliveryPlaque?: string | number | null;
+        deliveryUnit?: string | number | null;
+      }
+    | undefined;
   if (key === "province")
-    return "province" in address
-      ? address.province || ""
-      : address.deliveryProvince || "";
+    return source?.province || source?.deliveryProvince || "";
   if (key === "county")
-    return "county" in address
-      ? address.county || ""
-      : address.deliveryCounty || "";
+    return source?.county || source?.deliveryCounty || "";
   if (key === "city")
-    return "city" in address ? address.city || "" : address.deliveryCity || "";
+    return source?.city || source?.deliveryCity || "";
   if (key === "fullAddress")
-    return "fullAddress" in address
-      ? address.fullAddress || ""
-      : address.deliveryFullAddress || "";
+    return (
+      source?.fullAddress ||
+      source?.customerAddressText ||
+      source?.customerAddress ||
+      source?.deliveryFullAddress ||
+      ""
+    );
   if (key === "plaque")
-    return "plaque" in address
-      ? address.plaque || ""
-      : address.deliveryPlaque || "";
-  return "unit" in address ? address.unit || "" : address.deliveryUnit || "";
+    return String(source?.plaque || source?.deliveryPlaque || "");
+  return String(source?.unit || source?.deliveryUnit || "");
+}
+
+function getAddressPostalCode(address: NonNullable<AddressLike>): string {
+  return "";
 }

@@ -781,7 +781,6 @@ export function OrderForm({
   const hasGeneratedPriceList = priceListOptions.length > 0;
   const selectedPriceListOption =
     priceListOptions.find((option) => option.objectId === selectedPriceListId) ??
-    priceListOptions[0] ??
     null;
   const requiresPriceListSelection =
     sepidarProductsOnly && Boolean(selectedCustomerId) && hasGeneratedPriceList;
@@ -1181,7 +1180,6 @@ export function OrderForm({
           selectedPriceListId ||
           initialOrder?.priceListId ||
           initialOrder?.priceList?.objectId ||
-          selectedCustomer?.priceListId ||
           undefined,
         notes: notes.trim(),
         ...addressPayload,

@@ -353,6 +353,49 @@ export async function cancelOrder(
   return mapOrderDto(data);
 }
 
+export interface FinancialApprovalPayload {
+  approvedByName?: string;
+  approvedBy?: string;
+}
+
+export interface FinancialReturnPayload {
+  returnedByName?: string;
+  returnedBy?: string;
+  correctionReason: string;
+  reason?: string;
+}
+
+export async function approveFinancialOrder(
+  objectId: string,
+  payload?: FinancialApprovalPayload,
+): Promise<Order> {
+  const data = await httpClient.post<unknown>(
+    `/api/orders/${objectId}/financial-approve`,
+    payload ?? {},
+  );
+  return mapOrderDto(data);
+}
+
+export async function returnFinancialOrder(
+  objectId: string,
+  payload: FinancialReturnPayload,
+): Promise<Order> {
+  const data = await httpClient.post<unknown>(
+    `/api/orders/${objectId}/financial-return`,
+    payload,
+  );
+  return mapOrderDto(data);
+}
+
+export async function resubmitFinancialOrder(
+  objectId: string,
+): Promise<Order> {
+  const data = await httpClient.post<unknown>(
+    `/api/orders/${objectId}/financial-resubmit`,
+  );
+  return mapOrderDto(data);
+}
+
 export async function markOrderNeedsReview(
   objectId: string,
   payload: MarkOrderNeedsReviewPayload,
@@ -388,6 +431,9 @@ function buildOrdersPath(filters?: OrderFilters): string {
   const params = new URLSearchParams();
   if (filters.status) params.set("status", filters.status);
   if (filters.orderType) params.set("orderType", filters.orderType);
+  if (filters.financialApprovalStatus) {
+    params.set("financialApprovalStatus", filters.financialApprovalStatus);
+  }
 
   const query = params.toString();
   return query ? `/api/orders?${query}` : "/api/orders";

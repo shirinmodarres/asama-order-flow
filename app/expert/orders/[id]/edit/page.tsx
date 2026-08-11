@@ -10,6 +10,7 @@ import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { SectionHeader } from "@/components/shared/section-header";
 import { OrderEditForm, type OrderEditFormSubmitPayload } from "@/components/orders/order-edit-form";
 import { getErrorMessage } from "@/lib/api/api-error";
+import { getFinancialApprovalStatusLabel } from "@/lib/domain/statuses";
 import type { OrderEditData } from "@/lib/models/order.model";
 import {
   getOrderEditData,
@@ -137,6 +138,18 @@ export default function EditExpertOrderPage() {
               </Link>
             }
           />
+
+          {editData.order.financialApprovalStatus === "needs_correction" ? (
+            <div className="rounded-xl border border-[#F8D9A0] bg-[#FFF8E7] p-4 text-sm text-[#8A5A17] shadow-sm">
+              <p className="font-semibold">
+                این سفارش از کنترل مالی برگشت خورده و نیازمند اصلاح است.
+              </p>
+              <p className="mt-2 leading-7">
+                وضعیت فعلی: {getFinancialApprovalStatusLabel(editData.order.financialApprovalStatus)}
+                . بعد از اصلاح و ذخیره، سفارش دوباره برای بررسی مالی ارسال می‌شود.
+              </p>
+            </div>
+          ) : null}
 
           <OrderEditForm
             order={editData.order}

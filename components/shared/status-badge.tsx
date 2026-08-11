@@ -1,11 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import {
+  getFinancialApprovalStatusLabel,
   getOrderStatusLabel,
   getWarehouseStatusLabel,
   normalizeOrderStatus,
 } from "@/lib/domain/statuses";
 
-type BadgeType = "order" | "warehouse" | "inventory";
+type BadgeType = "order" | "warehouse" | "inventory" | "financial";
 type InventoryStatus = "normal" | "warning" | "critical";
 
 interface StatusBadgeProps {
@@ -61,6 +62,16 @@ function getBadgeConfig(type: BadgeType, status: string) {
       return { label: getWarehouseStatusLabel(status), variant: "destructive" as const };
     }
     return { label: getWarehouseStatusLabel(status) || status || "نامشخص", variant: "neutral" as const };
+  }
+
+  if (type === "financial") {
+    if (status === "approved") {
+      return { label: getFinancialApprovalStatusLabel(status), variant: "success" as const };
+    }
+    if (status === "needs_correction") {
+      return { label: getFinancialApprovalStatusLabel(status), variant: "warning" as const };
+    }
+    return { label: getFinancialApprovalStatusLabel(status) || status || "نامشخص", variant: "neutral" as const };
   }
 
   const inventoryStatus = status as InventoryStatus;
