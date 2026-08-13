@@ -7,13 +7,13 @@ import { ActionLinkCard } from "@/components/shared/action-link-card";
 import { DateRangeFilter, type DateRangeValue } from "@/components/shared/date-range-filter";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
 import { SectionCard } from "@/components/ui/section-card";
-import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
 import { getErrorMessage } from "@/lib/api/api-error";
 import type { Order } from "@/lib/models/order.model";
 import { listOrders } from "@/lib/services/order.service";
+import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
 
 const TOP_EXPERT_ROWS = 6;
-const TOP_DAILY_ROWS = 10;
+const TOP_DAILY_ROWS = 12;
 
 export default function ManagerPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -42,11 +42,17 @@ export default function ManagerPage() {
     };
   }, []);
 
-  const filteredOrders = useMemo(() => {
-    return orders
-      .filter((order) => isWithinDateRange(order.createdAt, dateRange.from, dateRange.to))
-      .sort((a, b) => Number(new Date(b.createdAt)) - Number(new Date(a.createdAt)));
-  }, [dateRange.from, dateRange.to, orders]);
+  const filteredOrders = useMemo(
+    () =>
+      orders
+        .filter((order) =>
+          isWithinDateRange(order.createdAt, dateRange.from, dateRange.to),
+        )
+        .sort(
+          (a, b) => Number(new Date(b.createdAt)) - Number(new Date(a.createdAt)),
+        ),
+    [dateRange.from, dateRange.to, orders],
+  );
 
   const pendingFinancialCount = filteredOrders.filter(
     (order) => order.orderStatus === "pending_financial_approval",
@@ -54,109 +60,118 @@ export default function ManagerPage() {
   const pendingManagerCount = filteredOrders.filter(
     (order) => order.orderStatus === "pending_manager_approval",
   ).length;
-  const approvedOrders = filteredOrders.filter((order) =>
-    ["approved", "completed"].includes(order.orderStatus),
+  const completedOrders = filteredOrders.filter(
+    (order) => order.orderStatus === "completed",
   );
-  const approvedCount = approvedOrders.length;
-  const cancelledCount = filteredOrders.filter(
-    (order) => order.orderStatus === "cancelled",
-  ).length;
-  const warehouseInProgressCount = filteredOrders.filter((order) =>
-    ["reviewing", "processing", "dispatchIssued"].includes(
-      order.warehouseStatus,
-    ),
+  const invoicedOrders = filteredOrders.filter(
+    (order) => order.orderStatus === "invoiced",
+  );
+  const warehouseWaitingCount = filteredOrders.filter((order) =>
+    ["reserved", "reviewing"].includes(order.warehouseStatus),
   ).length;
 
-  const totalSalesAmount = approvedOrders.reduce(
+  const totalSalesAmount = completedOrders.reduce(
     (sum, order) => sum + getOrderTotalAmount(order),
     0,
   );
-  const totalApprovedQuantity = approvedOrders.reduce(
+  const totalSalesQuantity = completedOrders.reduce(
     (sum, order) => sum + getOrderTotalQuantity(order),
     0,
   );
-  const averageOrderAmount = approvedCount ? totalSalesAmount / approvedCount : 0;
+  const averageOrderAmount = completedOrders.length
+    ? totalSalesAmount / completedOrders.length
+    : 0;
 
   const expertRows = useMemo(
-    () => groupByExpert(approvedOrders).slice(0, TOP_EXPERT_ROWS),
-    [approvedOrders],
+    () => groupByExpert(completedOrders).slice(0, TOP_EXPERT_ROWS),
+    [completedOrders],
   );
   const channelRows = useMemo(
-    () => groupByChannel(approvedOrders),
-    [approvedOrders],
+    () => groupByChannel(completedOrders),
+    [completedOrders],
   );
   const trendRows = useMemo(
-    () => groupByDay(approvedOrders).slice(0, TOP_DAILY_ROWS),
-    [approvedOrders],
+    () => groupByDay(completedOrders).slice(0, TOP_DAILY_ROWS),
+    [completedOrders],
   );
 
-  const topTrendValue = Math.max(
-    ...trendRows.map((row) => row.amount),
+  const maxAmount = Math.max(
+    1,
     ...expertRows.map((row) => row.amount),
     ...channelRows.map((row) => row.amount),
-    1,
+    ...trendRows.map((row) => row.amount),
   );
 
   return (
     <DashboardLayout role="manager" title="داشبورد مدیر فروش">
       {error ? <InlineErrorMessage message={error} /> : null}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <ManagerSummaryCard
-            title="در انتظار تأیید مالی"
-            value={pendingFinancialCount}
-            hint="صف کنترل مالی"
+      <section className="grid gap-4">
+        <SectionCard title="بازه زمانی گزارش" description="اگر بازه‌ای انتخاب نشود، کل گزارش نمایش داده می‌شود.">
+          <DateRangeFilter
+            value={dateRange}
+            onChange={setDateRange}
+            label="بازه گزارش"
+            placeholder="کل گزارش"
           />
-          <ManagerSummaryCard
-            title="در انتظار تأیید مدیر"
-            value={pendingManagerCount}
-            hint="سفارش‌های آماده تصمیم نهایی"
-          />
-          <ManagerSummaryCard
-            title="سفارش‌های تأییدشده"
-            value={approvedCount}
-            hint="سفارش‌های وارد مسیر فروش شده"
-          />
-          <ManagerSummaryCard
-            title="مبلغ کل فروش"
-            value={formatCurrency(totalSalesAmount)}
-            hint="فقط سفارش‌های تأییدشده در بازه انتخابی"
-          />
-        </div>
+        </SectionCard>
+      </section>
 
-        <SectionCard title="فیلتر گزارش" description="بازه زمانی گزارش را انتخاب کنید.">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <ManagerSummaryCard
+          title="در انتظار تأیید مالی"
+          value={pendingFinancialCount}
+          hint="سفارش‌های آماده بررسی مالی"
+        />
+        <ManagerSummaryCard
+          title="در انتظار تأیید مدیر"
+          value={pendingManagerCount}
+          hint="سفارش‌هایی که باید تعیین تکلیف شوند"
+        />
+        <ManagerSummaryCard
+          title="سفارش‌های تکمیل شده"
+          value={completedOrders.length}
+          hint="رسیده به انتهای مسیر عملیاتی"
+        />
+        <ManagerSummaryCard
+          title="سفارش‌های فاکتور شده"
+          value={invoicedOrders.length}
+          hint="ثبت شده در مسیر مالی"
+        />
+        <ManagerSummaryCard
+          title="در انتظار انبار"
+          value={warehouseWaitingCount}
+          hint="رزرو شده و در صف عملیات انبار"
+        />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <SectionCard title="مبلغ کل فروش" description="جمع فروش قطعی در بازه انتخابی">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <MetricBox label="مبلغ کل فروش" value={formatCurrency(totalSalesAmount)} />
+            <MetricBox label="تعداد اقلام فروش" value={formatNumber(totalSalesQuantity)} />
+            <MetricBox label="تعداد سفارش‌های قطعی" value={formatNumber(completedOrders.length)} />
+            <MetricBox label="میانگین مبلغ سفارش" value={formatCurrency(averageOrderAmount)} />
+          </div>
+        </SectionCard>
+
+        <SectionCard title="خلاصه فروش" description="نمایی سریع از وضعیت فروش در همین بازه">
           <div className="grid gap-3">
-            <DateRangeFilter
-              value={dateRange}
-              onChange={setDateRange}
-              label="بازه گزارش"
-              placeholder="همه بازه‌ها"
-            />
-            <div className="grid gap-3 rounded-[18px] border border-[#E6EDF4] bg-white p-4">
-              <KpiLine label="تعداد اقلام فروش" value={formatNumber(totalApprovedQuantity)} />
-              <KpiLine label="میانگین مبلغ سفارش" value={formatCurrency(averageOrderAmount)} />
-              <KpiLine label="سفارش‌های لغوشده" value={formatNumber(cancelledCount)} />
-              <KpiLine label="سفارش‌های در جریان انبار" value={formatNumber(warehouseInProgressCount)} />
-            </div>
+            <MiniStat label="فروش تأیید شده" value={formatCurrency(totalSalesAmount)} accent="bg-[#1F3A5F]" />
+            <MiniStat label="سفارش‌های تکمیل شده" value={formatNumber(completedOrders.length)} accent="bg-[#6CAE75]" />
+            <MiniStat label="سفارش‌های فاکتور شده" value={formatNumber(invoicedOrders.length)} accent="bg-[#F59E0B]" />
+            <MiniStat label="در انتظار انبار" value={formatNumber(warehouseWaitingCount)} accent="bg-[#EF4444]" />
           </div>
         </SectionCard>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <ReportCard
-          title="فروش به تفکیک کارشناس"
-          description="سهم هر کارشناس از سفارش‌های تأییدشده در بازه انتخابی"
-          rows={expertRows}
-          emptyMessage="در این بازه سفارشی برای نمایش وجود ندارد."
-          topValue={topTrendValue}
-        />
+      <section className="grid gap-4 xl:grid-cols-2">
         <SectionCard
           title="ترکیب فروش بازار / ناجا"
-          description="نمایش سهم هر دسته در سفارش‌های تأییدشده"
+          description="نمودار دونات برای مقایسه سهم هر گروه در فروش تأییدشده"
         >
           {channelRows.some((row) => row.amount > 0) ? (
-            <div className="grid gap-5">
+            <div className="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-center">
               <DonutChart rows={channelRows} />
               <div className="grid gap-3">
                 {channelRows.map((row) => (
@@ -168,21 +183,36 @@ export default function ManagerPage() {
             <EmptyState message="برای این بازه داده‌ای ثبت نشده است." />
           )}
         </SectionCard>
+
+        <SectionCard
+          title="فروش به تفکیک کارشناس"
+          description="نمودار و رتبه‌بندی کارشناسان بر اساس مبلغ فروش"
+        >
+          {expertRows.length ? (
+            <div className="grid gap-3">
+              {expertRows.map((row) => (
+                <BarRow key={row.key} label={row.label} amount={row.amount} total={maxAmount} meta={`${formatNumber(row.count)} سفارش · ${formatNumber(row.quantity)} قلم`} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState message="در این بازه فروش ثبت‌شده‌ای برای کارشناسان وجود ندارد." />
+          )}
+        </SectionCard>
       </section>
 
       <SectionCard
         title="روند فروش"
-        description="آخرین روزهای دارای سفارش تأییدشده در بازه انتخابی"
+        description="نمودار روزانه فروش تأییدشده در بازه انتخابی"
       >
         {trendRows.length ? (
-          <div className="grid gap-3">
+          <div className="grid gap-4">
             {trendRows.map((row) => (
-              <TrendRow
+              <TrendChartRow
                 key={row.key}
                 label={row.label}
-                count={row.count}
                 amount={row.amount}
-                topValue={topTrendValue}
+                count={row.count}
+                total={maxAmount}
               />
             ))}
           </div>
@@ -235,7 +265,6 @@ function groupByExpert(orders: Order[]) {
       quantity: 0,
       amount: 0,
     };
-
     current.count += 1;
     current.quantity += getOrderTotalQuantity(order);
     current.amount += getOrderTotalAmount(order);
@@ -276,7 +305,6 @@ function groupByDay(orders: Order[]) {
       quantity: 0,
       amount: 0,
     };
-
     current.count += 1;
     current.quantity += getOrderTotalQuantity(order);
     current.amount += getOrderTotalAmount(order);
@@ -313,84 +341,24 @@ function isWithinDateRange(
   return true;
 }
 
-function ReportCard({
-  title,
-  description,
-  rows,
-  emptyMessage,
-  topValue,
-}: {
-  title: string;
-  description: string;
-  rows: Array<{
-    key: string;
-    label: string;
-    count: number;
-    quantity: number;
-    amount: number;
-  }>;
-  emptyMessage: string;
-  topValue: number;
-}) {
-  return (
-    <SectionCard title={title} description={description}>
-      {rows.length ? (
-        <div className="grid gap-3">
-          {rows.map((row) => (
-            <div key={row.key} className="rounded-[18px] border border-[#E6EDF4] bg-white p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-[#102034]">{row.label}</p>
-                  <p className="mt-1 text-xs text-[#6B7280]">
-                    تعداد سفارش: {formatNumber(row.count)} · تعداد اقلام: {formatNumber(row.quantity)}
-                  </p>
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold text-[#102034]">{formatCurrency(row.amount)}</p>
-                  <p className="mt-1 text-xs text-[#6B7280]">سهم از کل</p>
-                </div>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF3F8]">
-                <div
-                  className="h-full rounded-full bg-[#2C4A73]"
-                  style={{ width: `${Math.max((row.amount / topValue) * 100, 8)}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <EmptyState message={emptyMessage} />
-      )}
-    </SectionCard>
-  );
-}
-
 function DonutChart({
   rows,
 }: {
   rows: Array<{ key: string; label: string; count: number; quantity: number; amount: number }>;
 }) {
   const total = rows.reduce((sum, row) => sum + row.amount, 0);
-  const primary = rows[0];
-  const secondary = rows[1];
-  const primaryRatio = total > 0 ? primary.amount / total : 0;
-  const secondaryRatio = total > 0 ? secondary.amount / total : 0;
-  const primaryStroke = Math.max(primaryRatio * 283, 18);
-  const secondaryStroke = Math.max(secondaryRatio * 283, 18);
+  const [first, second] = rows;
+  const firstRatio = total > 0 ? first.amount / total : 0;
+  const secondRatio = total > 0 ? second.amount / total : 0;
+  const circumference = 2 * Math.PI * 45;
+  const firstDash = firstRatio * circumference;
+  const secondDash = secondRatio * circumference;
 
   return (
     <div className="flex items-center justify-center">
       <div className="relative h-56 w-56">
         <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-          <circle
-            cx="60"
-            cy="60"
-            r="45"
-            fill="none"
-            stroke="#EEF3F8"
-            strokeWidth="14"
-          />
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#EEF3F8" strokeWidth="14" />
           <circle
             cx="60"
             cy="60"
@@ -399,7 +367,7 @@ function DonutChart({
             stroke="#2C4A73"
             strokeWidth="14"
             strokeLinecap="round"
-            strokeDasharray={`${primaryStroke} ${283 - primaryStroke}`}
+            strokeDasharray={`${firstDash} ${circumference - firstDash}`}
             strokeDashoffset="0"
           />
           <circle
@@ -410,8 +378,8 @@ function DonutChart({
             stroke="#6CAE75"
             strokeWidth="14"
             strokeLinecap="round"
-            strokeDasharray={`${secondaryStroke} ${283 - secondaryStroke}`}
-            strokeDashoffset={-primaryStroke}
+            strokeDasharray={`${secondDash} ${circumference - secondDash}`}
+            strokeDashoffset={-firstDash}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
@@ -451,49 +419,96 @@ function ChannelLegendRow({
         </div>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF3F8]">
-        <div
-          className={`h-full rounded-full ${color}`}
-          style={{ width: `${Math.max(percent, 8)}%` }}
-        />
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(percent, 8)}%` }} />
       </div>
     </div>
   );
 }
 
-function TrendRow({
+function BarRow({
   label,
-  count,
   amount,
-  topValue,
+  total,
+  meta,
 }: {
   label: string;
-  count: number;
   amount: number;
-  topValue: number;
+  total: number;
+  meta: string;
 }) {
+  const percent = total > 0 ? Math.round((amount / total) * 100) : 0;
   return (
     <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-bold text-[#102034]">{label}</p>
-          <p className="mt-1 text-xs text-[#6B7280]">تعداد سفارش: {formatNumber(count)}</p>
+          <p className="mt-1 text-xs text-[#6B7280]">{meta}</p>
         </div>
-        <p className="text-sm font-bold text-[#102034]">{formatCurrency(amount)}</p>
+        <div className="text-left">
+          <p className="text-sm font-bold text-[#102034]">{formatCurrency(amount)}</p>
+          <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(percent)}٪</p>
+        </div>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF3F8]">
-        <div
-          className="h-full rounded-full bg-[#6CAE75]"
-          style={{ width: `${Math.max((amount / topValue) * 100, 8)}%` }}
-        />
+        <div className="h-full rounded-full bg-[#1F3A5F]" style={{ width: `${Math.max(percent, 8)}%` }} />
       </div>
     </div>
   );
 }
 
-function KpiLine({ label, value }: { label: string; value: string }) {
+function TrendChartRow({
+  label,
+  amount,
+  count,
+  total,
+}: {
+  label: string;
+  amount: number;
+  count: number;
+  total: number;
+}) {
+  const percent = total > 0 ? Math.round((amount / total) * 100) : 0;
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[14px] bg-[#F8FAFC] px-4 py-3">
-      <span className="text-sm font-medium text-[#475569]">{label}</span>
+    <div className="grid gap-3 rounded-[18px] border border-[#E6EDF4] bg-white p-4 lg:grid-cols-[10rem_minmax(0,1fr)_8rem] lg:items-center">
+      <div>
+        <p className="text-sm font-bold text-[#102034]">{label}</p>
+        <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(count)} سفارش</p>
+      </div>
+      <div className="h-3 overflow-hidden rounded-full bg-[#EEF3F8]">
+        <div className="h-full rounded-full bg-[#6CAE75]" style={{ width: `${Math.max(percent, 8)}%` }} />
+      </div>
+      <div className="text-left">
+        <p className="text-sm font-bold text-[#102034]">{formatCurrency(amount)}</p>
+        <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(percent)}٪ از کل</p>
+      </div>
+    </div>
+  );
+}
+
+function MetricBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-4">
+      <p className="text-xs font-medium text-[#6B7280]">{label}</p>
+      <p className="mt-2 text-lg font-black text-[#102034]">{value}</p>
+    </div>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[#E6EDF4] bg-white p-4">
+      <div className="flex items-center gap-3">
+        <span className={`size-3 rounded-full ${accent}`} />
+        <span className="text-sm font-medium text-[#475569]">{label}</span>
+      </div>
       <span className="text-sm font-bold text-[#102034]">{value}</span>
     </div>
   );

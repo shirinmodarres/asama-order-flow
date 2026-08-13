@@ -25,7 +25,7 @@ export function DateRangeFilter({
   label = "بازه زمانی",
   placeholder = "انتخاب بازه زمانی",
 }: DateRangeFilterProps) {
-  const containerRef = useRef<HTMLLabelElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({
@@ -128,7 +128,7 @@ export function DateRangeFilter({
       : null;
 
   return (
-    <label
+    <div
       ref={containerRef}
       className="relative grid w-full min-w-0 gap-2 text-sm font-medium text-[#334155] xl:max-w-[18rem]"
     >
@@ -152,7 +152,7 @@ export function DateRangeFilter({
       </button>
 
       {popover}
-    </label>
+    </div>
   );
 }
 
