@@ -1,5 +1,7 @@
 export type OrderStatusCode =
   | "pending_approval"
+  | "pending_financial_approval"
+  | "pending_manager_approval"
   | "needs_review"
   | "review_resolved"
   | "approved"
@@ -27,6 +29,8 @@ export type FinancialApprovalStatusCode = "pending" | "approved" | "needs_correc
 
 export const ORDER_STATUS_LABELS: Record<OrderStatusCode, string> = {
   pending_approval: "در انتظار تایید",
+  pending_financial_approval: "در انتظار تأیید مالی",
+  pending_manager_approval: "در انتظار تأیید مدیر",
   needs_review: "نیازمند بررسی",
   review_resolved: "مشکل برطرف شد",
   approved: "تأیید شده",

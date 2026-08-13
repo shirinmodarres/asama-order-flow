@@ -27,7 +27,7 @@ export default function ManagerPendingOrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("pending_approval");
+  const [statusFilter, setStatusFilter] = useState("pending_manager_approval");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -79,20 +79,26 @@ export default function ManagerPendingOrdersPage() {
 
   const hasActiveFilters =
     search.trim().length > 0 ||
-    statusFilter !== "pending_approval" ||
+    statusFilter !== "pending_manager_approval" ||
     dateFrom.length > 0 ||
     dateTo.length > 0;
 
   const statusOptions = useMemo(
-    () =>
-      Array.from(
+    () => {
+      const legacyAndQueueStatuses = [
+        "pending_manager_approval",
+        "needs_review",
+        "review_resolved",
+      ];
+      return Array.from(
         new Set([
-          "pending_approval",
-          "needs_review",
-          "review_resolved",
-          ...orders.map((order) => order.orderStatus).filter(Boolean),
+          ...legacyAndQueueStatuses,
+          ...orders
+            .map((order) => order.orderStatus)
+            .filter((value): value is string => Boolean(value) && value !== "pending_approval"),
         ]),
-      ),
+      );
+    },
     [orders],
   );
 
@@ -179,7 +185,7 @@ export default function ManagerPendingOrdersPage() {
                 value={statusFilter}
                 onValueChange={setStatusFilter}
                 options={[
-                  { value: "pending_approval", label: getOrderStatusLabel("pending_approval") },
+                  { value: "pending_manager_approval", label: getOrderStatusLabel("pending_manager_approval") },
                   { value: "needs_review", label: "نیازمند بررسی" },
                   { value: "review_resolved", label: "مشکل برطرف شد" },
                   { value: "all", label: "همه وضعیت‌ها" },
@@ -187,7 +193,7 @@ export default function ManagerPendingOrdersPage() {
                     .filter(
                       (value) =>
                         ![
-                          "pending_approval",
+                          "pending_manager_approval",
                           "needs_review",
                           "review_resolved",
                         ].includes(value),
@@ -218,7 +224,7 @@ export default function ManagerPendingOrdersPage() {
               className="inline-flex w-fit shrink-0 items-center gap-2"
               onClick={() => {
                 setSearch("");
-                setStatusFilter("pending_approval");
+                setStatusFilter("pending_manager_approval");
                 setDateFrom("");
                 setDateTo("");
               }}

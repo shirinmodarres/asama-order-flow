@@ -2004,7 +2004,7 @@ export function OrderForm({
         itemCount={totalItems}
         totalQuantity={totalQuantity}
         totalAmount={totalAmount}
-        status={initialOrder?.orderStatus ?? "pending_approval"}
+        status={initialOrder?.orderStatus ?? "pending_financial_approval"}
         warehouseStatus={initialOrder?.warehouseStatus ?? "reserved"}
         saleTypeTitle={currentSaleTypeTitle}
         stockTitles={currentStockTitles}

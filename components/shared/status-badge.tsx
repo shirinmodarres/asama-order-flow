@@ -27,6 +27,12 @@ export function StatusBadge({ type, status }: StatusBadgeProps) {
 function getBadgeConfig(type: BadgeType, status: string) {
   if (type === "order") {
     const orderStatus = normalizeOrderStatus(status);
+    if (orderStatus === "pending_financial_approval") {
+      return { label: getOrderStatusLabel(orderStatus), variant: "warning" as const };
+    }
+    if (orderStatus === "pending_manager_approval") {
+      return { label: getOrderStatusLabel(orderStatus), variant: "brand" as const };
+    }
     if (orderStatus === "pending_approval") {
       return { label: getOrderStatusLabel(orderStatus), variant: "warning" as const };
     }

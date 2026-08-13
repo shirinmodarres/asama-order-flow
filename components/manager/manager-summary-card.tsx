@@ -5,7 +5,7 @@ import { formatNumber } from "@/lib/expert/utils";
 
 interface ManagerSummaryCardProps {
   title: string;
-  value: number;
+  value: number | string;
   hint: string;
 }
 
@@ -20,7 +20,7 @@ export function ManagerSummaryCard({
         <div>
           <p className="text-sm font-semibold text-[#5F6E81]">{title}</p>
           <p className="mt-3 text-3xl font-black tracking-tight text-[#102034]">
-            {formatNumber(value)}
+            {typeof value === "number" ? formatNumber(value) : value}
           </p>
         </div>
         <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DDE7F0] bg-[#F5F8FB] text-[#1F3A5F]">

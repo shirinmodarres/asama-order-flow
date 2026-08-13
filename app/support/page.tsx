@@ -46,7 +46,7 @@ export default function SupportPage() {
   ).length;
   const orderNeedsEditCount = orders.filter(
     (order) =>
-      order.orderStatus === "pending_approval" || order.orderStatus === "approved",
+      order.orderStatus === "pending_financial_approval" || order.orderStatus === "approved",
   ).length;
   const activeProductCount = products.filter(
     (product) => product.status === "active",

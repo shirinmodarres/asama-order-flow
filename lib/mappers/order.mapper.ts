@@ -454,7 +454,7 @@ function mapOrderType(value: unknown): OrderType {
 }
 
 function normalizeOrderStatus(value: string): string {
-  return normalizeOrderStatusCode(value) || "pending_approval";
+  return normalizeOrderStatusCode(value) || "pending_financial_approval";
 }
 
 function mapFulfillmentStatus(value: unknown): FulfillmentStatus {

@@ -27,7 +27,8 @@ import { formatFaDigits } from "@/lib/utils/number-format";
 
 type TrackingFilter =
   | "all"
-  | "pending_approval"
+  | "pending_financial_approval"
+  | "pending_manager_approval"
   | "needs_review"
   | "review_resolved"
   | "approved"
@@ -186,8 +187,12 @@ export default function ManagerOrderTrackingPage() {
                 options={[
                   { value: "all", label: "همه وضعیت‌ها" },
                   {
-                    value: "pending_approval",
-                    label: getOrderStatusLabel("pending_approval"),
+                    value: "pending_financial_approval",
+                    label: getOrderStatusLabel("pending_financial_approval"),
+                  },
+                  {
+                    value: "pending_manager_approval",
+                    label: getOrderStatusLabel("pending_manager_approval"),
                   },
                   {
                     value: "needs_review",

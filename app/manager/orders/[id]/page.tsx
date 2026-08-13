@@ -150,13 +150,13 @@ export default function ManagerOrderReviewPage() {
   const isNajaOrder = order.orderType === "naja";
   const financialGateOpen =
     !order.financialApprovalStatus || order.financialApprovalStatus === "approved";
-  const canApprove = ["pending_approval", "review_resolved"].includes(order.orderStatus) && financialGateOpen;
-  const canNeedReview = !isNajaOrder && order.orderStatus === "pending_approval";
+  const canApprove = ["pending_manager_approval", "review_resolved"].includes(order.orderStatus) && financialGateOpen;
+  const canNeedReview = !isNajaOrder && order.orderStatus === "pending_manager_approval";
   const shouldShowNeedReviewButton =
     !isNajaOrder && (canNeedReview || order.orderStatus === "review_resolved");
   const canCancel =
     !isNajaOrder &&
-    ["pending_approval", "needs_review", "review_resolved"].includes(
+    ["pending_manager_approval", "needs_review", "review_resolved"].includes(
       order.orderStatus,
     ) && !["dispatchIssued", "delivered"].includes(order.warehouseStatus);
   const shipmentActionBlockedStatuses = ["cancelled", "invoiced"];

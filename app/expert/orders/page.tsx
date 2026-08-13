@@ -59,7 +59,8 @@ export default function ExpertOrdersPage() {
     () =>
       Array.from(
         new Set([
-          "pending_approval",
+          "pending_financial_approval",
+          "pending_manager_approval",
           "needs_review",
           "review_resolved",
           ...orders.map((order) => order.orderStatus).filter(Boolean),
