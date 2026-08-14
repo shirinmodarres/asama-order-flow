@@ -6,6 +6,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { PageErrorMessage } from "@/components/shared/page-error-message";
+import { PaginationBar } from "@/components/shared/pagination-bar";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,8 @@ export default function SupportOrdersPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     let isMounted = true;
@@ -68,6 +71,20 @@ export default function SupportOrdersPage() {
         (order) => statusFilter === "all" || order.orderStatus === statusFilter,
       );
   }, [orders, search, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const paginatedOrders = useMemo(
+    () => filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [currentPage, filteredOrders],
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const hasActiveFilters = search.trim().length > 0 || statusFilter !== "all";
 
@@ -194,11 +211,19 @@ export default function SupportOrdersPage() {
       ) : error ? (
         <PageErrorMessage title="دریافت سفارش ها انجام نشد" message={error} />
       ) : filteredOrders.length > 0 ? (
-        <DataTable
-          columns={columns}
-          rows={filteredOrders}
-          rowKey={(row) => row.objectId || row.id}
-        />
+        <div className="space-y-4">
+          <DataTable
+            columns={columns}
+            rows={paginatedOrders}
+            rowKey={(row) => row.objectId || row.id}
+          />
+          <PaginationBar
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredOrders.length}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       ) : (
         <EmptyState
           title="سفارشی یافت نشد"

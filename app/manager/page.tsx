@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { DateRangeFilter, type DateRangeValue } from "@/components/shared/date-range-filter";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
+import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
 import { Card } from "@/components/ui/card";
 import { getErrorMessage } from "@/lib/api/api-error";
 import type { Order } from "@/lib/models/order.model";
@@ -129,6 +130,34 @@ export default function ManagerPage() {
           </div>
         </section>
 
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <ManagerSummaryCard
+            title="در انتظار تأیید مالی"
+            value={pendingFinancialCount}
+            hint="سفارش‌هایی که منتظر بررسی مالی هستند"
+          />
+          <ManagerSummaryCard
+            title="در انتظار تأیید مدیر"
+            value={pendingManagerCount}
+            hint="سفارش‌هایی که منتظر مدیر فروش هستند"
+          />
+          <ManagerSummaryCard
+            title="در انتظار انبار"
+            value={warehouseWaitingCount}
+            hint="سفارش‌هایی که در انبار نهایی نشده‌اند"
+          />
+          <ManagerSummaryCard
+            title="فاکتور شده"
+            value={invoicedOrders.length}
+            hint="سفارش‌هایی که فاکتور گرفته‌اند"
+          />
+          <ManagerSummaryCard
+            title="تأیید شده"
+            value={approvedOrders.length}
+            hint="سفارش‌های تأیید شده در بازه انتخابی"
+          />
+        </section>
+
         <section className="grid gap-4 xl:grid-cols-4">
           <ManagerMetricCard
             title="مبلغ کل فروش"
@@ -226,9 +255,9 @@ export default function ManagerPage() {
             </div>
             <div className="p-5 sm:p-6">
               {channelRows.some((row) => row.amount > 0) ? (
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,1fr)] xl:items-center">
+                <div className="grid gap-6">
                   <DonutChart rows={channelRows} total={totalSalesAmount} />
-                  <div className="grid gap-4">
+                  <div className="grid gap-4 xl:grid-cols-2">
                     {channelRows.map((row) => (
                       <ChannelLegendCard
                         key={row.key}
@@ -236,6 +265,14 @@ export default function ManagerPage() {
                         total={totalSalesAmount}
                       />
                     ))}
+                  </div>
+                  <div className="rounded-[22px] border border-[#E6EDF4] bg-[#FCFDFE] px-5 py-4 text-center">
+                    <p className="text-sm font-medium text-[#6B7280]">
+                      مبلغ کل سفارش
+                    </p>
+                    <p className="mt-2 text-xl font-black text-[#102034] sm:text-2xl">
+                      {formatCurrency(totalSalesAmount)}
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -442,8 +479,10 @@ function ChannelLegendCard({
           </div>
         </div>
         <div className="text-left">
-          <p className="text-sm font-bold text-[#102034]">{formatCurrency(row.amount)}</p>
-          <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(percent)}٪</p>
+          <p className="text-xs font-bold text-[#102034] sm:text-sm">
+            {formatCurrency(row.amount)}
+          </p>
+          <p className="mt-1 text-[11px] text-[#6B7280]">{formatNumber(percent)}٪</p>
         </div>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF3F8]">

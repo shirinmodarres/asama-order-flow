@@ -104,6 +104,9 @@ export default function ManagerActivePriceListsPage() {
     [brandFilter, rows, search, typeFilter],
   );
 
+  const hasActiveFilters =
+    search.trim().length > 0 || brandFilter !== "all" || typeFilter !== "all";
+
   const columns: DataTableColumn<PriceList>[] = [
     { key: "name", header: "لیست قیمت", render: (row) => row.displayName || row.name || "-" },
     { key: "code", header: "کد داخلی", render: (row) => row.internalCode ? formatFaDigits(row.internalCode) : "-" },
@@ -187,6 +190,23 @@ export default function ManagerActivePriceListsPage() {
               </Select>
             </div>
           </div>
+
+          {hasActiveFilters ? (
+            <div className="flex items-center justify-start">
+              <Button
+                type="button"
+                variant="outline"
+                className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 px-4 sm:w-fit"
+                onClick={() => {
+                  setSearch("");
+                  setBrandFilter("all");
+                  setTypeFilter("all");
+                }}
+              >
+                <span>حذف فیلترها</span>
+              </Button>
+            </div>
+          ) : null}
 
           {filteredRows.length ? (
             <DataTable

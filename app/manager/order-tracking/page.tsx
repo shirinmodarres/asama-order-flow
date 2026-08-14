@@ -10,6 +10,7 @@ import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { PageErrorMessage } from "@/components/shared/page-error-message";
+import { PaginationBar } from "@/components/shared/pagination-bar";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,8 @@ export default function ManagerOrderTrackingPage() {
   const [filter, setFilter] = useState<TrackingFilter>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     let isMounted = true;
@@ -102,6 +105,20 @@ export default function ManagerOrderTrackingPage() {
       })
       .filter((order) => isWithinDateRange(order.updatedAt, dateFrom, dateTo));
   }, [dateFrom, dateTo, expertUserId, filter, orders, priceListId, search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateFrom, dateTo, expertUserId, filter, priceListId, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const paginatedOrders = useMemo(
+    () => filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [currentPage, filteredOrders],
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const priceListOptions = useMemo(
     () =>
@@ -207,50 +224,33 @@ export default function ManagerOrderTrackingPage() {
         description="پایش وضعیت سفارش‌ها از ثبت تا فاکتور"
       />
 
-      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm overflow-visible">
+      <section className="overflow-visible rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid gap-4">
-          <label className="grid flex-1 gap-2 text-sm font-medium text-[#334155]">
-            <span>جستجو در سفارش‌ها</span>
-            <div className="relative">
-              <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="جستجو بر اساس کد سفارش، مشتری یا ثبت کننده"
-                className="pr-10"
-              />
-            </div>
-          </label>
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-            <DateRangeFilter
-              value={{ from: dateFrom, to: dateTo }}
-              onChange={(range) => {
-                setDateFrom(range.from ?? "");
-                setDateTo(range.to ?? "");
-              }}
-            />
-            {hasActiveFilters ? (
-              <div className="flex items-end justify-start xl:justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="inline-flex w-full shrink-0 items-center justify-center gap-2 xl:w-fit"
-                  onClick={() => {
-                    setSearch("");
-                    setPriceListId("");
-                    setExpertUserId("");
-                    setFilter("all");
-                    setDateFrom("");
-                    setDateTo("");
-                  }}
-                >
-                  <span>حذف فیلترها</span>
-                  <X className="size-4" />
-                </Button>
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(12rem,1fr))]">
+            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
+              <span>جستجو در سفارش‌ها</span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="جستجو بر اساس کد سفارش، مشتری یا ثبت کننده"
+                  className="h-11 pr-10"
+                />
               </div>
-            ) : null}
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_18rem_18rem_14rem]">
+            </label>
+
+            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
+              <span>بازه زمانی</span>
+              <DateRangeFilter
+                value={{ from: dateFrom, to: dateTo }}
+                onChange={(range) => {
+                  setDateFrom(range.from ?? "");
+                  setDateTo(range.to ?? "");
+                }}
+              />
+            </label>
+
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>لیست قیمت</span>
               <SearchableSelect
@@ -263,9 +263,10 @@ export default function ManagerOrderTrackingPage() {
                 placeholder="همه لیست قیمت‌ها"
                 searchPlaceholder="جستجو در لیست قیمت‌ها"
                 emptyMessage="لیست قیمتی پیدا نشد"
-                triggerClassName="pr-10"
+                triggerClassName="h-11 pr-10"
               />
             </label>
+
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>کارشناس</span>
               <SearchableSelect
@@ -278,9 +279,10 @@ export default function ManagerOrderTrackingPage() {
                 placeholder="همه کارشناسان"
                 searchPlaceholder="جستجو در کارشناسان"
                 emptyMessage="کارشناس پیدا نشد"
-                triggerClassName="pr-10"
+                triggerClassName="h-11 pr-10"
               />
             </label>
+
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>فیلتر وضعیت</span>
               <div className="relative">
@@ -330,11 +332,32 @@ export default function ManagerOrderTrackingPage() {
                   placeholder="همه وضعیت‌ها"
                   searchPlaceholder="جستجو در وضعیت‌ها"
                   emptyMessage="وضعیتی پیدا نشد"
-                  triggerClassName="pr-10"
+                  triggerClassName="h-11 pr-10"
                 />
               </div>
             </label>
           </div>
+
+          {hasActiveFilters ? (
+            <div className="flex items-center justify-start">
+              <Button
+                type="button"
+                variant="outline"
+                className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 px-4 sm:w-fit"
+                onClick={() => {
+                  setSearch("");
+                  setPriceListId("");
+                  setExpertUserId("");
+                  setFilter("all");
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+              >
+                <span>حذف فیلترها</span>
+                <X className="size-4" />
+              </Button>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -343,11 +366,19 @@ export default function ManagerOrderTrackingPage() {
       ) : error ? (
         <PageErrorMessage title="دریافت سفارش ها انجام نشد" message={error} />
       ) : filteredOrders.length > 0 ? (
-        <DataTable
-          columns={columns}
-          rows={filteredOrders}
-          rowKey={(row) => row.objectId || row.id}
-        />
+        <div className="space-y-4">
+          <DataTable
+            columns={columns}
+            rows={paginatedOrders}
+            rowKey={(row) => row.objectId || row.id}
+          />
+          <PaginationBar
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredOrders.length}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       ) : (
         <EmptyState
           title="سفارشی با این فیلتر یافت نشد"

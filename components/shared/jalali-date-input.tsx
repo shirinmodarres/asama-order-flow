@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { FieldError } from "@/components/shared/field-error";
@@ -61,6 +61,41 @@ export function JalaliDateInput({
   const selectedParts = jalaliPartsFromIso(value);
   const displayValue = isoToJalaliDisplay(value);
 
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        !event.defaultPrevented &&
+        !event
+          .composedPath()
+          .some(
+            (node) =>
+              node instanceof HTMLElement &&
+              node.dataset?.jalaliDateInputPopover === "true",
+          )
+      ) {
+        if (!target) return;
+        const popover = document.querySelector(
+          '[data-jalali-date-input-popover="true"]',
+        );
+        const trigger = document.querySelector(
+          '[data-jalali-date-input-trigger="true"]',
+        );
+        if (
+          popover &&
+          !popover.contains(target) &&
+          trigger &&
+          !trigger.contains(target)
+        ) {
+          setIsOpen(false);
+        }
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
   const calendarDays = useMemo(() => {
     const firstDayIso = jalaliToIso(visibleMonth.year, visibleMonth.month, 1);
     const firstDay = new Date(`${firstDayIso}T00:00:00Z`).getUTCDay();
@@ -107,14 +142,9 @@ export function JalaliDateInput({
     isOpen && !disabled && typeof document !== "undefined"
       ? createPortal(
           <>
-            <button
-              type="button"
-              aria-label="بستن تقویم"
-              className="fixed inset-0 z-[9998] cursor-default bg-transparent"
-              onClick={() => setIsOpen(false)}
-            />
             <div
-              className="fixed z-[9999] w-[min(92vw,20rem)] rounded-xl border border-[#E5E7EB] bg-white p-3 shadow-lg"
+              data-jalali-date-input-popover="true"
+              className="fixed z-[9999] w-[min(92vw,20rem)] rounded-xl border border-[#E5E7EB] bg-white p-3 shadow-lg max-h-[calc(100vh-1rem)] overflow-y-auto"
               style={{
                 top: popoverPosition.top,
                 right: popoverPosition.right,
@@ -183,6 +213,7 @@ export function JalaliDateInput({
       <div className="relative">
         <CalendarDays className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6CAE75]" />
         <Input
+          data-jalali-date-input-trigger="true"
           value={displayValue}
           readOnly
           disabled={disabled}
