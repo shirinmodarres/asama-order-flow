@@ -225,8 +225,8 @@ export default function ManagerOrderTrackingPage() {
       />
 
       <section className="overflow-visible rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
-        <div className="grid gap-4">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(12rem,1fr))]">
+        <div className="grid gap-3">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(16rem,18rem)_minmax(16rem,18rem)]">
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>جستجو در سفارش‌ها</span>
               <div className="relative">
@@ -243,6 +243,7 @@ export default function ManagerOrderTrackingPage() {
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>بازه زمانی</span>
               <DateRangeFilter
+              label=""
                 value={{ from: dateFrom, to: dateTo }}
                 onChange={(range) => {
                   setDateFrom(range.from ?? "");
@@ -266,7 +267,9 @@ export default function ManagerOrderTrackingPage() {
                 triggerClassName="h-11 pr-10"
               />
             </label>
+          </div>
 
+          <div className="grid gap-3 xl:grid-cols-[minmax(16rem,18rem)_minmax(16rem,18rem)_auto]">
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>کارشناس</span>
               <SearchableSelect
@@ -336,28 +339,28 @@ export default function ManagerOrderTrackingPage() {
                 />
               </div>
             </label>
-          </div>
 
-          {hasActiveFilters ? (
-            <div className="flex items-center justify-start">
-              <Button
-                type="button"
-                variant="outline"
-                className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 px-4 sm:w-fit"
-                onClick={() => {
-                  setSearch("");
-                  setPriceListId("");
-                  setExpertUserId("");
-                  setFilter("all");
-                  setDateFrom("");
-                  setDateTo("");
-                }}
-              >
-                <span>حذف فیلترها</span>
-                <X className="size-4" />
-              </Button>
-            </div>
-          ) : null}
+            {hasActiveFilters ? (
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 px-4 xl:w-fit"
+                  onClick={() => {
+                    setSearch("");
+                    setPriceListId("");
+                    setExpertUserId("");
+                    setFilter("all");
+                    setDateFrom("");
+                    setDateTo("");
+                  }}
+                >
+                  <span>حذف فیلترها</span>
+                  <X className="size-4" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </section>
 

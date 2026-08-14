@@ -22,8 +22,6 @@ export function ManagerBrandSalesCard({
   totalQuantity,
   emptyMessage,
 }: ManagerBrandSalesCardProps) {
-  const maxPercent = Math.max(1, ...rows.map((row) => row.amount));
-
   return (
     <Card className="overflow-hidden rounded-[28px] border border-[#DDE7F0] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
       <div className="border-b border-[#E7EDF4] px-5 py-5 text-right sm:px-6">
@@ -34,47 +32,46 @@ export function ManagerBrandSalesCard({
           مقایسه سهم هر برند در فروش قطعی بازه انتخابی
         </p>
       </div>
+
       <div className="p-5 sm:p-6">
         {rows.length ? (
           <div className="grid gap-4">
-            {rows.map((row) => {
-              const percent = Math.round((row.amount / maxPercent) * 100);
+            <div className="overflow-hidden rounded-[24px] border border-[#E6EDF4] bg-[#FCFDFE]">
+              <div className="grid grid-cols-[minmax(0,1.3fr)_8rem_10rem] border-b border-[#E6EDF4] px-4 py-4 text-sm font-bold text-[#102034] sm:px-5">
+                <div>برند</div>
+                <div className="text-center">تعداد</div>
+                <div className="text-left">مبلغ فروش</div>
+              </div>
 
-              return (
-                <div
-                  key={row.key}
-                  className="rounded-[24px] border border-[#E6EDF4] bg-[#FCFDFE] p-4 sm:p-5"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="divide-y divide-[#E6EDF4]">
+                {rows.map((row) => (
+                  <div
+                    key={row.key}
+                    className="grid grid-cols-[minmax(0,1.3fr)_8rem_10rem] items-center gap-3 px-4 py-5 sm:px-5"
+                  >
                     <div className="min-w-0">
-                      <p className="truncate text-lg font-black text-[#102034]">
+                      <p className="truncate text-base font-black text-[#102034]">
                         {row.label}
                       </p>
-                      <p className="mt-1 text-sm text-[#6B7280]">
-                        {formatNumber(row.count)} سفارش · {formatNumber(row.quantity)} قلم
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-[#102034]">
+                        {formatNumber(row.quantity)} قلم
+                      </p>
+                      <p className="mt-1 text-xs text-[#6B7280]">
+                        {formatNumber(row.count)} سفارش
                       </p>
                     </div>
-                    <div className="text-right sm:text-left">
-                      <p className="text-sm font-medium text-[#6B7280]">مبلغ فروش</p>
-                      <p className="text-xl font-black text-[#102034]">
+
+                    <div className="text-left">
+                      <p className="text-base font-black text-[#102034]">
                         {formatFaCurrencywithoutRial(row.amount)}
                       </p>
                     </div>
                   </div>
-
-                  <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#EEF3F8]">
-                    <div
-                      className="h-full rounded-full bg-[#6CAE75]"
-                      style={{ width: `${Math.max(percent, 8)}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <SummaryBox title="مبلغ کل فروش" value={formatFaCurrencywithoutRial(totalAmount)} />
-              <SummaryBox title="تعداد کل اقلام" value={formatNumber(totalQuantity)} />
+                ))}
+              </div>
             </div>
           </div>
         ) : (

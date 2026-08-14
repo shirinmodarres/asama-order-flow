@@ -39,7 +39,16 @@ export function DateRangeFilter({
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       const target = event.target as Node;
+      const isInsideNestedDatePicker =
+        event
+          .composedPath()
+          .some(
+            (node) =>
+              node instanceof HTMLElement &&
+              node.dataset?.jalaliDateInputPopover === "true",
+          );
       if (
+        isInsideNestedDatePicker ||
         !containerRef.current?.contains(target) &&
         !popoverRef.current?.contains(target)
       ) {
@@ -77,6 +86,9 @@ export function DateRangeFilter({
               left: popoverPosition.left,
             }}
             onMouseDown={(event) => {
+              event.stopPropagation();
+            }}
+            onClick={(event) => {
               event.stopPropagation();
             }}
           >
