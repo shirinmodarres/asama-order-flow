@@ -154,7 +154,7 @@ export default function ManagerPage() {
           />
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-4">
+        <section className="grid gap-3 xl:grid-cols-3">
           <ManagerMetricCard
             title="مبلغ کل فروش"
             value={formatFaCurrencywithoutRial(totalSalesAmount)}

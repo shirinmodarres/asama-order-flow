@@ -56,10 +56,18 @@ function DonutChart({
   const secondDash = secondRatio * circumference;
 
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex flex-col items-center justify-center">
       <div className="relative h-56 w-56 sm:h-60 sm:w-60 lg:h-64 lg:w-64">
         <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-          <circle cx="60" cy="60" r="45" fill="none" stroke="#EEF3F8" strokeWidth="15" />
+          <circle
+            cx="60"
+            cy="60"
+            r="45"
+            fill="none"
+            stroke="#EEF3F8"
+            strokeWidth="15"
+          />
+
           <circle
             cx="60"
             cy="60"
@@ -71,6 +79,7 @@ function DonutChart({
             strokeDasharray={`${firstDash} ${circumference - firstDash}`}
             strokeDashoffset="0"
           />
+
           <circle
             cx="60"
             cy="60"
@@ -83,13 +92,16 @@ function DonutChart({
             strokeDashoffset={-firstDash}
           />
         </svg>
+      </div>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <p className="text-[12px] font-medium text-[#6B7280]">مبلغ کل فروش</p>
-          <p className="mt-2 text-2xl font-black text-[#102034] sm:text-[2rem]">
-            {formatCurrency(total)}
-          </p>
-        </div>
+      <div className="mt-4 text-center">
+        <p className="text-[12px] font-medium text-[#6B7280]">
+          مبلغ کل فروش
+        </p>
+
+        <p className="mt-1 text-2xl font-black text-[#102034] sm:text-[2rem]">
+          {formatCurrency(total)}
+        </p>
       </div>
     </div>
   );
