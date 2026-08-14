@@ -137,12 +137,20 @@ export function DateRangeFilter({
         ref={triggerRef}
         type="button"
         className="flex h-10 w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-[#D8E1EA] bg-white px-3 text-right text-sm text-[#334155] transition-colors hover:border-[#C8D3DF]"
+        onMouseDown={(event) => {
+          event.preventDefault();
+          if (!isOpen) {
+            setDraftFrom(value.from ?? "");
+            setDraftTo(value.to ?? "");
+          }
+          setIsOpen(true);
+        }}
         onClick={() => {
           if (!isOpen) {
             setDraftFrom(value.from ?? "");
             setDraftTo(value.to ?? "");
           }
-          setIsOpen(!isOpen);
+          setIsOpen((current) => !current);
         }}
       >
         <span className={value.from || value.to ? "" : "text-[#64748B]"}>

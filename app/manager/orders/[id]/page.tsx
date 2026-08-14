@@ -595,7 +595,13 @@ export default function ManagerOrderReviewPage() {
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
               <InfoItem
                 label="وضعیت سفارش"
-                value={<StatusBadge type="order" status={order.orderStatus} />}
+                value={
+                  <StatusBadge
+                    type="order"
+                    status={order.orderStatus}
+                    warehouseStatus={order.warehouseStatus}
+                  />
+                }
               />
               <InfoItem
                 label="وضعیت انبار"

@@ -1,6 +1,7 @@
 import { PackageCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
+  getDisplayOrderStatusLabel,
   getOrderStatusLabel,
   getWarehouseStatusLabel,
 } from "@/lib/domain/statuses";
@@ -59,7 +60,10 @@ export function OrderSummaryCard({
           label="انبارهای مجاز"
           value={stockTitles.length ? stockTitles.join("، ") : "-"}
         /> */}
-        <SummaryRow label="وضعیت سفارش" value={getOrderStatusLabel(status)} />
+        <SummaryRow
+          label="وضعیت سفارش"
+          value={getDisplayOrderStatusLabel(status, warehouseStatus)}
+        />
         <SummaryRow
           label="وضعیت انبار"
           value={getWarehouseStatusLabel(warehouseStatus)}

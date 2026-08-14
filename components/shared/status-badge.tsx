@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import {
+  getDisplayOrderStatusLabel,
   getFinancialApprovalStatusLabel,
   getOrderStatusLabel,
   getWarehouseStatusLabel,
@@ -12,10 +13,11 @@ type InventoryStatus = "normal" | "warning" | "critical";
 interface StatusBadgeProps {
   type: BadgeType;
   status: string;
+  warehouseStatus?: string | null;
 }
 
-export function StatusBadge({ type, status }: StatusBadgeProps) {
-  const { label, variant } = getBadgeConfig(type, status);
+export function StatusBadge({ type, status, warehouseStatus }: StatusBadgeProps) {
+  const { label, variant } = getBadgeConfig(type, status, warehouseStatus);
 
   return (
     <Badge variant={variant} dot>
@@ -24,31 +26,32 @@ export function StatusBadge({ type, status }: StatusBadgeProps) {
   );
 }
 
-function getBadgeConfig(type: BadgeType, status: string) {
+function getBadgeConfig(type: BadgeType, status: string, warehouseStatus?: string | null) {
   if (type === "order") {
     const orderStatus = normalizeOrderStatus(status);
+    const label = getDisplayOrderStatusLabel(orderStatus, warehouseStatus);
     if (orderStatus === "pending_financial_approval") {
-      return { label: getOrderStatusLabel(orderStatus), variant: "warning" as const };
+      return { label, variant: "warning" as const };
     }
     if (orderStatus === "pending_manager_approval") {
-      return { label: getOrderStatusLabel(orderStatus), variant: "brand" as const };
+      return { label, variant: "brand" as const };
     }
     if (orderStatus === "pending_approval") {
-      return { label: getOrderStatusLabel(orderStatus), variant: "warning" as const };
+      return { label, variant: "warning" as const };
     }
     if (orderStatus === "approved" || orderStatus === "completed") {
-      return { label: getOrderStatusLabel(orderStatus), variant: "success" as const };
+      return { label, variant: "success" as const };
     }
     if (orderStatus === "cancelled" || orderStatus === "returned") {
-      return { label: getOrderStatusLabel(orderStatus), variant: "destructive" as const };
+      return { label, variant: "destructive" as const };
     }
     if (orderStatus === "returnedAfterInvoice") {
-      return { label: getOrderStatusLabel(orderStatus), variant: "warning" as const };
+      return { label, variant: "warning" as const };
     }
     if (orderStatus === "invoiced") {
-      return { label: getOrderStatusLabel(orderStatus), variant: "brand" as const };
+      return { label, variant: "brand" as const };
     }
-    return { label: getOrderStatusLabel(orderStatus) || orderStatus || "نامشخص", variant: "neutral" as const };
+    return { label: label || orderStatus || "نامشخص", variant: "neutral" as const };
   }
 
   if (type === "warehouse") {

@@ -76,6 +76,17 @@ export function getOrderStatusLabel(status: string | null | undefined): string {
   return ORDER_STATUS_LABELS[normalizedStatus as OrderStatusCode] ?? normalizedStatus;
 }
 
+export function getDisplayOrderStatusLabel(
+  status: string | null | undefined,
+  warehouseStatus?: string | null,
+): string {
+  const normalizedStatus = normalizeOrderStatus(status);
+  if (normalizedStatus === "approved" && warehouseStatus === "delivered") {
+    return "تحویل شده";
+  }
+  return getOrderStatusLabel(normalizedStatus);
+}
+
 export function normalizeOrderStatus(status: string | null | undefined): string {
   if (status === "pending" || status === "pending_approva") return "pending_approval";
   return status || "";

@@ -60,8 +60,8 @@ export default function ManagerPage() {
   const pendingManagerCount = filteredOrders.filter(
     (order) => order.orderStatus === "pending_manager_approval",
   ).length;
-  const completedOrders = filteredOrders.filter(
-    (order) => order.orderStatus === "completed",
+  const approvedOrders = filteredOrders.filter(
+    (order) => order.orderStatus === "approved",
   );
   const invoicedOrders = filteredOrders.filter(
     (order) => order.orderStatus === "invoiced",
@@ -70,29 +70,29 @@ export default function ManagerPage() {
     ["reserved", "reviewing"].includes(order.warehouseStatus),
   ).length;
 
-  const totalSalesAmount = completedOrders.reduce(
+  const totalSalesAmount = approvedOrders.reduce(
     (sum, order) => sum + getOrderTotalAmount(order),
     0,
   );
-  const totalSalesQuantity = completedOrders.reduce(
+  const totalSalesQuantity = approvedOrders.reduce(
     (sum, order) => sum + getOrderTotalQuantity(order),
     0,
   );
-  const averageOrderAmount = completedOrders.length
-    ? totalSalesAmount / completedOrders.length
+  const averageOrderAmount = approvedOrders.length
+    ? totalSalesAmount / approvedOrders.length
     : 0;
 
   const expertRows = useMemo(
-    () => groupByExpert(completedOrders).slice(0, TOP_EXPERT_ROWS),
-    [completedOrders],
+    () => groupByExpert(approvedOrders).slice(0, TOP_EXPERT_ROWS),
+    [approvedOrders],
   );
   const channelRows = useMemo(
-    () => groupByChannel(completedOrders),
-    [completedOrders],
+    () => groupByChannel(approvedOrders),
+    [approvedOrders],
   );
   const trendRows = useMemo(
-    () => groupByDay(completedOrders).slice(0, TOP_DAILY_ROWS),
-    [completedOrders],
+    () => groupByDay(approvedOrders).slice(0, TOP_DAILY_ROWS),
+    [approvedOrders],
   );
 
   const maxAmount = Math.max(
@@ -123,7 +123,7 @@ export default function ManagerPage() {
           </SectionCard>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-5">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <ManagerSummaryCard
             title="سفارش‌های در انتظار تأیید مالی"
             value={pendingFinancialCount}
@@ -135,9 +135,9 @@ export default function ManagerPage() {
             hint="سفارش‌هایی که باید تعیین تکلیف شوند"
           />
           <ManagerSummaryCard
-              title="سفارش‌های در انتظار انبار"
-              value={warehouseWaitingCount}
-              hint="رزرو شده و در صف عملیات انبار"
+            title="سفارش‌های در انتظار انبار"
+            value={warehouseWaitingCount}
+            hint="رزرو شده و در صف عملیات انبار"
           />
           <ManagerSummaryCard
             title="سفارش‌های فاکتور شده"
@@ -145,9 +145,9 @@ export default function ManagerPage() {
             hint="ثبت شده در مسیر مالی"
           />
           <ManagerSummaryCard
-            title="سفارش‌های تکمیل شده"
-            value={completedOrders.length}
-            hint="رسیده به انتهای مسیر عملیاتی"
+            title="سفارش‌های تأیید شده"
+            value={approvedOrders.length}
+            hint="سفارش‌هایی که تأیید نهایی شده‌اند"
           />
         </section>
 
@@ -166,8 +166,8 @@ export default function ManagerPage() {
                 value={formatNumber(totalSalesQuantity)}
               />
               <MetricBox
-                label="تعداد سفارش‌های قطعی"
-                value={formatNumber(completedOrders.length)}
+                label="تعداد سفارش‌های تأیید شده"
+                value={formatNumber(approvedOrders.length)}
               />
               <MetricBox
                 label="میانگین مبلغ سفارش"
@@ -187,8 +187,8 @@ export default function ManagerPage() {
                 accent="bg-[#1F3A5F]"
               />
               <MiniStat
-                label="سفارش‌های تکمیل شده"
-                value={formatNumber(completedOrders.length)}
+                label="سفارش‌های تأیید شده"
+                value={formatNumber(approvedOrders.length)}
                 accent="bg-[#6CAE75]"
               />
               <MiniStat
@@ -407,7 +407,7 @@ function DonutChart({
 
   return (
     <div className="flex items-center justify-center">
-      <div className="relative h-56 w-56">
+      <div className="relative h-48 w-48 sm:h-52 sm:w-52 lg:h-56 lg:w-56">
         <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
           <circle cx="60" cy="60" r="45" fill="none" stroke="#EEF3F8" strokeWidth="14" />
           <circle
@@ -434,8 +434,10 @@ function DonutChart({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <p className="text-xs font-medium text-[#6B7280]">جمع فروش</p>
-          <p className="mt-2 text-2xl font-black text-[#102034]">{formatCurrency(total)}</p>
+          <p className="text-[11px] font-medium text-[#6B7280]">جمع فروش</p>
+          <p className="mt-1 text-xl font-black text-[#102034] sm:text-2xl">
+            {formatCurrency(total)}
+          </p>
         </div>
       </div>
     </div>
@@ -453,19 +455,21 @@ function ChannelLegendRow({
   const color = row.key === "naja" ? "bg-[#6CAE75]" : "bg-[#2C4A73]";
 
   return (
-    <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className={`size-3 rounded-full ${color}`} />
-          <div>
-            <p className="text-sm font-bold text-[#102034]">{row.label}</p>
-            <p className="mt-1 text-xs text-[#6B7280]">
-              تعداد سفارش: {formatNumber(row.count)} · تعداد اقلام: {formatNumber(row.quantity)}
-            </p>
+    <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-3.5 sm:p-4">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={`size-2.5 rounded-full ${color}`} />
+            <p className="truncate text-sm font-bold text-[#102034]">{row.label}</p>
           </div>
+          <p className="mt-2 text-xs leading-6 text-[#6B7280]">
+            تعداد سفارش: {formatNumber(row.count)} · تعداد اقلام: {formatNumber(row.quantity)}
+          </p>
         </div>
-        <div className="text-left">
-          <p className="text-sm font-bold text-[#102034]">{formatCurrency(row.amount)}</p>
+        <div className="text-left sm:min-w-[7rem]">
+          <p className="text-sm font-bold text-[#102034] sm:text-base">
+            {formatCurrency(row.amount)}
+          </p>
           <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(percent)}٪</p>
         </div>
       </div>
@@ -489,14 +493,14 @@ function BarRow({
 }) {
   const percent = total > 0 ? Math.round((amount / total) * 100) : 0;
   return (
-    <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-[#102034]">{label}</p>
-          <p className="mt-1 text-xs text-[#6B7280]">{meta}</p>
+    <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-3.5 sm:p-4">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-[#102034]">{label}</p>
+          <p className="mt-1 text-xs leading-6 text-[#6B7280]">{meta}</p>
         </div>
-        <div className="text-left">
-          <p className="text-sm font-bold text-[#102034]">{formatCurrency(amount)}</p>
+        <div className="text-left sm:min-w-[7rem]">
+          <p className="text-sm font-bold text-[#102034] sm:text-base">{formatCurrency(amount)}</p>
           <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(percent)}٪</p>
         </div>
       </div>

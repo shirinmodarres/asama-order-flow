@@ -146,7 +146,13 @@ export default function FinanceReadyPage() {
     {
       key: "orderStatus",
       header: "وضعیت سفارش",
-      render: (row) => <StatusBadge type="order" status={row.order.orderStatus} />,
+      render: (row) => (
+        <StatusBadge
+          type="order"
+          status={row.order.orderStatus}
+          warehouseStatus={row.order.warehouseStatus}
+        />
+      ),
     },
     {
       key: "warehouseStatus",

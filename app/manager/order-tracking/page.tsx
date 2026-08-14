@@ -100,7 +100,7 @@ export default function ManagerOrderTrackingPage() {
         return order.orderStatus === filter;
       })
       .filter((order) => isWithinDateRange(order.updatedAt, dateFrom, dateTo));
-  }, [dateFrom, dateTo, filter, orders, search]);
+  }, [dateFrom, dateTo, expertUserId, filter, orders, priceListId, search]);
 
   const priceListOptions = useMemo(
     () =>
@@ -164,7 +164,13 @@ export default function ManagerOrderTrackingPage() {
     {
       key: "order-status",
       header: "وضعیت سفارش",
-      render: (row) => <StatusBadge type="order" status={row.orderStatus} />,
+      render: (row) => (
+        <StatusBadge
+          type="order"
+          status={row.orderStatus}
+          warehouseStatus={row.warehouseStatus}
+        />
+      ),
     },
     {
       key: "warehouse-status",
@@ -199,8 +205,8 @@ export default function ManagerOrderTrackingPage() {
         description="پایش وضعیت سفارش‌ها از ثبت تا فاکتور"
       />
 
-      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm overflow-visible">
+        <div className="grid gap-4">
           <label className="grid flex-1 gap-2 text-sm font-medium text-[#334155]">
             <span>جستجو در سفارش‌ها</span>
             <div className="relative">
@@ -213,112 +219,120 @@ export default function ManagerOrderTrackingPage() {
               />
             </div>
           </label>
-          <label className="grid w-full gap-2 text-sm font-medium text-[#334155] xl:w-64">
-            <span>لیست قیمت</span>
-            <SearchableSelect
-              value={priceListId || undefined}
-              onValueChange={setPriceListId}
-              options={[
-                { value: "", label: "همه لیست قیمت‌ها" },
-                ...priceListOptions,
-              ]}
-              placeholder="همه لیست قیمت‌ها"
-              searchPlaceholder="جستجو در لیست قیمت‌ها"
-              emptyMessage="لیست قیمتی پیدا نشد"
-              triggerClassName="pr-10"
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
+            <DateRangeFilter
+              value={{ from: dateFrom, to: dateTo }}
+              onChange={(range) => {
+                setDateFrom(range.from ?? "");
+                setDateTo(range.to ?? "");
+              }}
             />
-          </label>
-          <label className="grid w-full gap-2 text-sm font-medium text-[#334155] xl:w-64">
-            <span>کارشناس</span>
-            <SearchableSelect
-              value={expertUserId || undefined}
-              onValueChange={setExpertUserId}
-              options={[
-                { value: "", label: "همه کارشناسان" },
-                ...expertOptions,
-              ]}
-              placeholder="همه کارشناسان"
-              searchPlaceholder="جستجو در کارشناسان"
-              emptyMessage="کارشناس پیدا نشد"
-              triggerClassName="pr-10"
-            />
-          </label>
-          <label className="grid w-full gap-2 text-sm font-medium text-[#334155] xl:w-56">
-            <span>فیلتر وضعیت</span>
-            <div className="relative">
-              <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+            {hasActiveFilters ? (
+              <div className="flex items-end justify-start xl:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="inline-flex w-full shrink-0 items-center justify-center gap-2 xl:w-fit"
+                  onClick={() => {
+                    setSearch("");
+                    setPriceListId("");
+                    setExpertUserId("");
+                    setFilter("all");
+                    setDateFrom("");
+                    setDateTo("");
+                  }}
+                >
+                  <span>حذف فیلترها</span>
+                  <X className="size-4" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_18rem_18rem_14rem]">
+            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
+              <span>لیست قیمت</span>
               <SearchableSelect
-                value={filter}
-                onValueChange={(value) => setFilter(value as TrackingFilter)}
+                value={priceListId || undefined}
+                onValueChange={setPriceListId}
                 options={[
-                  { value: "all", label: "همه وضعیت‌ها" },
-                  {
-                    value: "pending_financial_approval",
-                    label: getOrderStatusLabel("pending_financial_approval"),
-                  },
-                  {
-                    value: "pending_manager_approval",
-                    label: getOrderStatusLabel("pending_manager_approval"),
-                  },
-                  {
-                    value: "needs_review",
-                    label: getOrderStatusLabel("needs_review"),
-                  },
-                  {
-                    value: "review_resolved",
-                    label: getOrderStatusLabel("review_resolved"),
-                  },
-                  { value: "approved", label: getOrderStatusLabel("approved") },
-                  {
-                    value: "cancelled",
-                    label: getOrderStatusLabel("cancelled"),
-                  },
-                  { value: "voided", label: getOrderStatusLabel("voided") },
-                  {
-                    value: "dispatchIssued",
-                    label: getWarehouseStatusLabel("dispatchIssued"),
-                  },
-                  {
-                    value: "delivered",
-                    label: getWarehouseStatusLabel("delivered"),
-                  },
-                  { value: "invoiced", label: getOrderStatusLabel("invoiced") },
-                  { value: "returned", label: getOrderStatusLabel("returned") },
-                  {
-                    value: "returnedAfterInvoice",
-                    label: getOrderStatusLabel("returnedAfterInvoice"),
-                  },
+                  { value: "", label: "همه لیست قیمت‌ها" },
+                  ...priceListOptions,
                 ]}
-                placeholder="همه وضعیت‌ها"
-                searchPlaceholder="جستجو در وضعیت‌ها"
-                emptyMessage="وضعیتی پیدا نشد"
+                placeholder="همه لیست قیمت‌ها"
+                searchPlaceholder="جستجو در لیست قیمت‌ها"
+                emptyMessage="لیست قیمتی پیدا نشد"
                 triggerClassName="pr-10"
               />
-            </div>
-          </label>
-          <DateRangeFilter
-            value={{ from: dateFrom, to: dateTo }}
-            onChange={(range) => {
-              setDateFrom(range.from ?? "");
-              setDateTo(range.to ?? "");
-            }}
-          />
-          {hasActiveFilters ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="inline-flex w-fit shrink-0 items-center gap-2"
-              onClick={() => {
-                setSearch("");
-                setFilter("all");
-                setDateFrom("");
-                setDateTo("");
-              }}
-            >
-              <span>حذف فیلترها</span>
-              <X className="size-4" />
-            </Button>
-          ) : null}
+            </label>
+            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
+              <span>کارشناس</span>
+              <SearchableSelect
+                value={expertUserId || undefined}
+                onValueChange={setExpertUserId}
+                options={[
+                  { value: "", label: "همه کارشناسان" },
+                  ...expertOptions,
+                ]}
+                placeholder="همه کارشناسان"
+                searchPlaceholder="جستجو در کارشناسان"
+                emptyMessage="کارشناس پیدا نشد"
+                triggerClassName="pr-10"
+              />
+            </label>
+            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
+              <span>فیلتر وضعیت</span>
+              <div className="relative">
+                <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+                <SearchableSelect
+                  value={filter}
+                  onValueChange={(value) => setFilter(value as TrackingFilter)}
+                  options={[
+                    { value: "all", label: "همه وضعیت‌ها" },
+                    {
+                      value: "pending_financial_approval",
+                      label: getOrderStatusLabel("pending_financial_approval"),
+                    },
+                    {
+                      value: "pending_manager_approval",
+                      label: getOrderStatusLabel("pending_manager_approval"),
+                    },
+                    {
+                      value: "needs_review",
+                      label: getOrderStatusLabel("needs_review"),
+                    },
+                    {
+                      value: "review_resolved",
+                      label: getOrderStatusLabel("review_resolved"),
+                    },
+                    { value: "approved", label: getOrderStatusLabel("approved") },
+                    {
+                      value: "cancelled",
+                      label: getOrderStatusLabel("cancelled"),
+                    },
+                    { value: "voided", label: getOrderStatusLabel("voided") },
+                    {
+                      value: "dispatchIssued",
+                      label: getWarehouseStatusLabel("dispatchIssued"),
+                    },
+                    {
+                      value: "delivered",
+                      label: getWarehouseStatusLabel("delivered"),
+                    },
+                    { value: "invoiced", label: getOrderStatusLabel("invoiced") },
+                    { value: "returned", label: getOrderStatusLabel("returned") },
+                    {
+                      value: "returnedAfterInvoice",
+                      label: getOrderStatusLabel("returnedAfterInvoice"),
+                    },
+                  ]}
+                  placeholder="همه وضعیت‌ها"
+                  searchPlaceholder="جستجو در وضعیت‌ها"
+                  emptyMessage="وضعیتی پیدا نشد"
+                  triggerClassName="pr-10"
+                />
+              </div>
+            </label>
+          </div>
         </div>
       </section>
 
