@@ -81,6 +81,7 @@ export default function ManagerOrderTrackingPage() {
         (a, b) => Number(new Date(b.updatedAt)) - Number(new Date(a.updatedAt)),
       )
       .filter((order) => {
+        const expertKey = getOrderExpertKey(order);
         const matchesSearch =
           order.code.toLowerCase().includes(search.toLowerCase()) ||
           (order.createdByName ?? "").toLowerCase().includes(search.toLowerCase()) ||
@@ -90,7 +91,7 @@ export default function ManagerOrderTrackingPage() {
 
         if (!matchesSearch) return false;
         if (priceListId && order.priceListId !== priceListId) return false;
-        if (expertUserId && order.expertUserId !== expertUserId) return false;
+        if (expertUserId && expertKey !== expertUserId) return false;
         if (filter === "all") return true;
         if (filter === "dispatchIssued")
           return order.warehouseStatus === "dispatchIssued";
@@ -123,10 +124,11 @@ export default function ManagerOrderTrackingPage() {
         new Map(
           orders
             .filter((order) => order.expertUserId || order.createdByName)
-            .map((order) => [
-              order.expertUserId || order.createdByName || "نامشخص",
-              order.createdByName || order.expertUserId || "نامشخص",
-            ]),
+            .map((order) => {
+              const value = getOrderExpertKey(order) || "نامشخص";
+              const label = order.createdByName || order.expertUserId || "نامشخص";
+              return [value, label] as const;
+            }),
         ).entries(),
       ).map(([value, label]) => ({ value, label })),
     [orders],
@@ -369,4 +371,8 @@ function isWithinDateRange(
   if (dateTo && timestamp > new Date(`${dateTo}T23:59:59`).getTime())
     return false;
   return true;
+}
+
+function getOrderExpertKey(order: Order): string {
+  return order.expertUserId?.trim() || order.createdByName?.trim() || "";
 }

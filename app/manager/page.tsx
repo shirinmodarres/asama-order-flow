@@ -1,14 +1,17 @@
 "use client";
 
+import { ClipboardList, Package, TrendingUp, Wallet } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
-import { ActionLinkCard } from "@/components/shared/action-link-card";
 import { DateRangeFilter, type DateRangeValue } from "@/components/shared/date-range-filter";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
-import { SectionCard } from "@/components/ui/section-card";
+import { Card } from "@/components/ui/card";
 import { getErrorMessage } from "@/lib/api/api-error";
 import type { Order } from "@/lib/models/order.model";
+import {
+  getOrderTotalAmount as getSalesTotalAmount,
+  getOrderTotalQuantity as getSalesTotalQuantity,
+} from "@/lib/reports/order-sales-metrics";
 import { listOrders } from "@/lib/services/order.service";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
 
@@ -71,11 +74,11 @@ export default function ManagerPage() {
   ).length;
 
   const totalSalesAmount = approvedOrders.reduce(
-    (sum, order) => sum + getOrderTotalAmount(order),
+    (sum, order) => sum + getSalesTotalAmount(order.items),
     0,
   );
   const totalSalesQuantity = approvedOrders.reduce(
-    (sum, order) => sum + getOrderTotalQuantity(order),
+    (sum, order) => sum + getSalesTotalQuantity(order.items),
     0,
   );
   const averageOrderAmount = approvedOrders.length
@@ -107,197 +110,168 @@ export default function ManagerPage() {
       <div className="space-y-4">
         {error ? <InlineErrorMessage message={error} /> : null}
 
-        <section className="grid gap-4">
-          <SectionCard
-            title="بازه زمانی گزارش"
-            description="اگر بازه‌ای انتخاب نشود، کل گزارش نمایش داده می‌شود."
-          >
-            <div className="max-w-4xl">
-              <DateRangeFilter
-                value={dateRange}
-                onChange={setDateRange}
-                label="بازه گزارش"
-                placeholder="کل گزارش"
-              />
-            </div>
-          </SectionCard>
+        <section className="rounded-[26px] border border-[#DDE7F0] bg-white px-4 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:px-5 lg:px-6">
+          <div className="flex flex-col gap-3 border-b border-[#E7EDF4] pb-5 text-right">
+            <h1 className="text-2xl font-black text-[#102034] sm:text-3xl">
+              مبلغ کل فروش
+            </h1>
+            <p className="text-base font-medium text-[#6B7280]">
+              جمع فروش قطعی در بازه انتخابی
+            </p>
+          </div>
+          <div className="mt-5 max-w-xl">
+            <DateRangeFilter
+              value={dateRange}
+              onChange={setDateRange}
+              label="بازه گزارش"
+              placeholder="کل گزارش"
+            />
+          </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <ManagerSummaryCard
-            title="سفارش‌های در انتظار تأیید مالی"
-            value={pendingFinancialCount}
-            hint="سفارش‌های آماده بررسی مالی"
-          />
-          <ManagerSummaryCard
-            title="سفارش‌های در انتظار تأیید مدیر"
-            value={pendingManagerCount}
-            hint="سفارش‌هایی که باید تعیین تکلیف شوند"
-          />
-          <ManagerSummaryCard
-            title="سفارش‌های در انتظار انبار"
-            value={warehouseWaitingCount}
-            hint="رزرو شده و در صف عملیات انبار"
-          />
-          <ManagerSummaryCard
-            title="سفارش‌های فاکتور شده"
-            value={invoicedOrders.length}
-            hint="ثبت شده در مسیر مالی"
-          />
-          <ManagerSummaryCard
-            title="سفارش‌های تأیید شده"
-            value={approvedOrders.length}
-            hint="سفارش‌هایی که تأیید نهایی شده‌اند"
-          />
-        </section>
-
-        <section className="grid gap-4 xl:grid-cols-2">
-          <SectionCard
+        <section className="grid gap-4 xl:grid-cols-4">
+          <ManagerMetricCard
             title="مبلغ کل فروش"
-            description="جمع فروش قطعی در بازه انتخابی"
-          >
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricBox
-                label="مبلغ کل فروش"
-                value={formatCurrency(totalSalesAmount)}
-              />
-              <MetricBox
-                label="تعداد اقلام فروش"
-                value={formatNumber(totalSalesQuantity)}
-              />
-              <MetricBox
-                label="تعداد سفارش‌های تأیید شده"
-                value={formatNumber(approvedOrders.length)}
-              />
-              <MetricBox
-                label="میانگین مبلغ سفارش"
-                value={formatCurrency(averageOrderAmount)}
-              />
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            title="خلاصه فروش"
-            description="نمایی سریع از وضعیت فروش در همین بازه"
-          >
-            <div className="grid gap-3">
-              <MiniStat
-                label="فروش تأیید شده"
-                value={formatCurrency(totalSalesAmount)}
-                accent="bg-[#1F3A5F]"
-              />
-              <MiniStat
-                label="سفارش‌های تأیید شده"
-                value={formatNumber(approvedOrders.length)}
-                accent="bg-[#6CAE75]"
-              />
-              <MiniStat
-                label="سفارش‌های فاکتور شده"
-                value={formatNumber(invoicedOrders.length)}
-                accent="bg-[#F59E0B]"
-              />
-              <MiniStat
-                label="در انتظار انبار"
-                value={formatNumber(warehouseWaitingCount)}
-                accent="bg-[#EF4444]"
-              />
-            </div>
-          </SectionCard>
+            value={formatCurrency(totalSalesAmount)}
+            icon={<Wallet className="size-6" />}
+            iconTone="green"
+            footer="ریال"
+          />
+          <ManagerMetricCard
+            title="تعداد سفارش‌های تأیید شده"
+            value={formatNumber(approvedOrders.length)}
+            icon={<ClipboardList className="size-6" />}
+            iconTone="blue"
+            footer="سفارش"
+          />
+          <ManagerMetricCard
+            title="تعداد اقلام"
+            value={formatNumber(totalSalesQuantity)}
+            icon={<Package className="size-6" />}
+            iconTone="amber"
+            footer="قلم"
+          />
+          <ManagerMetricCard
+            title="میانگین مبلغ سفارش"
+            value={formatCurrency(averageOrderAmount)}
+            icon={<TrendingUp className="size-6" />}
+            iconTone="green"
+            footer="ریال"
+          />
         </section>
 
         <section className="grid gap-4 xl:grid-cols-2">
-          <SectionCard
-            title="ترکیب فروش بازار / ناجا"
-            description="نمودار دونات برای مقایسه سهم هر گروه در فروش تأییدشده"
-          >
-            {channelRows.some((row) => row.amount > 0) ? (
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] xl:items-center">
-                <DonutChart rows={channelRows} />
-                <div className="grid gap-3">
-                  {channelRows.map((row) => (
-                    <ChannelLegendRow
-                      key={row.key}
-                      row={row}
-                      total={totalSalesAmount}
-                    />
-                  ))}
+          <Card className="overflow-hidden rounded-[28px] border border-[#DDE7F0] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="border-b border-[#E7EDF4] px-5 py-5 text-right sm:px-6">
+              <h2 className="text-2xl font-black text-[#102034]">
+                فروش به تفکیک کارشناس
+              </h2>
+              <p className="mt-2 text-base font-medium text-[#6B7280]">
+                نمودار رتبه‌بندی کارشناسان بر اساس مبلغ فروش
+              </p>
+            </div>
+            <div className="p-5 sm:p-6">
+              {expertRows.length ? (
+                <div className="overflow-hidden rounded-[24px] border border-[#E6EDF4] bg-[#FCFDFE]">
+                  <div className="grid grid-cols-[minmax(0,1.25fr)_7rem_9rem] border-b border-[#E6EDF4] px-4 py-4 text-sm font-bold text-[#102034] sm:px-5">
+                    <div>کارشناس</div>
+                    <div className="text-center">تعداد سفارش</div>
+                    <div className="text-left">مبلغ فروش (ریال)</div>
+                  </div>
+                  <div className="divide-y divide-[#E6EDF4]">
+                    {expertRows.map((row, index) => (
+                      <div
+                        key={row.key}
+                        className="grid grid-cols-[minmax(0,1.25fr)_7rem_9rem] items-center gap-3 px-4 py-5 sm:px-5"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span
+                            className={`flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-black text-white ${rankColor(index)}`}
+                          >
+                            {index + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-[#102034] sm:text-[15px]">
+                              {row.label}
+                            </p>
+                            <p className="mt-1 text-xs text-[#6B7280]">
+                              {formatNumber(row.quantity)} قلم
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-center text-sm font-medium text-[#334155]">
+                          {formatNumber(row.count)} سفارش
+                        </div>
+                        <div className="text-left text-sm font-black text-[#102034] sm:text-base">
+                          {formatCurrency(row.amount)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <EmptyState message="برای این بازه داده‌ای ثبت نشده است." />
-            )}
-          </SectionCard>
+              ) : (
+                <EmptyState message="در این بازه فروش ثبت‌شده‌ای برای کارشناسان وجود ندارد." />
+              )}
+            </div>
+          </Card>
 
-          <SectionCard
-            title="فروش به تفکیک کارشناس"
-            description="نمودار و رتبه‌بندی کارشناسان بر اساس مبلغ فروش"
-          >
-            {expertRows.length ? (
-              <div className="grid gap-3">
-                {expertRows.map((row) => (
-                  <BarRow
+          <Card className="overflow-hidden rounded-[28px] border border-[#DDE7F0] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="border-b border-[#E7EDF4] px-5 py-5 text-right sm:px-6">
+              <h2 className="text-2xl font-black text-[#102034]">
+                ترکیب فروش بازار / ناجا
+              </h2>
+              <p className="mt-2 text-base font-medium text-[#6B7280]">
+                نمودار دونات برای مقایسه سهم هر گروه در فروش
+              </p>
+            </div>
+            <div className="p-5 sm:p-6">
+              {channelRows.some((row) => row.amount > 0) ? (
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,1fr)] xl:items-center">
+                  <DonutChart rows={channelRows} total={totalSalesAmount} />
+                  <div className="grid gap-4">
+                    {channelRows.map((row) => (
+                      <ChannelLegendCard
+                        key={row.key}
+                        row={row}
+                        total={totalSalesAmount}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <EmptyState message="برای این بازه داده‌ای ثبت نشده است." />
+              )}
+            </div>
+          </Card>
+        </section>
+
+        <Card className="overflow-hidden rounded-[28px] border border-[#DDE7F0] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="border-b border-[#E7EDF4] px-5 py-5 text-right sm:px-6">
+            <h2 className="text-2xl font-black text-[#102034]">روند فروش</h2>
+            <p className="mt-2 text-base font-medium text-[#6B7280]">
+              نمودار روزانه فروش تأییدشده در بازه انتخابی
+            </p>
+          </div>
+          <div className="p-5 sm:p-6">
+            {trendRows.length ? (
+              <div className="grid gap-4">
+                {trendRows.map((row) => (
+                  <TrendChartRow
                     key={row.key}
                     label={row.label}
                     amount={row.amount}
+                    count={row.count}
                     total={maxAmount}
-                    meta={`${formatNumber(row.count)} سفارش · ${formatNumber(row.quantity)} قلم`}
                   />
                 ))}
               </div>
             ) : (
-              <EmptyState message="در این بازه فروش ثبت‌شده‌ای برای کارشناسان وجود ندارد." />
+              <EmptyState message="در بازه انتخابی روند فروشی برای نمایش وجود ندارد." />
             )}
-          </SectionCard>
-        </section>
-
-        <SectionCard
-          title="روند فروش"
-          description="نمودار روزانه فروش تأییدشده در بازه انتخابی"
-        >
-          {trendRows.length ? (
-            <div className="grid gap-4">
-              {trendRows.map((row) => (
-                <TrendChartRow
-                  key={row.key}
-                  label={row.label}
-                  amount={row.amount}
-                  count={row.count}
-                  total={maxAmount}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState message="در بازه انتخابی روند فروشی برای نمایش وجود ندارد." />
-          )}
-        </SectionCard>
-
-        <section className="grid gap-4 md:grid-cols-2">
-          <ActionLinkCard
-            href="/manager/pending-orders"
-            icon="clipboard-check"
-            title="بررسی سفارش‌ها"
-            description="مشاهده سفارش‌های در انتظار تأیید و ثبت تصمیم نهایی"
-          />
-          <ActionLinkCard
-            href="/manager/order-tracking"
-            icon="activity"
-            title="مشاهده روند سفارش‌ها"
-            description="پایش وضعیت کلی سفارش‌ها از تأیید تا فاکتور"
-          />
-        </section>
+          </div>
+        </Card>
       </div>
     </DashboardLayout>
-  );
-}
-
-function getOrderTotalQuantity(order: Order): number {
-  return order.items.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
-}
-
-function getOrderTotalAmount(order: Order): number {
-  return order.items.reduce(
-    (sum, item) => sum + Number(item.quantity ?? 0) * Number(item.unitPrice ?? 0),
-    0,
   );
 }
 
@@ -317,8 +291,8 @@ function groupByExpert(orders: Order[]) {
       amount: 0,
     };
     current.count += 1;
-    current.quantity += getOrderTotalQuantity(order);
-    current.amount += getOrderTotalAmount(order);
+    current.quantity += getSalesTotalQuantity(order.items);
+    current.amount += getSalesTotalAmount(order.items);
     map.set(key, current);
   }
 
@@ -334,8 +308,8 @@ function groupByChannel(orders: Order[]) {
   for (const order of orders) {
     const target = order.orderType === "naja" ? grouped[1] : grouped[0];
     target.count += 1;
-    target.quantity += getOrderTotalQuantity(order);
-    target.amount += getOrderTotalAmount(order);
+    target.quantity += getSalesTotalQuantity(order.items);
+    target.amount += getSalesTotalAmount(order.items);
   }
 
   return grouped;
@@ -357,8 +331,8 @@ function groupByDay(orders: Order[]) {
       amount: 0,
     };
     current.count += 1;
-    current.quantity += getOrderTotalQuantity(order);
-    current.amount += getOrderTotalAmount(order);
+    current.quantity += getSalesTotalQuantity(order.items);
+    current.amount += getSalesTotalAmount(order.items);
     map.set(key, current);
   }
 
@@ -394,10 +368,11 @@ function isWithinDateRange(
 
 function DonutChart({
   rows,
+  total,
 }: {
   rows: Array<{ key: string; label: string; count: number; quantity: number; amount: number }>;
+  total: number;
 }) {
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
   const [first, second] = rows;
   const firstRatio = total > 0 ? first.amount / total : 0;
   const secondRatio = total > 0 ? second.amount / total : 0;
@@ -407,16 +382,16 @@ function DonutChart({
 
   return (
     <div className="flex items-center justify-center">
-      <div className="relative h-48 w-48 sm:h-52 sm:w-52 lg:h-56 lg:w-56">
+      <div className="relative h-56 w-56 sm:h-60 sm:w-60 lg:h-64 lg:w-64">
         <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-          <circle cx="60" cy="60" r="45" fill="none" stroke="#EEF3F8" strokeWidth="14" />
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#EEF3F8" strokeWidth="15" />
           <circle
             cx="60"
             cy="60"
             r="45"
             fill="none"
             stroke="#2C4A73"
-            strokeWidth="14"
+            strokeWidth="15"
             strokeLinecap="round"
             strokeDasharray={`${firstDash} ${circumference - firstDash}`}
             strokeDashoffset="0"
@@ -427,15 +402,15 @@ function DonutChart({
             r="45"
             fill="none"
             stroke="#6CAE75"
-            strokeWidth="14"
+            strokeWidth="15"
             strokeLinecap="round"
             strokeDasharray={`${secondDash} ${circumference - secondDash}`}
             strokeDashoffset={-firstDash}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <p className="text-[11px] font-medium text-[#6B7280]">جمع فروش</p>
-          <p className="mt-1 text-xl font-black text-[#102034] sm:text-2xl">
+          <p className="text-[12px] font-medium text-[#6B7280]">مبلغ کل فروش</p>
+          <p className="mt-2 text-2xl font-black text-[#102034] sm:text-[2rem]">
             {formatCurrency(total)}
           </p>
         </div>
@@ -444,7 +419,7 @@ function DonutChart({
   );
 }
 
-function ChannelLegendRow({
+function ChannelLegendCard({
   row,
   total,
 }: {
@@ -455,57 +430,24 @@ function ChannelLegendRow({
   const color = row.key === "naja" ? "bg-[#6CAE75]" : "bg-[#2C4A73]";
 
   return (
-    <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-3.5 sm:p-4">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`size-2.5 rounded-full ${color}`} />
-            <p className="truncate text-sm font-bold text-[#102034]">{row.label}</p>
+    <div className="rounded-[18px] border border-[#E6EDF4] bg-[#FCFDFE] p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className={`size-3 rounded-full ${color}`} />
+          <div>
+            <p className="text-sm font-bold text-[#102034]">{row.label}</p>
+            <p className="mt-1 text-xs text-[#6B7280]">
+              تعداد سفارش: {formatNumber(row.count)} · تعداد اقلام: {formatNumber(row.quantity)}
+            </p>
           </div>
-          <p className="mt-2 text-xs leading-6 text-[#6B7280]">
-            تعداد سفارش: {formatNumber(row.count)} · تعداد اقلام: {formatNumber(row.quantity)}
-          </p>
         </div>
-        <div className="text-left sm:min-w-[7rem]">
-          <p className="text-sm font-bold text-[#102034] sm:text-base">
-            {formatCurrency(row.amount)}
-          </p>
+        <div className="text-left">
+          <p className="text-sm font-bold text-[#102034]">{formatCurrency(row.amount)}</p>
           <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(percent)}٪</p>
         </div>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF3F8]">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(percent, 8)}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function BarRow({
-  label,
-  amount,
-  total,
-  meta,
-}: {
-  label: string;
-  amount: number;
-  total: number;
-  meta: string;
-}) {
-  const percent = total > 0 ? Math.round((amount / total) * 100) : 0;
-  return (
-    <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-3.5 sm:p-4">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-[#102034]">{label}</p>
-          <p className="mt-1 text-xs leading-6 text-[#6B7280]">{meta}</p>
-        </div>
-        <div className="text-left sm:min-w-[7rem]">
-          <p className="text-sm font-bold text-[#102034] sm:text-base">{formatCurrency(amount)}</p>
-          <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(percent)}٪</p>
-        </div>
-      </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF3F8]">
-        <div className="h-full rounded-full bg-[#1F3A5F]" style={{ width: `${Math.max(percent, 8)}%` }} />
       </div>
     </div>
   );
@@ -540,39 +482,60 @@ function TrendChartRow({
   );
 }
 
-function MetricBox({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[18px] border border-[#E6EDF4] bg-white p-4">
-      <p className="text-xs font-medium text-[#6B7280]">{label}</p>
-      <p className="mt-2 text-lg font-black text-[#102034]">{value}</p>
-    </div>
-  );
-}
-
-function MiniStat({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[#E6EDF4] bg-white p-4">
-      <div className="flex items-center gap-3">
-        <span className={`size-3 rounded-full ${accent}`} />
-        <span className="text-sm font-medium text-[#475569]">{label}</span>
-      </div>
-      <span className="text-sm font-bold text-[#102034]">{value}</span>
-    </div>
-  );
-}
-
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="rounded-[18px] border border-dashed border-[#D7E1EA] bg-[#FBFCFE] px-5 py-8 text-center text-sm text-[#6B7280]">
       {message}
     </div>
   );
+}
+
+function ManagerMetricCard({
+  title,
+  value,
+  footer,
+  icon,
+  iconTone,
+}: {
+  title: string;
+  value: string;
+  footer: string;
+  icon: React.ReactNode;
+  iconTone: "green" | "blue" | "amber";
+}) {
+  const toneStyles =
+    iconTone === "blue"
+      ? "bg-[#E8F1FF] text-[#3B82F6]"
+      : iconTone === "amber"
+        ? "bg-[#FFF2DF] text-[#F59E0B]"
+        : "bg-[#E7F7EA] text-[#6CAE75]";
+
+  return (
+    <Card className="rounded-[24px] border border-[#DDE7F0] bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+      <div className="flex items-start gap-4">
+        <span className={`flex size-12 shrink-0 items-center justify-center rounded-full ${toneStyles}`}>
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1 text-right">
+          <p className="text-sm font-semibold text-[#6B7280]">{title}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[#102034] sm:text-[2rem]">
+            {value}
+          </p>
+          <p className="mt-1 text-sm font-medium text-[#6B7280]">{footer}</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function rankColor(index: number): string {
+  const palette = [
+    "bg-[#6CAE75]",
+    "bg-[#8CB8E8]",
+    "bg-[#F1B975]",
+    "bg-[#A78BFA]",
+    "bg-[#F472B6]",
+    "bg-[#94A3B8]",
+  ];
+  return palette[index] ?? "bg-[#94A3B8]";
 }

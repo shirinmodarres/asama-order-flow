@@ -26,6 +26,7 @@ export function DateRangeFilter({
   placeholder = "انتخاب بازه زمانی",
 }: DateRangeFilterProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({
@@ -37,7 +38,11 @@ export function DateRangeFilter({
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        !containerRef.current?.contains(target) &&
+        !popoverRef.current?.contains(target)
+      ) {
         setIsOpen(false);
       }
     }
@@ -72,10 +77,14 @@ export function DateRangeFilter({
               onClick={() => setIsOpen(false)}
             />
             <div
+              ref={popoverRef}
               className="absolute z-[121] w-[min(calc(100vw-1rem),20rem)] rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.16)]"
               style={{
                 top: popoverPosition.top,
                 left: popoverPosition.left,
+              }}
+              onMouseDown={(event) => {
+                event.stopPropagation();
               }}
             >
               <div className="grid gap-3">
