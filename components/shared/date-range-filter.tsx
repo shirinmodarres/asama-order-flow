@@ -48,7 +48,7 @@ export function DateRangeFilter({
               node.dataset?.jalaliDateInputPopover === "true",
           );
       if (
-        isInsideNestedDatePicker ||
+        !isInsideNestedDatePicker &&
         !containerRef.current?.contains(target) &&
         !popoverRef.current?.contains(target)
       ) {

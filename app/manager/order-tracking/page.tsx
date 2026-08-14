@@ -240,10 +240,30 @@ export default function ManagerOrderTrackingPage() {
               </div>
             </label>
 
+
+            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
+              <span>لیست قیمت</span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+                <SearchableSelect
+                  value={priceListId || undefined}
+                  onValueChange={setPriceListId}
+                  options={[
+                    { value: "", label: "همه لیست قیمت‌ها" },
+                    ...priceListOptions,
+                  ]}
+                  placeholder="همه لیست قیمت‌ها"
+                  searchPlaceholder="جستجو در لیست قیمت‌ها"
+                  emptyMessage="لیست قیمتی پیدا نشد"
+                  triggerClassName="h-11 pr-10"
+                />
+              </div>
+            </label>
+            
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>بازه زمانی</span>
               <DateRangeFilter
-              label=""
+           label=""
                 value={{ from: dateFrom, to: dateTo }}
                 onChange={(range) => {
                   setDateFrom(range.from ?? "");
@@ -251,39 +271,26 @@ export default function ManagerOrderTrackingPage() {
                 }}
               />
             </label>
-
-            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
-              <span>لیست قیمت</span>
-              <SearchableSelect
-                value={priceListId || undefined}
-                onValueChange={setPriceListId}
-                options={[
-                  { value: "", label: "همه لیست قیمت‌ها" },
-                  ...priceListOptions,
-                ]}
-                placeholder="همه لیست قیمت‌ها"
-                searchPlaceholder="جستجو در لیست قیمت‌ها"
-                emptyMessage="لیست قیمتی پیدا نشد"
-                triggerClassName="h-11 pr-10"
-              />
-            </label>
           </div>
 
           <div className="grid gap-3 xl:grid-cols-[minmax(16rem,18rem)_minmax(16rem,18rem)_auto]">
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>کارشناس</span>
-              <SearchableSelect
-                value={expertUserId || undefined}
-                onValueChange={setExpertUserId}
-                options={[
-                  { value: "", label: "همه کارشناسان" },
-                  ...expertOptions,
-                ]}
-                placeholder="همه کارشناسان"
-                searchPlaceholder="جستجو در کارشناسان"
-                emptyMessage="کارشناس پیدا نشد"
-                triggerClassName="h-11 pr-10"
-              />
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+                <SearchableSelect
+                  value={expertUserId || undefined}
+                  onValueChange={setExpertUserId}
+                  options={[
+                    { value: "", label: "همه کارشناسان" },
+                    ...expertOptions,
+                  ]}
+                  placeholder="همه کارشناسان"
+                  searchPlaceholder="جستجو در کارشناسان"
+                  emptyMessage="کارشناس پیدا نشد"
+                  triggerClassName="h-11 pr-10"
+                />
+              </div>
             </label>
 
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
