@@ -45,6 +45,8 @@ export default function ManagerOrderTrackingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [priceListId, setPriceListId] = useState("");
+  const [expertUserId, setExpertUserId] = useState("");
   const [filter, setFilter] = useState<TrackingFilter>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -87,6 +89,8 @@ export default function ManagerOrderTrackingPage() {
             .includes(search.toLowerCase());
 
         if (!matchesSearch) return false;
+        if (priceListId && order.priceListId !== priceListId) return false;
+        if (expertUserId && order.expertUserId !== expertUserId) return false;
         if (filter === "all") return true;
         if (filter === "dispatchIssued")
           return order.warehouseStatus === "dispatchIssued";
@@ -98,8 +102,40 @@ export default function ManagerOrderTrackingPage() {
       .filter((order) => isWithinDateRange(order.updatedAt, dateFrom, dateTo));
   }, [dateFrom, dateTo, filter, orders, search]);
 
+  const priceListOptions = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          orders
+            .filter((order) => order.priceListId)
+            .map((order) => [
+              order.priceListId as string,
+              order.priceListTitle || order.priceList?.title || order.priceListId || "-",
+            ]),
+        ).entries(),
+      ).map(([value, label]) => ({ value, label })),
+    [orders],
+  );
+
+  const expertOptions = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          orders
+            .filter((order) => order.expertUserId || order.createdByName)
+            .map((order) => [
+              order.expertUserId || order.createdByName || "نامشخص",
+              order.createdByName || order.expertUserId || "نامشخص",
+            ]),
+        ).entries(),
+      ).map(([value, label]) => ({ value, label })),
+    [orders],
+  );
+
   const hasActiveFilters =
     search.trim().length > 0 ||
+    priceListId.length > 0 ||
+    expertUserId.length > 0 ||
     filter !== "all" ||
     dateFrom.length > 0 ||
     dateTo.length > 0;
@@ -176,6 +212,36 @@ export default function ManagerOrderTrackingPage() {
                 className="pr-10"
               />
             </div>
+          </label>
+          <label className="grid w-full gap-2 text-sm font-medium text-[#334155] xl:w-64">
+            <span>لیست قیمت</span>
+            <SearchableSelect
+              value={priceListId || undefined}
+              onValueChange={setPriceListId}
+              options={[
+                { value: "", label: "همه لیست قیمت‌ها" },
+                ...priceListOptions,
+              ]}
+              placeholder="همه لیست قیمت‌ها"
+              searchPlaceholder="جستجو در لیست قیمت‌ها"
+              emptyMessage="لیست قیمتی پیدا نشد"
+              triggerClassName="pr-10"
+            />
+          </label>
+          <label className="grid w-full gap-2 text-sm font-medium text-[#334155] xl:w-64">
+            <span>کارشناس</span>
+            <SearchableSelect
+              value={expertUserId || undefined}
+              onValueChange={setExpertUserId}
+              options={[
+                { value: "", label: "همه کارشناسان" },
+                ...expertOptions,
+              ]}
+              placeholder="همه کارشناسان"
+              searchPlaceholder="جستجو در کارشناسان"
+              emptyMessage="کارشناس پیدا نشد"
+              triggerClassName="pr-10"
+            />
           </label>
           <label className="grid w-full gap-2 text-sm font-medium text-[#334155] xl:w-56">
             <span>فیلتر وضعیت</span>

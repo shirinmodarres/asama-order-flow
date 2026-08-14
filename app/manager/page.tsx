@@ -104,137 +104,188 @@ export default function ManagerPage() {
 
   return (
     <DashboardLayout role="manager" title="داشبورد مدیر فروش">
-      {error ? <InlineErrorMessage message={error} /> : null}
+      <div className="space-y-4">
+        {error ? <InlineErrorMessage message={error} /> : null}
 
-      <section className="grid gap-4">
-        <SectionCard title="بازه زمانی گزارش" description="اگر بازه‌ای انتخاب نشود، کل گزارش نمایش داده می‌شود.">
-          <DateRangeFilter
-            value={dateRange}
-            onChange={setDateRange}
-            label="بازه گزارش"
-            placeholder="کل گزارش"
+        <section className="grid gap-4">
+          <SectionCard
+            title="بازه زمانی گزارش"
+            description="اگر بازه‌ای انتخاب نشود، کل گزارش نمایش داده می‌شود."
+          >
+            <div className="max-w-4xl">
+              <DateRangeFilter
+                value={dateRange}
+                onChange={setDateRange}
+                label="بازه گزارش"
+                placeholder="کل گزارش"
+              />
+            </div>
+          </SectionCard>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-5">
+          <ManagerSummaryCard
+            title="سفارش‌های در انتظار تأیید مالی"
+            value={pendingFinancialCount}
+            hint="سفارش‌های آماده بررسی مالی"
           />
-        </SectionCard>
-      </section>
+          <ManagerSummaryCard
+            title="سفارش‌های در انتظار تأیید مدیر"
+            value={pendingManagerCount}
+            hint="سفارش‌هایی که باید تعیین تکلیف شوند"
+          />
+          <ManagerSummaryCard
+              title="سفارش‌های در انتظار انبار"
+              value={warehouseWaitingCount}
+              hint="رزرو شده و در صف عملیات انبار"
+          />
+          <ManagerSummaryCard
+            title="سفارش‌های فاکتور شده"
+            value={invoicedOrders.length}
+            hint="ثبت شده در مسیر مالی"
+          />
+          <ManagerSummaryCard
+            title="سفارش‌های تکمیل شده"
+            value={completedOrders.length}
+            hint="رسیده به انتهای مسیر عملیاتی"
+          />
+        </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <ManagerSummaryCard
-          title="در انتظار تأیید مالی"
-          value={pendingFinancialCount}
-          hint="سفارش‌های آماده بررسی مالی"
-        />
-        <ManagerSummaryCard
-          title="در انتظار تأیید مدیر"
-          value={pendingManagerCount}
-          hint="سفارش‌هایی که باید تعیین تکلیف شوند"
-        />
-        <ManagerSummaryCard
-          title="سفارش‌های تکمیل شده"
-          value={completedOrders.length}
-          hint="رسیده به انتهای مسیر عملیاتی"
-        />
-        <ManagerSummaryCard
-          title="سفارش‌های فاکتور شده"
-          value={invoicedOrders.length}
-          hint="ثبت شده در مسیر مالی"
-        />
-        <ManagerSummaryCard
-          title="در انتظار انبار"
-          value={warehouseWaitingCount}
-          hint="رزرو شده و در صف عملیات انبار"
-        />
-      </section>
+        <section className="grid gap-4 xl:grid-cols-2">
+          <SectionCard
+            title="مبلغ کل فروش"
+            description="جمع فروش قطعی در بازه انتخابی"
+          >
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricBox
+                label="مبلغ کل فروش"
+                value={formatCurrency(totalSalesAmount)}
+              />
+              <MetricBox
+                label="تعداد اقلام فروش"
+                value={formatNumber(totalSalesQuantity)}
+              />
+              <MetricBox
+                label="تعداد سفارش‌های قطعی"
+                value={formatNumber(completedOrders.length)}
+              />
+              <MetricBox
+                label="میانگین مبلغ سفارش"
+                value={formatCurrency(averageOrderAmount)}
+              />
+            </div>
+          </SectionCard>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="مبلغ کل فروش" description="جمع فروش قطعی در بازه انتخابی">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MetricBox label="مبلغ کل فروش" value={formatCurrency(totalSalesAmount)} />
-            <MetricBox label="تعداد اقلام فروش" value={formatNumber(totalSalesQuantity)} />
-            <MetricBox label="تعداد سفارش‌های قطعی" value={formatNumber(completedOrders.length)} />
-            <MetricBox label="میانگین مبلغ سفارش" value={formatCurrency(averageOrderAmount)} />
-          </div>
-        </SectionCard>
+          <SectionCard
+            title="خلاصه فروش"
+            description="نمایی سریع از وضعیت فروش در همین بازه"
+          >
+            <div className="grid gap-3">
+              <MiniStat
+                label="فروش تأیید شده"
+                value={formatCurrency(totalSalesAmount)}
+                accent="bg-[#1F3A5F]"
+              />
+              <MiniStat
+                label="سفارش‌های تکمیل شده"
+                value={formatNumber(completedOrders.length)}
+                accent="bg-[#6CAE75]"
+              />
+              <MiniStat
+                label="سفارش‌های فاکتور شده"
+                value={formatNumber(invoicedOrders.length)}
+                accent="bg-[#F59E0B]"
+              />
+              <MiniStat
+                label="در انتظار انبار"
+                value={formatNumber(warehouseWaitingCount)}
+                accent="bg-[#EF4444]"
+              />
+            </div>
+          </SectionCard>
+        </section>
 
-        <SectionCard title="خلاصه فروش" description="نمایی سریع از وضعیت فروش در همین بازه">
-          <div className="grid gap-3">
-            <MiniStat label="فروش تأیید شده" value={formatCurrency(totalSalesAmount)} accent="bg-[#1F3A5F]" />
-            <MiniStat label="سفارش‌های تکمیل شده" value={formatNumber(completedOrders.length)} accent="bg-[#6CAE75]" />
-            <MiniStat label="سفارش‌های فاکتور شده" value={formatNumber(invoicedOrders.length)} accent="bg-[#F59E0B]" />
-            <MiniStat label="در انتظار انبار" value={formatNumber(warehouseWaitingCount)} accent="bg-[#EF4444]" />
-          </div>
-        </SectionCard>
-      </section>
+        <section className="grid gap-4 xl:grid-cols-2">
+          <SectionCard
+            title="ترکیب فروش بازار / ناجا"
+            description="نمودار دونات برای مقایسه سهم هر گروه در فروش تأییدشده"
+          >
+            {channelRows.some((row) => row.amount > 0) ? (
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] xl:items-center">
+                <DonutChart rows={channelRows} />
+                <div className="grid gap-3">
+                  {channelRows.map((row) => (
+                    <ChannelLegendRow
+                      key={row.key}
+                      row={row}
+                      total={totalSalesAmount}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <EmptyState message="برای این بازه داده‌ای ثبت نشده است." />
+            )}
+          </SectionCard>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <SectionCard
-          title="ترکیب فروش بازار / ناجا"
-          description="نمودار دونات برای مقایسه سهم هر گروه در فروش تأییدشده"
-        >
-          {channelRows.some((row) => row.amount > 0) ? (
-            <div className="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-center">
-              <DonutChart rows={channelRows} />
+          <SectionCard
+            title="فروش به تفکیک کارشناس"
+            description="نمودار و رتبه‌بندی کارشناسان بر اساس مبلغ فروش"
+          >
+            {expertRows.length ? (
               <div className="grid gap-3">
-                {channelRows.map((row) => (
-                  <ChannelLegendRow key={row.key} row={row} total={totalSalesAmount} />
+                {expertRows.map((row) => (
+                  <BarRow
+                    key={row.key}
+                    label={row.label}
+                    amount={row.amount}
+                    total={maxAmount}
+                    meta={`${formatNumber(row.count)} سفارش · ${formatNumber(row.quantity)} قلم`}
+                  />
                 ))}
               </div>
-            </div>
-          ) : (
-            <EmptyState message="برای این بازه داده‌ای ثبت نشده است." />
-          )}
-        </SectionCard>
+            ) : (
+              <EmptyState message="در این بازه فروش ثبت‌شده‌ای برای کارشناسان وجود ندارد." />
+            )}
+          </SectionCard>
+        </section>
 
         <SectionCard
-          title="فروش به تفکیک کارشناس"
-          description="نمودار و رتبه‌بندی کارشناسان بر اساس مبلغ فروش"
+          title="روند فروش"
+          description="نمودار روزانه فروش تأییدشده در بازه انتخابی"
         >
-          {expertRows.length ? (
-            <div className="grid gap-3">
-              {expertRows.map((row) => (
-                <BarRow key={row.key} label={row.label} amount={row.amount} total={maxAmount} meta={`${formatNumber(row.count)} سفارش · ${formatNumber(row.quantity)} قلم`} />
+          {trendRows.length ? (
+            <div className="grid gap-4">
+              {trendRows.map((row) => (
+                <TrendChartRow
+                  key={row.key}
+                  label={row.label}
+                  amount={row.amount}
+                  count={row.count}
+                  total={maxAmount}
+                />
               ))}
             </div>
           ) : (
-            <EmptyState message="در این بازه فروش ثبت‌شده‌ای برای کارشناسان وجود ندارد." />
+            <EmptyState message="در بازه انتخابی روند فروشی برای نمایش وجود ندارد." />
           )}
         </SectionCard>
-      </section>
 
-      <SectionCard
-        title="روند فروش"
-        description="نمودار روزانه فروش تأییدشده در بازه انتخابی"
-      >
-        {trendRows.length ? (
-          <div className="grid gap-4">
-            {trendRows.map((row) => (
-              <TrendChartRow
-                key={row.key}
-                label={row.label}
-                amount={row.amount}
-                count={row.count}
-                total={maxAmount}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState message="در بازه انتخابی روند فروشی برای نمایش وجود ندارد." />
-        )}
-      </SectionCard>
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <ActionLinkCard
-          href="/manager/pending-orders"
-          icon="clipboard-check"
-          title="بررسی سفارش‌ها"
-          description="مشاهده سفارش‌های در انتظار تأیید و ثبت تصمیم نهایی"
-        />
-        <ActionLinkCard
-          href="/manager/order-tracking"
-          icon="activity"
-          title="مشاهده روند سفارش‌ها"
-          description="پایش وضعیت کلی سفارش‌ها از تأیید تا فاکتور"
-        />
-      </section>
+        <section className="grid gap-4 md:grid-cols-2">
+          <ActionLinkCard
+            href="/manager/pending-orders"
+            icon="clipboard-check"
+            title="بررسی سفارش‌ها"
+            description="مشاهده سفارش‌های در انتظار تأیید و ثبت تصمیم نهایی"
+          />
+          <ActionLinkCard
+            href="/manager/order-tracking"
+            icon="activity"
+            title="مشاهده روند سفارش‌ها"
+            description="پایش وضعیت کلی سفارش‌ها از تأیید تا فاکتور"
+          />
+        </section>
+      </div>
     </DashboardLayout>
   );
 }

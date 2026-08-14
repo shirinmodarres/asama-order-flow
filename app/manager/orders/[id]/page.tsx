@@ -482,7 +482,7 @@ export default function ManagerOrderReviewPage() {
               </Link>
             ) : null}
             <Link
-              href={isFinancialControlUser ? "/finance-control/orders" : "/manager/pending-orders"}
+              href={isFinancialControlUser ? "/finance-control/orders" : "/manager/order-tracking"}
               className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
             >
               بازگشت به لیست
@@ -845,7 +845,7 @@ export default function ManagerOrderReviewPage() {
                 ? "سفارش را در این مرحله تأیید یا برای اصلاح برگردانید."
                 : canApprove || canCancel || canNeedReview
                 ? "وضعیت سفارش را مشخص کنید."
-                : "این سفارش در وضعیت فعلی قابل تایید یا لغو نیست."}
+                : null}
             </p>
             {!isFinancialControlUser && order.financialApprovalStatus && order.financialApprovalStatus !== "approved" ? (
               <p className="mt-3 rounded-xl border border-[#F1D7AA] bg-[#FFF8EB] px-3 py-2 text-sm text-[#8A5A00]">

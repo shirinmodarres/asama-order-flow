@@ -178,7 +178,7 @@ export function JalaliDateInput({
       : null;
 
   return (
-    <label className="grid gap-2 text-sm font-medium text-[#334155]">
+    <div className="grid gap-2 text-sm font-medium text-[#334155]">
       <span>{label}</span>
       <div className="relative">
         <CalendarDays className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6CAE75]" />
@@ -206,6 +206,6 @@ export function JalaliDateInput({
         {calendarPopover}
       </div>
       <FieldError message={error} />
-    </label>
+    </div>
   );
 }
