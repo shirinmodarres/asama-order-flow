@@ -149,6 +149,12 @@ export function JalaliDateInput({
                 top: popoverPosition.top,
                 right: popoverPosition.right,
               }}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
             >
               <div className="mb-3 flex items-center justify-between">
                 <Button

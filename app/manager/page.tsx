@@ -5,8 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { DateRangeFilter, type DateRangeValue } from "@/components/shared/date-range-filter";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
+import { ManagerBrandSalesCard } from "@/components/manager/manager-brand-sales-card";
+import { ManagerChannelSalesCard } from "@/components/manager/manager-channel-sales-card";
+import { ManagerExpertSalesCard } from "@/components/manager/manager-expert-sales-card";
+import { ManagerMetricCard } from "@/components/manager/manager-metric-card";
 import { ManagerSummaryCard } from "@/components/manager/manager-summary-card";
-import { Card } from "@/components/ui/card";
 import { getErrorMessage } from "@/lib/api/api-error";
 import type { Order } from "@/lib/models/order.model";
 import {
@@ -14,10 +17,10 @@ import {
   getOrderTotalQuantity as getSalesTotalQuantity,
 } from "@/lib/reports/order-sales-metrics";
 import { listOrders } from "@/lib/services/order.service";
-import { formatCurrency, formatDate, formatFaCurrencywithoutRial, formatNumber } from "@/lib/expert/utils";
+import { formatFaCurrencywithoutRial, formatNumber } from "@/lib/expert/utils";
 
 const TOP_EXPERT_ROWS = 6;
-const TOP_DAILY_ROWS = 12;
+const TOP_BRAND_ROWS = 6;
 
 export default function ManagerPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -94,16 +97,9 @@ export default function ManagerPage() {
     () => groupByChannel(approvedOrders),
     [approvedOrders],
   );
-  const trendRows = useMemo(
-    () => groupByDay(approvedOrders).slice(0, TOP_DAILY_ROWS),
+  const brandRows = useMemo(
+    () => groupByBrand(approvedOrders).slice(0, TOP_BRAND_ROWS),
     [approvedOrders],
-  );
-
-  const maxAmount = Math.max(
-    1,
-    ...expertRows.map((row) => row.amount),
-    ...channelRows.map((row) => row.amount),
-    ...trendRows.map((row) => row.amount),
   );
 
   return (
@@ -180,125 +176,28 @@ export default function ManagerPage() {
             iconTone="amber"
             footer="قلم"
           />
-          <ManagerMetricCard
-            title="میانگین مبلغ سفارش"
-            value={formatFaCurrencywithoutRial(averageOrderAmount)}
-            icon={<TrendingUp className="size-6" />}
-            iconTone="green"
-            footer="ریال"
-          />
         </section>
 
         <section className="grid gap-4 xl:grid-cols-2">
-          <Card className="overflow-hidden rounded-[28px] border border-[#DDE7F0] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-            <div className="border-b border-[#E7EDF4] px-5 py-5 text-right sm:px-6">
-              <h2 className="text-2xl font-black text-[#102034]">
-                فروش به تفکیک کارشناس
-              </h2>
-              <p className="mt-2 text-base font-medium text-[#6B7280]">
-                نمودار رتبه‌بندی کارشناسان بر اساس مبلغ فروش
-              </p>
-            </div>
-            <div className="p-5 sm:p-6">
-              {expertRows.length ? (
-                <div className="overflow-hidden rounded-[24px] border border-[#E6EDF4] bg-[#FCFDFE]">
-                  <div className="grid grid-cols-[minmax(0,1.25fr)_7rem_9rem] border-b border-[#E6EDF4] px-4 py-4 text-sm font-bold text-[#102034] sm:px-5">
-                    <div>کارشناس</div>
-                    <div className="text-center">تعداد سفارش</div>
-                    <div className="text-left">مبلغ فروش (ریال)</div>
-                  </div>
-                  <div className="divide-y divide-[#E6EDF4]">
-                    {expertRows.map((row, index) => (
-                      <div
-                        key={row.key}
-                        className="grid grid-cols-[minmax(0,1.25fr)_7rem_9rem] items-center gap-3 px-4 py-5 sm:px-5"
-                      >
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            className={`flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-black text-white ${rankColor(index)}`}
-                          >
-                            {index + 1}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-bold text-[#102034] sm:text-[15px]">
-                              {row.label}
-                            </p>
-                            <p className="mt-1 text-xs text-[#6B7280]">
-                              {formatNumber(row.quantity)} قلم
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-center text-sm font-medium text-[#334155]">
-                          {formatNumber(row.count)} سفارش
-                        </div>
-                        <div className="text-left text-sm font-black text-[#102034] sm:text-base">
-                          {formatFaCurrencywithoutRial(row.amount)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <EmptyState message="در این بازه فروش ثبت‌شده‌ای برای کارشناسان وجود ندارد." />
-              )}
-            </div>
-          </Card>
-
-          <Card className="overflow-hidden rounded-[28px] border border-[#DDE7F0] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-            <div className="border-b border-[#E7EDF4] px-5 py-5 text-right sm:px-6">
-              <h2 className="text-2xl font-black text-[#102034]">
-                ترکیب فروش بازار / ناجا
-              </h2>
-              <p className="mt-2 text-base font-medium text-[#6B7280]">
-                نمودار برای مقایسه سهم هر گروه در فروش
-              </p>
-            </div>
-            <div className="p-5 sm:p-6">
-              {channelRows.some((row) => row.amount > 0) ? (
-                <div className="grid gap-6">
-                  <DonutChart rows={channelRows} total={totalSalesAmount} />
-                  <div className="grid gap-4 xl:grid-cols-2">
-                    {channelRows.map((row) => (
-                      <ChannelLegendCard
-                        key={row.key}
-                        row={row}
-                        total={totalSalesAmount}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <EmptyState message="برای این بازه داده‌ای ثبت نشده است." />
-              )}
-            </div>
-          </Card>
+          <ManagerExpertSalesCard
+            title="فروش به تفکیک کارشناس"
+            description="نمودار رتبه‌بندی کارشناسان بر اساس مبلغ فروش"
+            rows={expertRows}
+            emptyMessage="در این بازه فروش ثبت‌شده‌ای برای کارشناسان وجود ندارد."
+          />
+          <ManagerChannelSalesCard
+            rows={channelRows}
+            totalAmount={totalSalesAmount}
+            emptyMessage="برای این بازه داده‌ای ثبت نشده است."
+          />
         </section>
 
-        <Card className="overflow-hidden rounded-[28px] border border-[#DDE7F0] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-          <div className="border-b border-[#E7EDF4] px-5 py-5 text-right sm:px-6">
-            <h2 className="text-2xl font-black text-[#102034]">روند فروش</h2>
-            <p className="mt-2 text-base font-medium text-[#6B7280]">
-              نمودار روزانه فروش تأییدشده در بازه انتخابی
-            </p>
-          </div>
-          <div className="p-5 sm:p-6">
-            {trendRows.length ? (
-              <div className="grid gap-4">
-                {trendRows.map((row) => (
-                  <TrendChartRow
-                    key={row.key}
-                    label={row.label}
-                    amount={row.amount}
-                    count={row.count}
-                    total={maxAmount}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState message="در بازه انتخابی روند فروشی برای نمایش وجود ندارد." />
-            )}
-          </div>
-        </Card>
+        <ManagerBrandSalesCard
+          rows={brandRows}
+          totalAmount={totalSalesAmount}
+          totalQuantity={totalSalesQuantity}
+          emptyMessage="در این بازه فروشی برای نمایش بر اساس برند وجود ندارد."
+        />
       </div>
     </DashboardLayout>
   );
@@ -344,17 +243,17 @@ function groupByChannel(orders: Order[]) {
   return grouped;
 }
 
-function groupByDay(orders: Order[]) {
+function groupByBrand(orders: Order[]) {
   const map = new Map<
     string,
     { key: string; label: string; count: number; quantity: number; amount: number }
   >();
 
   for (const order of orders) {
-    const key = getDateKey(order.createdAt);
+    const key = order.priceListBrand?.trim() || "نامشخص";
     const current = map.get(key) ?? {
       key,
-      label: formatDate(order.createdAt),
+      label: order.priceListBrand?.trim() || "نامشخص",
       count: 0,
       quantity: 0,
       amount: 0,
@@ -365,13 +264,7 @@ function groupByDay(orders: Order[]) {
     map.set(key, current);
   }
 
-  return Array.from(map.values()).sort((a, b) => (a.key < b.key ? 1 : -1));
-}
-
-function getDateKey(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toISOString().slice(0, 10);
+  return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
 }
 
 function isWithinDateRange(
@@ -393,177 +286,4 @@ function isWithinDateRange(
   }
 
   return true;
-}
-
-function DonutChart({
-  rows,
-  total,
-}: {
-  rows: Array<{ key: string; label: string; count: number; quantity: number; amount: number }>;
-  total: number;
-}) {
-  const [first, second] = rows;
-  const firstRatio = total > 0 ? first.amount / total : 0;
-  const secondRatio = total > 0 ? second.amount / total : 0;
-  const circumference = 2 * Math.PI * 45;
-  const firstDash = firstRatio * circumference;
-  const secondDash = secondRatio * circumference;
-
-  return (
-    <div className="flex items-center justify-center">
-      <div className="relative h-56 w-56 sm:h-60 sm:w-60 lg:h-64 lg:w-64">
-        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-          <circle cx="60" cy="60" r="45" fill="none" stroke="#EEF3F8" strokeWidth="15" />
-          <circle
-            cx="60"
-            cy="60"
-            r="45"
-            fill="none"
-            stroke="#2C4A73"
-            strokeWidth="15"
-            strokeLinecap="round"
-            strokeDasharray={`${firstDash} ${circumference - firstDash}`}
-            strokeDashoffset="0"
-          />
-          <circle
-            cx="60"
-            cy="60"
-            r="45"
-            fill="none"
-            stroke="#6CAE75"
-            strokeWidth="15"
-            strokeLinecap="round"
-            strokeDasharray={`${secondDash} ${circumference - secondDash}`}
-            strokeDashoffset={-firstDash}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <p className="text-[12px] font-medium text-[#6B7280]">مبلغ کل فروش</p>
-          <p className="mt-2 text-2xl font-black text-[#102034] sm:text-[2rem]">
-            {formatCurrency(total)}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ChannelLegendCard({
-  row,
-  total,
-}: {
-  row: { key: string; label: string; count: number; quantity: number; amount: number };
-  total: number;
-}) {
-  const percent = total > 0 ? Math.round((row.amount / total) * 100) : 0;
-  const color = row.key === "naja" ? "bg-[#6CAE75]" : "bg-[#2C4A73]";
-
-  return (
-    <div className="rounded-[18px] border border-[#E6EDF4] bg-[#FCFDFE] p-4 text-center">
-      <div className="flex items-center justify-center gap-2">
-        <span className={`size-2.5 rounded-full ${color}`} />
-        <p className="text-sm font-bold text-[#102034]">{row.label}</p>
-      </div>
-
-      <p className="mt-3 text-xl font-black text-[#102034] sm:text-2xl">
-        {formatCurrency(row.amount)}
-      </p>
-
-      <p className="mt-2 text-xs font-medium text-[#6B7280]">
-        {formatNumber(percent)}٪
-      </p>
-
-      <div className="mt-4 flex items-center justify-center gap-5 text-xs text-[#6B7280]">
-        <span>تعداد سفارش: {formatNumber(row.count)}</span>
-        <span>تعداد اقلام: {formatNumber(row.quantity)}</span>
-      </div>
-    </div>
-  );
-}
-
-function TrendChartRow({
-  label,
-  amount,
-  count,
-  total,
-}: {
-  label: string;
-  amount: number;
-  count: number;
-  total: number;
-}) {
-  const percent = total > 0 ? Math.round((amount / total) * 100) : 0;
-  return (
-    <div className="grid gap-3 rounded-[18px] border border-[#E6EDF4] bg-white p-4 lg:grid-cols-[10rem_minmax(0,1fr)_8rem] lg:items-center">
-      <div>
-        <p className="text-sm font-bold text-[#102034]">{label}</p>
-        <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(count)} سفارش</p>
-      </div>
-      <div className="h-3 overflow-hidden rounded-full bg-[#EEF3F8]">
-        <div className="h-full rounded-full bg-[#6CAE75]" style={{ width: `${Math.max(percent, 8)}%` }} />
-      </div>
-      <div className="text-left">
-        <p className="text-sm font-bold text-[#102034]">{formatCurrency(amount)}</p>
-        <p className="mt-1 text-xs text-[#6B7280]">{formatNumber(percent)}٪ از کل</p>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="rounded-[18px] border border-dashed border-[#D7E1EA] bg-[#FBFCFE] px-5 py-8 text-center text-sm text-[#6B7280]">
-      {message}
-    </div>
-  );
-}
-
-function ManagerMetricCard({
-  title,
-  value,
-  footer,
-  icon,
-  iconTone,
-}: {
-  title: string;
-  value: string;
-  footer: string;
-  icon: React.ReactNode;
-  iconTone: "green" | "blue" | "amber";
-}) {
-  const toneStyles =
-    iconTone === "blue"
-      ? "bg-[#E8F1FF] text-[#3B82F6]"
-      : iconTone === "amber"
-        ? "bg-[#FFF2DF] text-[#F59E0B]"
-        : "bg-[#E7F7EA] text-[#6CAE75]";
-
-  return (
-    <Card className="rounded-[24px] border border-[#DDE7F0] bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-      <div className="flex items-start gap-4">
-        <span className={`flex size-12 shrink-0 items-center justify-center rounded-full ${toneStyles}`}>
-          {icon}
-        </span>
-        <div className="min-w-0 flex-1 text-right">
-          <p className="text-sm font-semibold text-[#6B7280]">{title}</p>
-          <p className="mt-2 text-lg font-black tracking-tight text-[#102034] sm:text-[2rem]">
-            {value}
-          </p>
-          <p className="mt-1 text-sm font-medium text-[#6B7280]">{footer}</p>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function rankColor(index: number): string {
-  const palette = [
-    "bg-[#6CAE75]",
-    "bg-[#8CB8E8]",
-    "bg-[#F1B975]",
-    "bg-[#A78BFA]",
-    "bg-[#F472B6]",
-    "bg-[#94A3B8]",
-  ];
-  return palette[index] ?? "bg-[#94A3B8]";
 }
