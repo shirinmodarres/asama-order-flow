@@ -14,7 +14,7 @@ import {
   getOrderTotalQuantity as getSalesTotalQuantity,
 } from "@/lib/reports/order-sales-metrics";
 import { listOrders } from "@/lib/services/order.service";
-import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
+import { formatCurrency, formatDate, formatFaCurrencywithoutRial, formatNumber } from "@/lib/expert/utils";
 
 const TOP_EXPERT_ROWS = 6;
 const TOP_DAILY_ROWS = 12;
@@ -161,7 +161,7 @@ export default function ManagerPage() {
         <section className="grid gap-4 xl:grid-cols-4">
           <ManagerMetricCard
             title="مبلغ کل فروش"
-            value={formatCurrency(totalSalesAmount)}
+            value={formatFaCurrencywithoutRial(totalSalesAmount)}
             icon={<Wallet className="size-6" />}
             iconTone="green"
             footer="ریال"
@@ -182,7 +182,7 @@ export default function ManagerPage() {
           />
           <ManagerMetricCard
             title="میانگین مبلغ سفارش"
-            value={formatCurrency(averageOrderAmount)}
+            value={formatFaCurrencywithoutRial(averageOrderAmount)}
             icon={<TrendingUp className="size-6" />}
             iconTone="green"
             footer="ریال"
@@ -232,7 +232,7 @@ export default function ManagerPage() {
                           {formatNumber(row.count)} سفارش
                         </div>
                         <div className="text-left text-sm font-black text-[#102034] sm:text-base">
-                          {formatCurrency(row.amount)}
+                          {formatFaCurrencywithoutRial(row.amount)}
                         </div>
                       </div>
                     ))}
@@ -250,7 +250,7 @@ export default function ManagerPage() {
                 ترکیب فروش بازار / ناجا
               </h2>
               <p className="mt-2 text-base font-medium text-[#6B7280]">
-                نمودار دونات برای مقایسه سهم هر گروه در فروش
+                نمودار برای مقایسه سهم هر گروه در فروش
               </p>
             </div>
             <div className="p-5 sm:p-6">
@@ -265,14 +265,6 @@ export default function ManagerPage() {
                         total={totalSalesAmount}
                       />
                     ))}
-                  </div>
-                  <div className="rounded-[22px] border border-[#E6EDF4] bg-[#FCFDFE] px-5 py-4 text-center">
-                    <p className="text-sm font-medium text-[#6B7280]">
-                      مبلغ کل سفارش
-                    </p>
-                    <p className="mt-2 text-xl font-black text-[#102034] sm:text-2xl">
-                      {formatCurrency(totalSalesAmount)}
-                    </p>
                   </div>
                 </div>
               ) : (
@@ -467,26 +459,23 @@ function ChannelLegendCard({
   const color = row.key === "naja" ? "bg-[#6CAE75]" : "bg-[#2C4A73]";
 
   return (
-    <div className="rounded-[18px] border border-[#E6EDF4] bg-[#FCFDFE] p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className={`size-3 rounded-full ${color}`} />
-          <div>
-            <p className="text-sm font-bold text-[#102034]">{row.label}</p>
-            <p className="mt-1 text-xs text-[#6B7280]">
-              تعداد سفارش: {formatNumber(row.count)} · تعداد اقلام: {formatNumber(row.quantity)}
-            </p>
-          </div>
-        </div>
-        <div className="text-left">
-          <p className="text-xs font-bold text-[#102034] sm:text-sm">
-            {formatCurrency(row.amount)}
-          </p>
-          <p className="mt-1 text-[11px] text-[#6B7280]">{formatNumber(percent)}٪</p>
-        </div>
+    <div className="rounded-[18px] border border-[#E6EDF4] bg-[#FCFDFE] p-4 text-center">
+      <div className="flex items-center justify-center gap-2">
+        <span className={`size-2.5 rounded-full ${color}`} />
+        <p className="text-sm font-bold text-[#102034]">{row.label}</p>
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF3F8]">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(percent, 8)}%` }} />
+
+      <p className="mt-3 text-xl font-black text-[#102034] sm:text-2xl">
+        {formatCurrency(row.amount)}
+      </p>
+
+      <p className="mt-2 text-xs font-medium text-[#6B7280]">
+        {formatNumber(percent)}٪
+      </p>
+
+      <div className="mt-4 flex items-center justify-center gap-5 text-xs text-[#6B7280]">
+        <span>تعداد سفارش: {formatNumber(row.count)}</span>
+        <span>تعداد اقلام: {formatNumber(row.quantity)}</span>
       </div>
     </div>
   );
@@ -557,7 +546,7 @@ function ManagerMetricCard({
         </span>
         <div className="min-w-0 flex-1 text-right">
           <p className="text-sm font-semibold text-[#6B7280]">{title}</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-[#102034] sm:text-[2rem]">
+          <p className="mt-2 text-lg font-black tracking-tight text-[#102034] sm:text-[2rem]">
             {value}
           </p>
           <p className="mt-1 text-sm font-medium text-[#6B7280]">{footer}</p>

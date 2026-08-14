@@ -32,6 +32,10 @@ export function formatCurrency(value?: number | string | null): string {
   return formatFaCurrency(value);
 }
 
+export function formatFaCurrencywithoutRial(value?: number | string | null): string {
+  return formatFaCurrencywithoutRial(value);
+}
+
 export function formatDate(value: string | Date | null | undefined): string {
   return formatJalaliDate(value);
 }
