@@ -240,6 +240,17 @@ export default function ManagerOrderTrackingPage() {
               </div>
             </label>
 
+            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
+              <span>بازه زمانی</span>
+              <DateRangeFilter
+                label=""
+                value={{ from: dateFrom, to: dateTo }}
+                onChange={(range) => {
+                  setDateFrom(range.from ?? "");
+                  setDateTo(range.to ?? "");
+                }}
+              />
+            </label>
 
             <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
               <span>لیست قیمت</span>
@@ -258,18 +269,6 @@ export default function ManagerOrderTrackingPage() {
                   triggerClassName="h-11 pr-10"
                 />
               </div>
-            </label>
-            
-            <label className="grid min-w-0 gap-2 text-sm font-medium text-[#334155]">
-              <span>بازه زمانی</span>
-              <DateRangeFilter
-           label=""
-                value={{ from: dateFrom, to: dateTo }}
-                onChange={(range) => {
-                  setDateFrom(range.from ?? "");
-                  setDateTo(range.to ?? "");
-                }}
-              />
             </label>
           </div>
 
