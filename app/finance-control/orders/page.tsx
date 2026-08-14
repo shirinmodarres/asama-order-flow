@@ -142,9 +142,6 @@ export default function FinancialControlOrdersPage() {
             onClick={() => setActiveTab("needs_correction")}
           />
           </div>
-          <p className="text-sm text-[#64748B]">
-            فقط همین صف‌های مالی را می‌بینید و جزئیات از همین‌جا قابل بررسی است.
-          </p>
         </div>
 
         <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_auto] xl:items-end">

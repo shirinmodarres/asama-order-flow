@@ -95,7 +95,8 @@ export function OrderEditForm({
   header,
 }: OrderEditFormProps) {
   const [customers] = useState<Customer[]>(() => mergeCustomers(initialCustomers, order));
-  const [products] = useState<Product[]>(() => mergeProducts(initialProducts, order));
+  const selectableProducts = useMemo(() => getSelectableProducts(initialProducts), [initialProducts]);
+  const [products] = useState<Product[]>(() => mergeProducts(selectableProducts, order));
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState(
@@ -129,7 +130,7 @@ export function OrderEditForm({
 
   const isExpertEdit = roleScope === "expert";
   const canEditCustomerFields = !isExpertEdit;
-  const canEditItemSelection = !isExpertEdit;
+  const canEditItemSelection = true;
   const canEditItemQuantity = true;
   const canEditRecipientFields = !isExpertEdit;
   const canEditDescription = !isExpertEdit;
@@ -227,6 +228,14 @@ export function OrderEditForm({
         return accumulator;
       }, {}),
     [products],
+  );
+  const selectableProductMap = useMemo(
+    () =>
+      selectableProducts.reduce<Record<string, Product>>((accumulator, product) => {
+        accumulator[product.objectId] = product;
+        return accumulator;
+      }, {}),
+    [selectableProducts],
   );
   const originalQuantityByProductId = useMemo(
     () =>
@@ -596,8 +605,8 @@ export function OrderEditForm({
               <h3 className="text-base font-semibold text-[#102034]">آیتم‌های سفارش</h3>
               <p className="mt-1 text-sm leading-7 text-[#6B7280]">
                 {isExpertEdit
-                  ? "کارشناس فقط می‌تواند تعداد کالاهای سفارش را تغییر دهد."
-                  : "کالاها را بازبینی کنید و در صورت نیاز تغییر دهید."}
+                  ? "کارشناس می‌تواند کالا اضافه کند و تعداد ردیف‌های سفارش را تغییر دهد."
+                  : "کالاها را بازبینی کنید، در صورت نیاز آیتم اضافه کنید و تغییر دهید."}
               </p>
             </div>
           </div>
@@ -605,12 +614,13 @@ export function OrderEditForm({
           <div className="mt-5 grid gap-4">
             {items.map((item, index) => {
               const product = productMap[item.productObjectId];
+              const inventoryProduct = selectableProductMap[item.productObjectId] ?? product ?? null;
               const originalQuantity =
                 originalQuantityByProductId.get(item.productObjectId) ?? item.quantity;
-              const editableAvailableQuantity = product
+              const editableAvailableQuantity = inventoryProduct
                 ? Math.max(
                     0,
-                    (product.availableForSale ?? product.availableSalesQuantity ?? 0) +
+                    (inventoryProduct.availableForSale ?? inventoryProduct.availableSalesQuantity ?? 0) +
                       originalQuantity,
                   )
                 : 0;
@@ -622,7 +632,7 @@ export function OrderEditForm({
                       <SearchableSelect
                         value={item.productObjectId || undefined}
                         onValueChange={(value) => updateRow(item.rowId, { productObjectId: value })}
-                        options={products.map((productOption) => ({
+                        options={selectableProducts.map((productOption) => ({
                           value: productOption.objectId,
                           label: productIdentityLabel(productOption),
                           searchText: [
@@ -701,7 +711,7 @@ export function OrderEditForm({
                     <div className="grid gap-2 text-sm text-[#64748B]">
                       <span className="font-medium text-[#334155]">توضیحات ردیف</span>
                       <div className="rounded-2xl border border-[#EEF2F6] bg-[#FBFCFD] px-3 py-2.5 leading-7">
-                        {product?.name || "کالا انتخاب نشده است."}
+                        {inventoryProduct?.name || product?.name || "کالا انتخاب نشده است."}
                       </div>
                     </div>
                   </div>
@@ -1017,6 +1027,17 @@ function mergeCustomers(initialCustomers: Customer[], order: Order): Customer[] 
     list.push(order.customer);
   }
   return list;
+}
+
+function getSelectableProducts(products: Product[]): Product[] {
+  const seen = new Set<string>();
+  return products.filter((product) => {
+    if (!product.objectId) return false;
+    if (product.inventorySource === "order_snapshot") return false;
+    if (seen.has(product.objectId)) return false;
+    seen.add(product.objectId);
+    return true;
+  });
 }
 
 function mergeProducts(initialProducts: Product[], order: Order): Product[] {

@@ -160,9 +160,11 @@ export default function ManagerOrderReviewPage() {
     !isNajaOrder && (canNeedReview || order.orderStatus === "review_resolved");
   const canCancel =
     !isNajaOrder &&
-    ["pending_manager_approval", "needs_review", "review_resolved"].includes(
+    ["pending_manager_approval", "needs_review", "review_resolved", "approved"].includes(
       order.orderStatus,
-    ) && !["dispatchIssued", "delivered"].includes(order.warehouseStatus);
+    ) && !["dispatchIssued", "delivered"].includes(order.warehouseStatus) &&
+    order.orderStatus !== "cancelled" &&
+    order.orderStatus !== "voided";
   const shipmentActionBlockedStatuses = ["cancelled", "invoiced"];
   const shipmentActionBlockedWarehouseStatuses = [
     "dispatchIssued",
@@ -989,7 +991,9 @@ export default function ManagerOrderReviewPage() {
             ? "با تایید، سفارش وارد فرآیند انبار می شود."
             : decision === "needs_review"
               ? "در این وضعیت موجودی سفارش تا ۴۸ ساعت رزرو می‌ماند و کارشناس باید مشکل را برطرف کند."
-              : "آیا از لغو این سفارش مطمئن هستید؟"
+              : order.quotationStatus === "success"
+                ? "برای این سفارش پیش‌فاکتور در سپیدار ثبت شده است. با لغو سفارش، پیش‌فاکتور سپیدار حذف نخواهد شد. آیا از ادامه مطمئن هستید؟"
+                : "آیا از لغو این سفارش مطمئن هستید؟"
         }
         confirmText={
           decision === "approve"
