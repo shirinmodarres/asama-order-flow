@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Search, X } from "lucide-react";
+import { CheckCircle2, Search, ShieldAlert, X } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
@@ -72,25 +72,6 @@ export default function FinancialControlOrdersPage() {
     [activeTab, dateFrom, dateTo, pendingOrders, returnedOrders, search],
   );
 
-  const pendingItemCount = useMemo(
-    () =>
-      pendingOrders.reduce(
-        (sum, order) =>
-          sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
-        0,
-      ),
-    [pendingOrders],
-  );
-  const returnedItemCount = useMemo(
-    () =>
-      returnedOrders.reduce(
-        (sum, order) =>
-          sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
-        0,
-      ),
-    [returnedOrders],
-  );
-
   const columns: DataTableColumn<Order>[] = [
     {
       key: "code",
@@ -143,39 +124,30 @@ export default function FinancialControlOrdersPage() {
         description="سفارش‌های در انتظار تأیید مالی و سفارش‌های برگشتی برای اصلاح"
       />
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <SummaryCard
-          title="در انتظار تأیید مالی"
-          value={formatFaDigits(pendingOrders.length)}
-          description={`${formatFaDigits(pendingItemCount)} آیتم`}
-        />
-        <SummaryCard
-          title="نیازمند اصلاح مالی"
-          value={formatFaDigits(returnedOrders.length)}
-          description={`${formatFaDigits(returnedItemCount)} آیتم`}
-        />
-        <SummaryCard
-          title="کل سفارش‌ها"
-          value={formatFaDigits(pendingOrders.length + returnedOrders.length)}
-          description="فقط صف کنترل مالی"
-        />
-      </section>
-
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap gap-2 border-b border-[#E2E8F0] pb-4">
+        <div className="flex flex-col gap-3 border-b border-[#E2E8F0] pb-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-wrap gap-2">
           <TabButton
             active={activeTab === "pending"}
+            icon={<ShieldAlert className="size-4" />}
             label={`در انتظار تأیید مالی (${formatFaDigits(pendingOrders.length)})`}
+            description="سفارش‌های آماده بررسی"
             onClick={() => setActiveTab("pending")}
           />
           <TabButton
             active={activeTab === "needs_correction"}
+            icon={<CheckCircle2 className="size-4" />}
             label={`نیازمند اصلاح (${formatFaDigits(returnedOrders.length)})`}
+            description="سفارش‌های برگشتی"
             onClick={() => setActiveTab("needs_correction")}
           />
+          </div>
+          <p className="text-sm text-[#64748B]">
+            فقط همین صف‌های مالی را می‌بینید و جزئیات از همین‌جا قابل بررسی است.
+          </p>
         </div>
 
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_auto] xl:items-end">
           <label className="grid flex-1 gap-2 text-sm font-medium text-[#334155]">
             <span>جستجو در سفارش‌ها</span>
             <div className="relative">
@@ -199,7 +171,7 @@ export default function FinancialControlOrdersPage() {
             <Button
               type="button"
               variant="outline"
-              className="inline-flex w-fit shrink-0 items-center gap-2"
+              className="inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 xl:w-fit"
               onClick={() => {
                 setSearch("");
                 setDateFrom("");
@@ -235,11 +207,15 @@ export default function FinancialControlOrdersPage() {
 
 function TabButton({
   active,
+  icon,
   label,
+  description,
   onClick,
 }: {
   active: boolean;
+  icon: ReactNode;
   label: string;
+  description: string;
   onClick: () => void;
 }) {
   return (
@@ -248,30 +224,26 @@ function TabButton({
       onClick={onClick}
       className={
         active
-          ? "rounded-full bg-[#1F3A5F] px-4 py-2 text-sm font-semibold text-white"
-          : "rounded-full border border-[#CBD5E1] bg-white px-4 py-2 text-sm font-medium text-[#334155]"
+          ? "inline-flex min-w-[230px] items-center gap-3 rounded-2xl border border-[#1F3A5F] bg-[#1F3A5F] px-4 py-3 text-right text-white shadow-sm"
+          : "inline-flex min-w-[230px] items-center gap-3 rounded-2xl border border-[#CBD5E1] bg-white px-4 py-3 text-right text-[#334155] hover:border-[#94A3B8]"
       }
     >
-      {label}
+      <span
+        className={
+          active
+            ? "flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white"
+            : "flex size-10 shrink-0 items-center justify-center rounded-full bg-[#EFF6FF] text-[#1F3A5F]"
+        }
+      >
+        {icon}
+      </span>
+      <span className="grid gap-0.5">
+        <span className="text-sm font-semibold leading-6">{label}</span>
+        <span className={active ? "text-xs text-white/80" : "text-xs text-[#64748B]"}>
+          {description}
+        </span>
+      </span>
     </button>
-  );
-}
-
-function SummaryCard({
-  title,
-  value,
-  description,
-}: {
-  title: string;
-  value: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
-      <div className="text-sm font-medium text-[#64748B]">{title}</div>
-      <div className="mt-3 text-2xl font-semibold text-[#1F3A5F]">{value}</div>
-      <div className="mt-2 text-sm leading-7 text-[#64748B]">{description}</div>
-    </div>
   );
 }
 

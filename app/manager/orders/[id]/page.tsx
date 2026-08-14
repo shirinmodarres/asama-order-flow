@@ -150,6 +150,10 @@ export default function ManagerOrderReviewPage() {
   const isNajaOrder = order.orderType === "naja";
   const financialGateOpen =
     !order.financialApprovalStatus || order.financialApprovalStatus === "approved";
+  const canManageFinancialDecision =
+    isFinancialControlUser &&
+    order.orderStatus === "pending_financial_approval" &&
+    order.financialApprovalStatus === "pending";
   const canApprove = ["pending_manager_approval", "review_resolved"].includes(order.orderStatus) && financialGateOpen;
   const canNeedReview = !isNajaOrder && order.orderStatus === "pending_manager_approval";
   const shouldShowNeedReviewButton =
@@ -174,6 +178,8 @@ export default function ManagerOrderReviewPage() {
   const isNeedsReview = order.orderStatus === "needs_review";
   const isReviewResolved = order.orderStatus === "review_resolved";
   const isVoided = order.orderStatus === "voided";
+  const isFinancialReadOnly =
+    isFinancialControlUser && order.orderStatus !== "pending_financial_approval";
   const pageTitle = isFinancialControlUser
     ? "بررسی سفارش مالی"
     : "بررسی جزئیات سفارش";
@@ -505,6 +511,12 @@ export default function ManagerOrderReviewPage() {
         <InlineErrorMessage message={message} />
       ) : null}
 
+      {isFinancialControlUser && isFinancialReadOnly ? (
+        <div className="rounded-xl border border-[#D7E5F0] bg-[#F8FBFF] px-4 py-3 text-sm leading-7 text-[#1F3A5F]">
+          این سفارش قبلاً در کنترل مالی بررسی شده است؛ در این صفحه فقط می‌توانید جزئیات را مشاهده کنید.
+        </div>
+      ) : null}
+
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
@@ -757,7 +769,7 @@ export default function ManagerOrderReviewPage() {
                 </h3>
                 <div className="mt-3">{getQuotationStatusBadge(order)}</div>
               </div>
-              {order.quotationStatus === "failed" ? (
+              {order.quotationStatus === "failed" && !isFinancialControlUser ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -816,31 +828,37 @@ export default function ManagerOrderReviewPage() {
               <p className="mt-2 text-sm leading-7 text-[#64748B]">
                 وضعیت فعلی: {order.financialApprovalStatusLabel || getFinancialApprovalStatusLabel(order.financialApprovalStatus) || "-"}
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  disabled={isFinancialActionSubmitting || order.financialApprovalStatus === "approved"}
-                  onClick={() => setFinancialDecision("approve")}
-                  className="gap-2"
-                >
-                  <CheckCircle2 className="size-4" />
-                  تأیید مالی
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={
-                    isFinancialActionSubmitting ||
-                    order.financialApprovalStatus === "needs_correction" ||
-                    order.financialApprovalStatus === "approved"
-                  }
-                  onClick={() => setFinancialDecision("return")}
-                  className="gap-2"
-                >
-                  <AlertTriangle className="size-4" />
-                  برگشت برای اصلاح
-                </Button>
-              </div>
+              {canManageFinancialDecision ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    disabled={isFinancialActionSubmitting || order.financialApprovalStatus === "approved"}
+                    onClick={() => setFinancialDecision("approve")}
+                    className="gap-2"
+                  >
+                    <CheckCircle2 className="size-4" />
+                    تأیید مالی
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      isFinancialActionSubmitting ||
+                      order.financialApprovalStatus === "needs_correction" ||
+                      order.financialApprovalStatus === "approved"
+                    }
+                    onClick={() => setFinancialDecision("return")}
+                    className="gap-2"
+                  >
+                    <AlertTriangle className="size-4" />
+                    برگشت برای اصلاح
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-4 py-3 text-sm leading-7 text-[#64748B]">
+                  این سفارش قبلاً در کنترل مالی بررسی شده است و فقط برای مشاهده در دسترس است.
+                </div>
+              )}
             </div>
           ) : null}
 
