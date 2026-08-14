@@ -2,6 +2,7 @@ import type { ExpertOrder, OrderItem, Product } from "@/lib/expert/types";
 import {
   formatFaCurrency,
   formatFaNumber,
+  formatFaCurrencywithoutRial as formatFaCurrencyWithoutRialBase,
 } from "@/lib/utils/number-format";
 import { formatJalaliDate, formatJalaliDateTime } from "@/lib/utils/date-format";
 import {
@@ -33,7 +34,7 @@ export function formatCurrency(value?: number | string | null): string {
 }
 
 export function formatFaCurrencywithoutRial(value?: number | string | null): string {
-  return formatFaCurrencywithoutRial(value);
+  return formatFaCurrencyWithoutRialBase(value);
 }
 
 export function formatDate(value: string | Date | null | undefined): string {
