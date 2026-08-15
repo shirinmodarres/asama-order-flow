@@ -13,6 +13,7 @@ import { getErrorMessage } from "@/lib/api/api-error";
 import type { Customer, CustomerAddress } from "@/lib/models/customer.model";
 import type { Order, OrderItem } from "@/lib/models/order.model";
 import type { Product } from "@/lib/models/product.model";
+import { listOrderProductsByPriceList } from "@/lib/services/product.service";
 import { listActiveSalesTypes } from "@/lib/services/sales-type.service";
 import { formatDeliveryAddress, getReceiverName } from "@/lib/utils/address-format";
 import { formatFaDigits, normalizeDigits, normalizePhone, toNumber, formatFaCurrency } from "@/lib/utils/number-format";
@@ -95,8 +96,9 @@ export function OrderEditForm({
   header,
 }: OrderEditFormProps) {
   const [customers] = useState<Customer[]>(() => mergeCustomers(initialCustomers, order));
-  const selectableProducts = useMemo(() => getSelectableProducts(initialProducts), [initialProducts]);
-  const [products] = useState<Product[]>(() => mergeProducts(selectableProducts, order));
+  const [products, setProducts] = useState<Product[]>(() =>
+    mergeProducts(getSelectableProducts(initialProducts), order),
+  );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState(
@@ -183,6 +185,40 @@ export function OrderEditForm({
       mounted = false;
     };
   }, [order]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadProducts() {
+      const seededProducts = mergeProducts(getSelectableProducts(initialProducts), order);
+      if (!selectedPriceListId) {
+        if (mounted) setProducts(seededProducts);
+        return;
+      }
+
+      try {
+        const fetchedProducts = await listOrderProductsByPriceList(selectedPriceListId, {
+          customerObjectId: selectedCustomerId || undefined,
+          expertUserId: order.expertUserId || undefined,
+        });
+        if (!mounted) return;
+        setProducts(mergeProducts([...seededProducts, ...fetchedProducts], order));
+      } catch {
+        if (!mounted) return;
+        setProducts(seededProducts);
+      }
+    }
+
+    loadProducts();
+    return () => {
+      mounted = false;
+    };
+  }, [initialProducts, order, order.expertUserId, selectedCustomerId, selectedPriceListId]);
+
+  const selectableProducts = useMemo(
+    () => getSelectableProducts(products),
+    [products],
+  );
 
   const selectedCustomer =
     customers.find((customer) => customer.objectId === selectedCustomerId) ||
