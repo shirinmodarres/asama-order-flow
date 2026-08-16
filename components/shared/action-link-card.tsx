@@ -21,16 +21,16 @@ export function ActionLinkCard({
 
   return (
     <Link href={href} className="group block h-full">
-      <Card className="flex h-full flex-col justify-between p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#C7D2DE] hover:shadow-[0_24px_40px_rgba(15,23,42,0.08)]">
+      <Card className="flex h-full flex-col justify-between p-4 sm:p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#C7D2DE] hover:shadow-[0_24px_40px_rgba(15,23,42,0.08)]">
         <div className="flex items-start justify-between gap-4">
-          <span className="flex size-11 items-center justify-center rounded-[14px] border border-[#DEE6EF] bg-[#F7FAFC] text-[#1F3A5F]">
+          <span className="flex size-10 items-center justify-center rounded-[14px] border border-[#DEE6EF] bg-[#F7FAFC] text-[#1F3A5F] sm:size-11">
             <Icon className="size-5" />
           </span>
-          <span className="flex size-9 items-center justify-center rounded-full border border-[#E4EAF1] bg-white text-[#6B7280] transition-colors group-hover:text-[#1F3A5F]">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#E4EAF1] bg-white text-[#6B7280] transition-colors group-hover:text-[#1F3A5F]">
             <ArrowUpLeft className="size-4" />
           </span>
         </div>
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           <h3 className="text-base font-semibold text-[#102034]">{title}</h3>
           <p className="mt-2 text-sm leading-7 text-[#6B7280]">{description}</p>
         </div>

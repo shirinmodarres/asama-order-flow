@@ -2,8 +2,13 @@ import type { ExpertOrder, OrderItem, Product } from "@/lib/expert/types";
 import {
   formatFaCurrency,
   formatFaNumber,
+  formatFaCurrencywithoutRial as formatFaCurrencyWithoutRialBase,
 } from "@/lib/utils/number-format";
 import { formatJalaliDate, formatJalaliDateTime } from "@/lib/utils/date-format";
+import {
+  getOrderTotalAmount as getOrderSalesAmount,
+  getOrderTotalQuantity as getOrderSalesQuantity,
+} from "@/lib/reports/order-sales-metrics";
 
 const textCollator = (() => {
   try {
@@ -28,6 +33,10 @@ export function formatCurrency(value?: number | string | null): string {
   return formatFaCurrency(value);
 }
 
+export function formatFaCurrencywithoutRial(value?: number | string | null): string {
+  return formatFaCurrencyWithoutRialBase(value);
+}
+
 export function formatDate(value: string | Date | null | undefined): string {
   return formatJalaliDate(value);
 }
@@ -37,7 +46,10 @@ export function formatDateTime(value: string | Date | null | undefined): string 
 }
 
 export function isOrderEditable(order: ExpertOrder): boolean {
-  return order.status === "pending_approval" || order.status === "needs_review";
+  return (
+    order.status === "pending_financial_approval" ||
+    order.status === "needs_review"
+  );
 }
 
 export function getAvailableStock(product: Product): number {
@@ -58,7 +70,7 @@ export function getOrderItemCount(items: OrderItem[]): number {
 }
 
 export function getOrderTotalQuantity(items: OrderItem[]): number {
-  return items.reduce((sum, item) => sum + item.quantity, 0);
+  return getOrderSalesQuantity(items);
 }
 
 export function getOrderLineTotal(quantity: number, unitPrice: number): number {
@@ -69,6 +81,10 @@ export function getOrderTotalAmount(
   items: OrderItem[],
   productsById: Record<string, Product | undefined>,
 ): number {
+  if (Object.keys(productsById).length === 0) {
+    return getOrderSalesAmount(items);
+  }
+
   return items.reduce((sum, item) => {
     const product = productsById[item.productId];
     return sum + getOrderLineTotal(item.quantity, product?.unitPrice ?? 0);

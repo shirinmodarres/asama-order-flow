@@ -38,6 +38,8 @@ export default function ReferencePriceListsPage() {
   const [internalCode, setInternalCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [notes, setNotes] = useState("");
+  const [search, setSearch] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [generatingId, setGeneratingId] = useState("");
@@ -195,11 +197,51 @@ export default function ReferencePriceListsPage() {
     },
   ];
 
+  const filteredReferences = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return references.filter((row) => {
+      const matchesBrand = !brandFilter || row.brandName === brandFilter;
+      const matchesSearch =
+        !query ||
+        (row.brandName ?? "").toLowerCase().includes(query) ||
+        (row.displayName ?? "").toLowerCase().includes(query) ||
+        (row.internalCode ?? "").toLowerCase().includes(query) ||
+        (row.saleTypeTitle ?? "").toLowerCase().includes(query);
+      return matchesBrand && matchesSearch;
+    });
+  }, [brandFilter, references, search]);
+
   return (
     <DashboardLayout role="support" title="لیست‌های مرجع">
       <SectionHeader title="لیست‌های مرجع" description="انتخاب مرجع فعال هر برند و تولید قیمت‌های داخلی" />
       {message ? <div className="asama-banner mb-4 px-4 py-3 text-sm">{message}</div> : null}
       {error ? <InlineErrorMessage message={error} /> : null}
+      <Card className="mb-6 p-5">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_18rem]">
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>جستجو</span>
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="جستجو در برند، عنوان، کد یا نام سپیدار"
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[#334155]">
+            <span>فیلتر برند</span>
+            <SearchableSelect
+              value={brandFilter || undefined}
+              onValueChange={setBrandFilter}
+              options={[
+                { value: "", label: "همه برندها" },
+                ...brandOptions,
+              ]}
+              placeholder="همه برندها"
+              searchPlaceholder="جستجو در برندها"
+              emptyMessage="برندی پیدا نشد"
+            />
+          </label>
+        </div>
+      </Card>
       <Card className="mb-6 p-5">
         <div className="grid gap-4 md:grid-cols-2">
           <label className="grid gap-2 text-sm font-medium text-[#334155]">
@@ -248,8 +290,8 @@ export default function ReferencePriceListsPage() {
           {isSaving ? "در حال ذخیره..." : "ذخیره مرجع فعال"}
         </Button>
       </Card>
-      {isLoading ? <LoadingState title="در حال دریافت لیست‌های مرجع" /> : references.length ? (
-        <DataTable columns={columns} rows={references} rowKey={(row) => row.objectId} />
+      {isLoading ? <LoadingState title="در حال دریافت لیست‌های مرجع" /> : filteredReferences.length ? (
+        <DataTable columns={columns} rows={filteredReferences} rowKey={(row) => row.objectId} />
       ) : (
         <EmptyState title="مرجعی ثبت نشده است" description="برای هر برند یک لیست سپیدار را به عنوان مرجع فعال انتخاب کنید." />
       )}

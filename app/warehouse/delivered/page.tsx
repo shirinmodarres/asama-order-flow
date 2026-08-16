@@ -149,7 +149,11 @@ export default function WarehouseDeliveredPage() {
       key: "order-status",
       header: "وضعیت سفارش",
       render: (row) => (
-        <StatusBadge type="order" status={row.order.orderStatus} />
+        <StatusBadge
+          type="order"
+          status={row.order.orderStatus}
+          warehouseStatus={row.order.warehouseStatus}
+        />
       ),
     },
     {

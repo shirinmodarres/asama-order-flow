@@ -1,5 +1,7 @@
 export type OrderStatusCode =
   | "pending_approval"
+  | "pending_financial_approval"
+  | "pending_manager_approval"
   | "needs_review"
   | "review_resolved"
   | "approved"
@@ -27,6 +29,8 @@ export type FinancialApprovalStatusCode = "pending" | "approved" | "needs_correc
 
 export const ORDER_STATUS_LABELS: Record<OrderStatusCode, string> = {
   pending_approval: "در انتظار تایید",
+  pending_financial_approval: "در انتظار تأیید مالی",
+  pending_manager_approval: "در انتظار تأیید مدیر",
   needs_review: "نیازمند بررسی",
   review_resolved: "مشکل برطرف شد",
   approved: "تأیید شده",
@@ -70,6 +74,17 @@ export function getOrderStatusLabel(status: string | null | undefined): string {
   if (!status) return "";
   const normalizedStatus = normalizeOrderStatus(status);
   return ORDER_STATUS_LABELS[normalizedStatus as OrderStatusCode] ?? normalizedStatus;
+}
+
+export function getDisplayOrderStatusLabel(
+  status: string | null | undefined,
+  warehouseStatus?: string | null,
+): string {
+  const normalizedStatus = normalizeOrderStatus(status);
+  if (normalizedStatus === "approved" && warehouseStatus === "delivered") {
+    return "تحویل شده";
+  }
+  return getOrderStatusLabel(normalizedStatus);
 }
 
 export function normalizeOrderStatus(status: string | null | undefined): string {

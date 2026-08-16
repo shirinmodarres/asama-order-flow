@@ -4,8 +4,10 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { DateRangeFilter, type DateRangeValue } from "@/components/shared/date-range-filter";
 import { LoadingState } from "@/components/shared/loading-state";
 import { PageErrorMessage } from "@/components/shared/page-error-message";
+import { PaginationBar } from "@/components/shared/pagination-bar";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Input } from "@/components/ui/input";
@@ -25,7 +27,13 @@ export default function SupportOrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeValue>({
+    from: null,
+    to: null,
+  });
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     let isMounted = true;
@@ -68,6 +76,20 @@ export default function SupportOrdersPage() {
         (order) => statusFilter === "all" || order.orderStatus === statusFilter,
       );
   }, [orders, search, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateRange.from, dateRange.to, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const paginatedOrders = useMemo(
+    () => filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [currentPage, filteredOrders],
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const hasActiveFilters = search.trim().length > 0 || statusFilter !== "all";
 
@@ -144,48 +166,67 @@ export default function SupportOrdersPage() {
       />
 
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-          <label className="grid flex-1 gap-2 text-sm font-medium text-[#334155]">
-            <span>جستجو در سفارش‌ها</span>
-            <div className="relative">
-              <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="جستجو بر اساس نام مشتری یا ثبت کننده"
-                className="pr-10"
-              />
-            </div>
-          </label>
-          <label className="grid w-full gap-2 text-sm font-medium text-[#334155] xl:w-56">
-            <span>فیلتر وضعیت</span>
-            <div className="relative">
-              <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
-              <SearchableSelect
-                value={statusFilter}
-                onValueChange={setStatusFilter}
-                options={statusOptions}
-                placeholder="همه وضعیت‌ها"
-                searchPlaceholder="جستجو در وضعیت‌ها"
-                emptyMessage="وضعیتی پیدا نشد"
-                triggerClassName="pr-10"
-              />
-            </div>
-          </label>
-          {hasActiveFilters ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="inline-flex w-fit shrink-0 items-center gap-2"
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("all");
-              }}
-            >
-              <span>حذف فیلترها</span>
-              <X className="size-4" />
-            </Button>
-          ) : null}
+        <div className="grid gap-3">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] xl:items-end">
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>جستجو در سفارش‌ها</span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="جستجو بر اساس نام مشتری یا ثبت کننده"
+                  className="pr-10"
+                />
+              </div>
+            </label>
+
+            <DateRangeFilter
+              value={dateRange}
+              onChange={(value) =>
+                setDateRange({
+                  from: value.from ?? null,
+                  to: value.to ?? null,
+                })
+              }
+              label="بازه زمانی"
+              placeholder="انتخاب بازه زمانی"
+            />
+          </div>
+
+          <div className="grid gap-3 xl:grid-cols-[minmax(18rem,22rem)_auto] xl:items-end">
+            <label className="grid gap-2 text-sm font-medium text-[#334155]">
+              <span>فیلتر وضعیت</span>
+              <div className="relative">
+                <ListFilter className="pointer-events-none absolute top-1/2 right-3.5 z-10 size-4 -translate-y-1/2 text-[#6CAE75]" />
+                <SearchableSelect
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                  options={statusOptions}
+                  placeholder="همه وضعیت‌ها"
+                  searchPlaceholder="جستجو در وضعیت‌ها"
+                  emptyMessage="وضعیتی پیدا نشد"
+                  triggerClassName="pr-10"
+                />
+              </div>
+            </label>
+
+            {hasActiveFilters ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="inline-flex w-fit shrink-0 items-center gap-2"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                  setDateRange({ from: null, to: null });
+                }}
+              >
+                <span>حذف فیلترها</span>
+                <X className="size-4" />
+              </Button>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -194,11 +235,19 @@ export default function SupportOrdersPage() {
       ) : error ? (
         <PageErrorMessage title="دریافت سفارش ها انجام نشد" message={error} />
       ) : filteredOrders.length > 0 ? (
-        <DataTable
-          columns={columns}
-          rows={filteredOrders}
-          rowKey={(row) => row.objectId || row.id}
-        />
+        <div className="space-y-4">
+          <DataTable
+            columns={columns}
+            rows={paginatedOrders}
+            rowKey={(row) => row.objectId || row.id}
+          />
+          <PaginationBar
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredOrders.length}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       ) : (
         <EmptyState
           title="سفارشی یافت نشد"

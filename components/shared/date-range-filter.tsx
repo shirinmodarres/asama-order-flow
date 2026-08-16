@@ -25,7 +25,8 @@ export function DateRangeFilter({
   label = "بازه زمانی",
   placeholder = "انتخاب بازه زمانی",
 }: DateRangeFilterProps) {
-  const containerRef = useRef<HTMLLabelElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({
@@ -37,7 +38,20 @@ export function DateRangeFilter({
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isInsideNestedDatePicker =
+        event
+          .composedPath()
+          .some(
+            (node) =>
+              node instanceof HTMLElement &&
+              node.dataset?.jalaliDateInputPopover === "true",
+          );
+      if (
+        !isInsideNestedDatePicker &&
+        !containerRef.current?.contains(target) &&
+        !popoverRef.current?.contains(target)
+      ) {
         setIsOpen(false);
       }
     }
@@ -64,63 +78,62 @@ export function DateRangeFilter({
   const popover =
     isOpen
       ? createPortal(
-          <div className="fixed inset-0 z-[120]">
-            <button
-              type="button"
-              aria-label="بستن فیلتر تاریخ"
-              className="absolute inset-0 bg-transparent"
-              onClick={() => setIsOpen(false)}
-            />
-            <div
-              className="absolute z-[121] w-[min(calc(100vw-1rem),20rem)] rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.16)]"
-              style={{
-                top: popoverPosition.top,
-                left: popoverPosition.left,
-              }}
-            >
-              <div className="grid gap-3">
-                <JalaliDateInput
-                  label="از تاریخ"
-                  value={draftFrom}
-                  onChange={setDraftFrom}
-                  placeholder="انتخاب تاریخ"
-                />
-                <JalaliDateInput
-                  label="تا تاریخ"
-                  value={draftTo}
-                  onChange={setDraftTo}
-                  placeholder="انتخاب تاریخ"
-                />
-              </div>
+          <div
+            ref={popoverRef}
+            className="fixed z-[121] w-[min(calc(100vw-1rem),20rem)] rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.16)]"
+            style={{
+              top: popoverPosition.top,
+              left: popoverPosition.left,
+            }}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <div className="grid gap-3">
+              <JalaliDateInput
+                label="از تاریخ"
+                value={draftFrom}
+                onChange={setDraftFrom}
+                placeholder="انتخاب تاریخ"
+              />
+              <JalaliDateInput
+                label="تا تاریخ"
+                value={draftTo}
+                onChange={setDraftTo}
+                placeholder="انتخاب تاریخ"
+              />
+            </div>
 
-              <div className="mt-4 flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setDraftFrom("");
-                    setDraftTo("");
-                    onChange({ from: null, to: null });
-                    setIsOpen(false);
-                  }}
-                >
-                  پاک کردن
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => {
-                    onChange({
-                      from: draftFrom || null,
-                      to: draftTo || null,
-                    });
-                    setIsOpen(false);
-                  }}
-                >
-                  اعمال
-                </Button>
-              </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setDraftFrom("");
+                  setDraftTo("");
+                  onChange({ from: null, to: null });
+                  setIsOpen(false);
+                }}
+              >
+                پاک کردن
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  onChange({
+                    from: draftFrom || null,
+                    to: draftTo || null,
+                  });
+                  setIsOpen(false);
+                }}
+              >
+                اعمال
+              </Button>
             </div>
           </div>,
           document.body,
@@ -128,7 +141,7 @@ export function DateRangeFilter({
       : null;
 
   return (
-    <label
+    <div
       ref={containerRef}
       className="relative grid w-full min-w-0 gap-2 text-sm font-medium text-[#334155] xl:max-w-[18rem]"
     >
@@ -138,12 +151,12 @@ export function DateRangeFilter({
         type="button"
         className="flex h-10 w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-[#D8E1EA] bg-white px-3 text-right text-sm text-[#334155] transition-colors hover:border-[#C8D3DF]"
         onClick={() => {
-          if (!isOpen) {
-            setDraftFrom(value.from ?? "");
-            setDraftTo(value.to ?? "");
+        if (!isOpen) {
+          setDraftFrom(value.from ?? "");
+          setDraftTo(value.to ?? "");
           }
-          setIsOpen(!isOpen);
-        }}
+          setIsOpen((current) => !current);
+       }}
       >
         <span className={value.from || value.to ? "" : "text-[#64748B]"}>
           {displayText}
@@ -152,7 +165,7 @@ export function DateRangeFilter({
       </button>
 
       {popover}
-    </label>
+    </div>
   );
 }
 

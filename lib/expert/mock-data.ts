@@ -12,6 +12,8 @@ import type {
 
 export const orderStatusLabel: Record<OrderStatus, string> = {
   pending_approval: "در انتظار تایید",
+  pending_financial_approval: "در انتظار تأیید مالی",
+  pending_manager_approval: "در انتظار تأیید مدیر",
   needs_review: "نیازمند بررسی",
   review_resolved: "مشکل برطرف شد",
   approved: "تأیید شده",
@@ -182,7 +184,7 @@ export const initialOrders: ExpertOrder[] = [
     customerName: "فروشگاه خانه مدرن تهران",
     createdAt: "2026-04-15T08:45:00.000Z",
     updatedAt: "2026-04-15T08:45:00.000Z",
-    status: "pending_approval",
+    status: "pending_financial_approval",
     warehouseStatus: "reserved",
     items: [
       { productId: "p-100", quantity: 3 },
@@ -517,7 +519,8 @@ export function getOrderLastStageLabel(order: ExpertOrder): string {
   if (order.orderSource === "naja" && order.warehouseStatus === "najaDetailsCompleted") {
     return "آماده صدور فاکتور ناجا";
   }
-  if (order.status === "pending_approval") return "در انتظار تصمیم مدیر فروش";
+  if (order.status === "pending_financial_approval") return "در انتظار تأیید مالی";
+  if (order.status === "pending_manager_approval") return "در انتظار تصمیم مدیر فروش";
   if (order.status === "cancelled") return "بازگشت رزرو به موجودی";
   if (order.status === "invoiced") return "فاکتور صادر شده";
   return warehouseStatusLabel[order.warehouseStatus];

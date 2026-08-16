@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { FieldError } from "@/components/shared/field-error";
@@ -54,12 +54,49 @@ export function JalaliDateInput({
     top: 0,
     right: 0,
   });
+  const triggerRef = useRef<HTMLInputElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const [year, month] = jalaliPartsFromIso(value) ?? todayJalaliParts();
     return { year, month };
   });
   const selectedParts = jalaliPartsFromIso(value);
   const displayValue = isoToJalaliDisplay(value);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        !event.defaultPrevented &&
+        !event
+          .composedPath()
+          .some(
+            (node) =>
+              node instanceof HTMLElement &&
+              node.dataset?.jalaliDateInputPopover === "true",
+          )
+      ) {
+        if (!target) return;
+        const popover = document.querySelector(
+          '[data-jalali-date-input-popover="true"]',
+        );
+        const trigger = document.querySelector(
+          '[data-jalali-date-input-trigger="true"]',
+        );
+        if (
+          popover &&
+          !popover.contains(target) &&
+          trigger &&
+          !trigger.contains(target)
+        ) {
+          setIsOpen(false);
+        }
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
 
   const calendarDays = useMemo(() => {
     const firstDayIso = jalaliToIso(visibleMonth.year, visibleMonth.month, 1);
@@ -84,17 +121,70 @@ export function JalaliDateInput({
     });
   };
 
+  const updatePopoverPosition = () => {
+    const trigger = triggerRef.current;
+    if (!trigger || typeof window === "undefined") return;
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const estimatedWidth = Math.min(viewportWidth - 16, 20 * 16);
+    const measuredHeight = popoverRef.current?.offsetHeight ?? 0;
+    const estimatedHeight = Math.max(measuredHeight, 22 * 16);
+    const spacing = 8;
+    const viewportMargin = 8;
+
+    const spaceBelow = viewportHeight - rect.bottom - viewportMargin;
+    const spaceAbove = rect.top - viewportMargin;
+    const openBelow = spaceBelow >= estimatedHeight || spaceBelow >= spaceAbove;
+
+    const top = openBelow
+      ? Math.min(rect.bottom + spacing, viewportHeight - estimatedHeight - viewportMargin)
+      : Math.max(rect.top - estimatedHeight - spacing, viewportMargin);
+
+    const right = clamp(
+      viewportWidth - rect.right,
+      viewportMargin,
+      viewportWidth - estimatedWidth - viewportMargin,
+    );
+
+    setPopoverPosition({
+      top: Math.max(top, viewportMargin),
+      right,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    updatePopoverPosition();
+    // Reposition once after paint so the measured popover height can refine placement.
+    const frame = window.requestAnimationFrame(() => {
+      updatePopoverPosition();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen, visibleMonth.year, visibleMonth.month]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleReposition = () => updatePopoverPosition();
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true);
+
+    return () => {
+      window.removeEventListener("resize", handleReposition);
+      window.removeEventListener("scroll", handleReposition, true);
+    };
+  }, [isOpen, visibleMonth.year, visibleMonth.month]);
+
   const handleSelectDay = (day: number) => {
     onChange(jalaliToIso(visibleMonth.year, visibleMonth.month, day));
     setIsOpen(false);
   };
 
-  const openCalendar = (element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
-    setPopoverPosition({
-      top: rect.bottom + 8,
-      right: window.innerWidth - rect.right,
-    });
+  const openCalendar = (element: HTMLInputElement) => {
+    triggerRef.current = element;
+    updatePopoverPosition();
     setIsOpen(true);
   };
 
@@ -107,17 +197,19 @@ export function JalaliDateInput({
     isOpen && !disabled && typeof document !== "undefined"
       ? createPortal(
           <>
-            <button
-              type="button"
-              aria-label="بستن تقویم"
-              className="fixed inset-0 z-[9998] cursor-default bg-transparent"
-              onClick={() => setIsOpen(false)}
-            />
             <div
-              className="fixed z-[9999] w-[min(92vw,20rem)] rounded-xl border border-[#E5E7EB] bg-white p-3 shadow-lg"
+              ref={popoverRef}
+              data-jalali-date-input-popover="true"
+              className="fixed z-[9999] w-[min(92vw,20rem)] rounded-xl border border-[#E5E7EB] bg-white p-3 shadow-lg max-h-[calc(100vh-1rem)] overflow-y-auto"
               style={{
                 top: popoverPosition.top,
                 right: popoverPosition.right,
+              }}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
               }}
             >
               <div className="mb-3 flex items-center justify-between">
@@ -178,11 +270,13 @@ export function JalaliDateInput({
       : null;
 
   return (
-    <label className="grid gap-2 text-sm font-medium text-[#334155]">
+    <div className="grid gap-2 text-sm font-medium text-[#334155]">
       <span>{label}</span>
       <div className="relative">
         <CalendarDays className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#6CAE75]" />
         <Input
+          ref={triggerRef}
+          data-jalali-date-input-trigger="true"
           value={displayValue}
           readOnly
           disabled={disabled}
@@ -206,6 +300,12 @@ export function JalaliDateInput({
         {calendarPopover}
       </div>
       <FieldError message={error} />
-    </label>
+    </div>
   );
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (Number.isNaN(value)) return min;
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
 }

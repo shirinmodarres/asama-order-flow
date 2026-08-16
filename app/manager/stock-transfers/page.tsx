@@ -82,14 +82,13 @@ export default function ManagerStockTransfersPage() {
   const [submittingId, setSubmittingId] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [tab, setTab] = useState<"pending" | "approved" | "rejected" | "all">(
+    "pending",
+  );
 
   const loadTransfers = async () => {
     const data = await listManagerStockTransfers();
-    setTransfers(
-      data.filter((transfer) =>
-        ["pending", "pending_manager_approval"].includes(transfer.status),
-      ),
-    );
+    setTransfers(data);
   };
 
   useEffect(() => {
@@ -206,22 +205,55 @@ export default function ManagerStockTransfersPage() {
     },
   ];
 
+  const filteredTransfers = transfers.filter((transfer) => {
+    if (tab === "all") return true;
+    if (tab === "pending") {
+      return ["pending", "pending_manager_approval"].includes(transfer.status);
+    }
+    if (tab === "approved") {
+      return [
+        "approved",
+        "approved_waiting_tracking_codes",
+        "approved_waiting_warehouse_scan",
+        "completed",
+      ].includes(transfer.status);
+    }
+    return transfer.status === "rejected";
+  });
+
   return (
     <DashboardLayout role="manager" title="انتقال موجودی">
       <SectionHeader
         title="تأیید انتقال موجودی"
         description="درخواست‌های انتقال از انبار زاگرس به انبارهای فروش را بررسی کنید."
       />
+      <div className="mb-4 flex flex-wrap gap-2">
+        {[
+          { key: "pending", label: "در انتظار تأیید" },
+          { key: "approved", label: "تأیید شده" },
+          { key: "rejected", label: "رد شده" },
+          { key: "all", label: "همه تاریخچه" },
+        ].map((item) => (
+          <Button
+            key={item.key}
+            type="button"
+            variant={tab === item.key ? "default" : "outline"}
+            onClick={() => setTab(item.key as typeof tab)}
+          >
+            {item.label}
+          </Button>
+        ))}
+      </div>
       {message ? <div className="asama-banner px-4 py-3 text-sm">{message}</div> : null}
       {error ? <InlineErrorMessage message={error} /> : null}
       {isLoading ? (
         <LoadingState title="در حال دریافت درخواست‌های انتقال" />
-      ) : transfers.length ? (
-        <DataTable columns={columns} rows={transfers} rowKey={(row) => row.objectId} />
+      ) : filteredTransfers.length ? (
+        <DataTable columns={columns} rows={filteredTransfers} rowKey={(row) => row.objectId} />
       ) : (
         <EmptyState
-          title="درخواست انتقالی در انتظار تأیید نیست"
-          description="درخواست‌های جدید پشتیبان در این بخش نمایش داده می‌شوند."
+          title="موردی برای نمایش نیست"
+          description="تب انتخاب‌شده در حال حاضر داده‌ای ندارد."
         />
       )}
     </DashboardLayout>

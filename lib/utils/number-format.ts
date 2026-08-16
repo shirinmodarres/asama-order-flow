@@ -45,3 +45,9 @@ export function formatFaCurrency(
 ): string {
   return `${formatFaNumber(value)} ریال`;
 }
+
+export function formatFaCurrencywithoutRial(
+  value: string | number | null | undefined,
+): string {
+  return `${formatFaNumber(value)}`;
+}

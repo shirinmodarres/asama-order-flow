@@ -7,7 +7,8 @@ interface OrderTimelineProps {
 export function OrderTimeline({ status }: OrderTimelineProps) {
   const steps = [
     { key: "created", label: "ثبت سفارش", done: true },
-    { key: "pending_approval", label: "در انتظار تایید", done: true },
+    { key: "pending_financial_approval", label: "در انتظار تأیید مالی", done: true },
+    { key: "pending_manager_approval", label: "در انتظار تأیید مدیر", done: true },
     {
       key: "approved",
       label:
@@ -16,7 +17,7 @@ export function OrderTimeline({ status }: OrderTimelineProps) {
           : status === "invoiced"
             ? "فاکتور شده"
             : "تایید نهایی",
-      done: status !== "pending_approval",
+      done: !["pending_financial_approval", "pending_manager_approval"].includes(status),
     },
   ];
 

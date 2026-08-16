@@ -150,15 +150,21 @@ export default function ManagerOrderReviewPage() {
   const isNajaOrder = order.orderType === "naja";
   const financialGateOpen =
     !order.financialApprovalStatus || order.financialApprovalStatus === "approved";
-  const canApprove = ["pending_approval", "review_resolved"].includes(order.orderStatus) && financialGateOpen;
-  const canNeedReview = !isNajaOrder && order.orderStatus === "pending_approval";
+  const canManageFinancialDecision =
+    isFinancialControlUser &&
+    order.orderStatus === "pending_financial_approval" &&
+    order.financialApprovalStatus === "pending";
+  const canApprove = ["pending_manager_approval", "review_resolved"].includes(order.orderStatus) && financialGateOpen;
+  const canNeedReview = !isNajaOrder && order.orderStatus === "pending_manager_approval";
   const shouldShowNeedReviewButton =
     !isNajaOrder && (canNeedReview || order.orderStatus === "review_resolved");
   const canCancel =
     !isNajaOrder &&
-    ["pending_approval", "needs_review", "review_resolved"].includes(
+    ["pending_manager_approval", "needs_review", "review_resolved", "approved"].includes(
       order.orderStatus,
-    ) && !["dispatchIssued", "delivered"].includes(order.warehouseStatus);
+    ) && !["dispatchIssued", "delivered"].includes(order.warehouseStatus) &&
+    order.orderStatus !== "cancelled" &&
+    order.orderStatus !== "voided";
   const shipmentActionBlockedStatuses = ["cancelled", "invoiced"];
   const shipmentActionBlockedWarehouseStatuses = [
     "dispatchIssued",
@@ -174,6 +180,8 @@ export default function ManagerOrderReviewPage() {
   const isNeedsReview = order.orderStatus === "needs_review";
   const isReviewResolved = order.orderStatus === "review_resolved";
   const isVoided = order.orderStatus === "voided";
+  const isFinancialReadOnly =
+    isFinancialControlUser && order.orderStatus !== "pending_financial_approval";
   const pageTitle = isFinancialControlUser
     ? "بررسی سفارش مالی"
     : "بررسی جزئیات سفارش";
@@ -482,7 +490,7 @@ export default function ManagerOrderReviewPage() {
               </Link>
             ) : null}
             <Link
-              href={isFinancialControlUser ? "/finance-control/orders" : "/manager/pending-orders"}
+              href={isFinancialControlUser ? "/finance-control/orders" : "/manager/order-tracking"}
               className="rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm text-[#334155] hover:border-[#CBD5E1]"
             >
               بازگشت به لیست
@@ -503,6 +511,12 @@ export default function ManagerOrderReviewPage() {
       ) : null}
       {message && messageType === "error" ? (
         <InlineErrorMessage message={message} />
+      ) : null}
+
+      {isFinancialControlUser && isFinancialReadOnly ? (
+        <div className="rounded-xl border border-[#D7E5F0] bg-[#F8FBFF] px-4 py-3 text-sm leading-7 text-[#1F3A5F]">
+          این سفارش قبلاً در کنترل مالی بررسی شده است؛ در این صفحه فقط می‌توانید جزئیات را مشاهده کنید.
+        </div>
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -595,7 +609,13 @@ export default function ManagerOrderReviewPage() {
               <InfoItem label="تاریخ ثبت" value={formatDate(order.createdAt)} />
               <InfoItem
                 label="وضعیت سفارش"
-                value={<StatusBadge type="order" status={order.orderStatus} />}
+                value={
+                  <StatusBadge
+                    type="order"
+                    status={order.orderStatus}
+                    warehouseStatus={order.warehouseStatus}
+                  />
+                }
               />
               <InfoItem
                 label="وضعیت انبار"
@@ -751,7 +771,7 @@ export default function ManagerOrderReviewPage() {
                 </h3>
                 <div className="mt-3">{getQuotationStatusBadge(order)}</div>
               </div>
-              {order.quotationStatus === "failed" ? (
+              {order.quotationStatus === "failed" && !isFinancialControlUser ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -810,31 +830,37 @@ export default function ManagerOrderReviewPage() {
               <p className="mt-2 text-sm leading-7 text-[#64748B]">
                 وضعیت فعلی: {order.financialApprovalStatusLabel || getFinancialApprovalStatusLabel(order.financialApprovalStatus) || "-"}
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  disabled={isFinancialActionSubmitting || order.financialApprovalStatus === "approved"}
-                  onClick={() => setFinancialDecision("approve")}
-                  className="gap-2"
-                >
-                  <CheckCircle2 className="size-4" />
-                  تأیید مالی
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={
-                    isFinancialActionSubmitting ||
-                    order.financialApprovalStatus === "needs_correction" ||
-                    order.financialApprovalStatus === "approved"
-                  }
-                  onClick={() => setFinancialDecision("return")}
-                  className="gap-2"
-                >
-                  <AlertTriangle className="size-4" />
-                  برگشت برای اصلاح
-                </Button>
-              </div>
+              {canManageFinancialDecision ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    disabled={isFinancialActionSubmitting || order.financialApprovalStatus === "approved"}
+                    onClick={() => setFinancialDecision("approve")}
+                    className="gap-2"
+                  >
+                    <CheckCircle2 className="size-4" />
+                    تأیید مالی
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      isFinancialActionSubmitting ||
+                      order.financialApprovalStatus === "needs_correction" ||
+                      order.financialApprovalStatus === "approved"
+                    }
+                    onClick={() => setFinancialDecision("return")}
+                    className="gap-2"
+                  >
+                    <AlertTriangle className="size-4" />
+                    برگشت برای اصلاح
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-4 py-3 text-sm leading-7 text-[#64748B]">
+                  این سفارش قبلاً در کنترل مالی بررسی شده است و فقط برای مشاهده در دسترس است.
+                </div>
+              )}
             </div>
           ) : null}
 
@@ -845,7 +871,7 @@ export default function ManagerOrderReviewPage() {
                 ? "سفارش را در این مرحله تأیید یا برای اصلاح برگردانید."
                 : canApprove || canCancel || canNeedReview
                 ? "وضعیت سفارش را مشخص کنید."
-                : "این سفارش در وضعیت فعلی قابل تایید یا لغو نیست."}
+                : null}
             </p>
             {!isFinancialControlUser && order.financialApprovalStatus && order.financialApprovalStatus !== "approved" ? (
               <p className="mt-3 rounded-xl border border-[#F1D7AA] bg-[#FFF8EB] px-3 py-2 text-sm text-[#8A5A00]">
@@ -965,7 +991,9 @@ export default function ManagerOrderReviewPage() {
             ? "با تایید، سفارش وارد فرآیند انبار می شود."
             : decision === "needs_review"
               ? "در این وضعیت موجودی سفارش تا ۴۸ ساعت رزرو می‌ماند و کارشناس باید مشکل را برطرف کند."
-              : "آیا از لغو این سفارش مطمئن هستید؟"
+              : order.quotationStatus === "success"
+                ? "برای این سفارش پیش‌فاکتور در سپیدار ثبت شده است. با لغو سفارش، پیش‌فاکتور سپیدار حذف نخواهد شد. آیا از ادامه مطمئن هستید؟"
+                : "آیا از لغو این سفارش مطمئن هستید؟"
         }
         confirmText={
           decision === "approve"

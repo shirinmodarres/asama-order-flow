@@ -44,7 +44,7 @@ export default function ExpertPage() {
 
   const stats = useMemo(() => {
     const pendingOrders = orders.filter(
-      (order) => order.orderStatus === "pending_approval",
+      (order) => order.orderStatus === "pending_financial_approval",
     );
     const needsReviewOrders = orders.filter(
       (order) => order.orderStatus === "needs_review",
