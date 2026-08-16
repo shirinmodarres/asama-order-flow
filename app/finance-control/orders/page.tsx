@@ -21,11 +21,12 @@ import type { Order } from "@/lib/models/order.model";
 import { listOrders } from "@/lib/services/order.service";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
-type FinancialTabKey = "pending" | "needs_correction";
+type FinancialTabKey = "pending" | "needs_correction" | "approved";
 
 export default function FinancialControlOrdersPage() {
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [returnedOrders, setReturnedOrders] = useState<Order[]>([]);
+  const [approvedOrders, setApprovedOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -39,13 +40,15 @@ export default function FinancialControlOrdersPage() {
       setIsLoading(true);
       setError("");
       try {
-        const [pendingData, correctionData] = await Promise.all([
+        const [pendingData, correctionData, approvedData] = await Promise.all([
           listOrders({ financialApprovalStatus: "pending" }),
           listOrders({ financialApprovalStatus: "needs_correction" }),
+          listOrders({ financialApprovalStatus: "approved" }),
         ]);
         if (!mounted) return;
         setPendingOrders(pendingData);
         setReturnedOrders(correctionData);
+        setApprovedOrders(approvedData);
       } catch (loadError) {
         if (mounted) setError(getErrorMessage(loadError));
       } finally {
@@ -58,9 +61,16 @@ export default function FinancialControlOrdersPage() {
     };
   }, []);
 
+  const activeOrders =
+    activeTab === "pending"
+      ? pendingOrders
+      : activeTab === "needs_correction"
+        ? returnedOrders
+        : approvedOrders;
+
   const filteredOrders = useMemo(
     () =>
-      [...(activeTab === "pending" ? pendingOrders : returnedOrders)]
+      [...activeOrders]
         .sort((a, b) => Number(new Date(b.createdAt)) - Number(new Date(a.createdAt)))
         .filter((order) => {
           const matchesSearch =
@@ -69,7 +79,7 @@ export default function FinancialControlOrdersPage() {
             (order.createdByName ?? "").toLowerCase().includes(search.toLowerCase());
           return matchesSearch && isWithinDateRange(order.createdAt, dateFrom, dateTo);
         }),
-    [activeTab, dateFrom, dateTo, pendingOrders, returnedOrders, search],
+    [activeOrders, dateFrom, dateTo, search],
   );
 
   const columns: DataTableColumn<Order>[] = [
@@ -89,18 +99,15 @@ export default function FinancialControlOrdersPage() {
     {
       key: "status",
       header: "وضعیت مالی",
-        render: (row) => (
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge
-              type="financial"
-              status={row.financialApprovalStatus ?? "pending"}
-            />
-            <span className="text-sm text-[#334155]">
-              {row.financialApprovalStatusLabel || getFinancialApprovalStatusLabel(row.financialApprovalStatus) || "-"}
-            </span>
-          </div>
-        ),
-      },
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <StatusBadge
+            type="financial"
+            status={row.financialApprovalStatus ?? "pending"}
+          />
+        </div>
+      ),
+    },
     {
       key: "actions",
       header: "عملیات",
@@ -127,20 +134,27 @@ export default function FinancialControlOrdersPage() {
       <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 border-b border-[#E2E8F0] pb-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-wrap gap-2">
-          <TabButton
-            active={activeTab === "pending"}
-            icon={<ShieldAlert className="size-4" />}
-            label={`در انتظار تأیید مالی (${formatFaDigits(pendingOrders.length)})`}
-            description="سفارش‌های آماده بررسی"
-            onClick={() => setActiveTab("pending")}
-          />
-          <TabButton
-            active={activeTab === "needs_correction"}
-            icon={<CheckCircle2 className="size-4" />}
-            label={`نیازمند اصلاح (${formatFaDigits(returnedOrders.length)})`}
-            description="سفارش‌های برگشتی"
-            onClick={() => setActiveTab("needs_correction")}
-          />
+            <TabButton
+              active={activeTab === "pending"}
+              icon={<ShieldAlert className="size-4" />}
+              label={`در انتظار تأیید مالی (${formatFaDigits(pendingOrders.length)})`}
+              description="سفارش‌های آماده بررسی"
+              onClick={() => setActiveTab("pending")}
+            />
+            <TabButton
+              active={activeTab === "needs_correction"}
+              icon={<CheckCircle2 className="size-4" />}
+              label={`نیازمند اصلاح (${formatFaDigits(returnedOrders.length)})`}
+              description="سفارش‌های برگشتی"
+              onClick={() => setActiveTab("needs_correction")}
+            />
+            <TabButton
+              active={activeTab === "approved"}
+              icon={<CheckCircle2 className="size-4" />}
+              label={`تأیید شده (${formatFaDigits(approvedOrders.length)})`}
+              description="سفارش‌های بررسی‌شده"
+              onClick={() => setActiveTab("approved")}
+            />
           </div>
         </div>
 

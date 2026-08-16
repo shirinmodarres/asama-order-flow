@@ -129,6 +129,11 @@ export function OrderEditForm({
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [rowErrors, setRowErrors] = useState<Record<string, { productObjectId?: string; quantity?: string }>>({});
+  const resolvedOrderPriceListId =
+    selectedPriceListId ||
+    order.priceListId ||
+    order.priceList?.objectId ||
+    "";
 
   const isExpertEdit = roleScope === "expert";
   const canEditCustomerFields = !isExpertEdit;
@@ -191,17 +196,25 @@ export function OrderEditForm({
 
     async function loadProducts() {
       const seededProducts = mergeProducts(getSelectableProducts(initialProducts), order);
-      if (!selectedPriceListId) {
+      if (!resolvedOrderPriceListId) {
         if (mounted) setProducts(seededProducts);
         return;
       }
 
       try {
-        const fetchedProducts = await listOrderProductsByPriceList(selectedPriceListId, {
+        const fetchedProducts = await listOrderProductsByPriceList(resolvedOrderPriceListId, {
           customerObjectId: selectedCustomerId || undefined,
           expertUserId: order.expertUserId || undefined,
         });
         if (!mounted) return;
+        if (process.env.NODE_ENV === "development") {
+          console.info("[ORDER_EDIT_PRICE_LIST_PRODUCTS]", {
+            orderId: order.objectId,
+            priceListId: resolvedOrderPriceListId,
+            fetchedCount: fetchedProducts.length,
+            seededCount: seededProducts.length,
+          });
+        }
         setProducts(mergeProducts([...seededProducts, ...fetchedProducts], order));
       } catch {
         if (!mounted) return;
@@ -213,7 +226,7 @@ export function OrderEditForm({
     return () => {
       mounted = false;
     };
-  }, [initialProducts, order, order.expertUserId, selectedCustomerId, selectedPriceListId]);
+  }, [initialProducts, order, order.expertUserId, resolvedOrderPriceListId, selectedCustomerId, selectedPriceListId]);
 
   const selectableProducts = useMemo(
     () => getSelectableProducts(products),
@@ -250,7 +263,7 @@ export function OrderEditForm({
     [order, selectedCustomer],
   );
   const resolvedPriceListKey =
-    selectedPriceListId ||
+    resolvedOrderPriceListId ||
     getOrderPriceListSnapshot(order)?.objectId ||
     "";
   const selectedPriceList =

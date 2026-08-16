@@ -27,9 +27,13 @@ export default function ManagerPendingOrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("pending_manager_approval");
+  const [statusFilter, setStatusFilter] = useState("workflow_pending");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const workflowPendingStatuses = [
+    "pending_financial_approval",
+    "pending_manager_approval",
+  ];
 
   useEffect(() => {
     let isMounted = true;
@@ -68,7 +72,11 @@ export default function ManagerPendingOrdersPage() {
             .toLowerCase()
             .includes(search.toLowerCase());
         const matchesStatus =
-          statusFilter === "all" ? true : order.orderStatus === statusFilter;
+          statusFilter === "all"
+            ? true
+            : statusFilter === "workflow_pending"
+              ? workflowPendingStatuses.includes(order.orderStatus)
+              : order.orderStatus === statusFilter;
         return (
           matchesSearch &&
           matchesStatus &&
@@ -79,13 +87,14 @@ export default function ManagerPendingOrdersPage() {
 
   const hasActiveFilters =
     search.trim().length > 0 ||
-    statusFilter !== "pending_manager_approval" ||
+    statusFilter !== "workflow_pending" ||
     dateFrom.length > 0 ||
     dateTo.length > 0;
 
   const statusOptions = useMemo(
     () => {
       const legacyAndQueueStatuses = [
+        "pending_financial_approval",
         "pending_manager_approval",
         "needs_review",
         "review_resolved",
@@ -185,7 +194,9 @@ export default function ManagerPendingOrdersPage() {
                 value={statusFilter}
                 onValueChange={setStatusFilter}
                 options={[
+                  { value: "workflow_pending", label: "در انتظار تأیید مالی و مدیر" },
                   { value: "pending_manager_approval", label: getOrderStatusLabel("pending_manager_approval") },
+                  { value: "pending_financial_approval", label: getOrderStatusLabel("pending_financial_approval") },
                   { value: "needs_review", label: "نیازمند بررسی" },
                   { value: "review_resolved", label: "مشکل برطرف شد" },
                   { value: "all", label: "همه وضعیت‌ها" },
@@ -193,7 +204,9 @@ export default function ManagerPendingOrdersPage() {
                     .filter(
                       (value) =>
                         ![
+                          "workflow_pending",
                           "pending_manager_approval",
+                          "pending_financial_approval",
                           "needs_review",
                           "review_resolved",
                         ].includes(value),
@@ -222,12 +235,12 @@ export default function ManagerPendingOrdersPage() {
               type="button"
               variant="outline"
               className="inline-flex w-fit shrink-0 items-center gap-2"
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("pending_manager_approval");
-                setDateFrom("");
-                setDateTo("");
-              }}
+            onClick={() => {
+              setSearch("");
+              setStatusFilter("workflow_pending");
+              setDateFrom("");
+              setDateTo("");
+            }}
             >
               <span>حذف فیلترها</span>
               <X className="size-4" />
