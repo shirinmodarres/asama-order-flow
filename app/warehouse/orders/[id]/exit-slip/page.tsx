@@ -115,12 +115,40 @@ export default function ExitSlipCreatePage() {
     () => expectedRows.reduce((sum, row) => sum + row.item.quantity, 0),
     [expectedRows],
   );
+  const totalScannedCount = useMemo(
+    () => expectedRows.reduce((sum, row) => sum + row.scannedQuantity, 0),
+    [expectedRows],
+  );
+  const remainingItemCount = Math.max(totalItemCount - totalScannedCount, 0);
+  const isFullyScanned = totalItemCount > 0 && totalScannedCount === totalItemCount;
   const lastUpdatedAt = order?.updatedAt  || null;
+  const submitIssues = useMemo(() => {
+    const issues: string[] = [];
+    expectedRows.forEach((row) => {
+      if (row.scannedQuantity < row.item.quantity) {
+        issues.push(
+          `${row.item.productName || row.item.productSku}: ${formatNumber(
+            row.item.quantity - row.scannedQuantity,
+          )} مورد باقی مانده`,
+        );
+      }
+    });
+
+    if (scannedUnits.length !== totalItemCount) {
+      issues.push("تعداد کل کالاهای اسکن‌شده هنوز با سفارش برابر نشده است.");
+    }
+
+    if (!isFullyScanned) {
+      issues.push("ثبت مرحله‌ای هنوز کامل نشده است.");
+    }
+
+    return issues;
+  }, [expectedRows, isFullyScanned, scannedUnits.length, totalItemCount]);
 
   const canSubmit =
     scannedUnits.length > 0 &&
     expectedRows.length > 0 &&
-    expectedRows.every((row) => row.scannedQuantity === row.item.quantity) &&
+    isFullyScanned &&
     scannedUnits.every((unit) =>
       expectedRows.some((row) => unitMatchesOrderItem(unit, row.item)),
     ) &&
@@ -358,7 +386,9 @@ export default function ExitSlipCreatePage() {
       .filter(Boolean);
 
     if (!canSubmit || unitObjectIds.length !== scannedUnits.length) {
-      setError("تعداد کالاهای ثبت‌شده با سفارش برابر نیست.");
+      setError(
+        submitIssues[0] || "ثبت مرحله‌ای هنوز کامل نشده است؛ لطفاً اول همه کالاها را تکمیل کنید.",
+      );
       return;
     }
 
@@ -438,6 +468,20 @@ export default function ExitSlipCreatePage() {
               <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-4 py-3 text-sm font-semibold text-[#1F3A5F]">
                 {formatNumber(totalItemCount)}
               </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <InfoItem
+                label="اسکن‌شده"
+                value={formatNumber(totalScannedCount)}
+              />
+              <InfoItem
+                label="باقی‌مانده"
+                value={formatNumber(remainingItemCount)}
+              />
+              <InfoItem
+                label="وضعیت ثبت"
+                value={isFullyScanned ? 'کامل شد' : 'در حال تکمیل'}
+              />
             </div>
           </Card>
           {message ? (
@@ -602,9 +646,14 @@ export default function ExitSlipCreatePage() {
               </Button>
             </div>
             {!canSubmit ? (
-              <p className="mt-3 text-xs leading-6 text-[#8A5A00]">
-                تعداد کالاهای ثبت‌شده کمتر از سفارش است.
-              </p>
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-800">
+                <p className="font-semibold">ثبت مرحله‌ای هنوز کامل نشده است.</p>
+                <ul className="mt-2 list-inside list-disc space-y-1">
+                  {submitIssues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
           </Card>
 
