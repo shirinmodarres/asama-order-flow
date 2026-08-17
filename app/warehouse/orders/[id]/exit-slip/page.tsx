@@ -39,6 +39,17 @@ interface ExpectedRow {
   remainingQuantity: number;
 }
 
+interface ExitSlipDraftState {
+  scanValues: {
+    productIdentifier: string;
+    serialNumber: string;
+    trackingCode: string;
+  };
+  scannedUnits: WarehouseItemUnit[];
+  notes: string;
+  savedAt: string;
+}
+
 export default function ExitSlipCreatePage() {
   const params = useParams<{ id: string }>();
   const productIdentifierRef = useRef<HTMLInputElement | null>(null);
@@ -59,6 +70,7 @@ export default function ExitSlipCreatePage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
+  const [draftMessage, setDraftMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -81,6 +93,52 @@ export default function ExitSlipCreatePage() {
       isMounted = false;
     };
   }, [params.id]);
+
+  useEffect(() => {
+    if (!order) return;
+    try {
+      const raw = window.localStorage.getItem(getExitSlipDraftStorageKey(order.objectId));
+      if (!raw) return;
+      const draft = JSON.parse(raw) as Partial<ExitSlipDraftState>;
+      if (Array.isArray(draft.scannedUnits)) {
+        setScannedUnits(
+          draft.scannedUnits.filter(
+            (unit): unit is WarehouseItemUnit =>
+              Boolean(unit && unit.objectId && unit.productObjectId),
+          ),
+        );
+      }
+      if (typeof draft.notes === "string") setNotes(draft.notes);
+      if (draft.scanValues) {
+        setScanValues({
+          productIdentifier: draft.scanValues.productIdentifier || "",
+          serialNumber: draft.scanValues.serialNumber || "",
+          trackingCode: draft.scanValues.trackingCode || "",
+        });
+      }
+      if (draft.savedAt) {
+        setDraftMessage(
+          `پیش‌نویس ثبت مرحله‌ای بازیابی شد (${formatDateTime(draft.savedAt)})`,
+        );
+      }
+    } catch {
+      // اگر پیش‌نویس خراب باشد، بی‌سروصدا نادیده‌اش می‌گیریم.
+    }
+  }, [order]);
+
+  useEffect(() => {
+    if (!order) return;
+    const payload: ExitSlipDraftState = {
+      scanValues,
+      scannedUnits,
+      notes,
+      savedAt: new Date().toISOString(),
+    };
+    window.localStorage.setItem(
+      getExitSlipDraftStorageKey(order.objectId),
+      JSON.stringify(payload),
+    );
+  }, [notes, order, scanValues, scannedUnits]);
 
   useEffect(() => {
     if (!isLoading) serialNumberRef.current?.focus();
@@ -401,6 +459,7 @@ export default function ExitSlipCreatePage() {
         notes: notes.trim() || undefined,
         unitObjectIds,
       });
+      window.localStorage.removeItem(getExitSlipDraftStorageKey(order.objectId));
       setCreatedSlip(slip);
       setMessage("حواله خروج صادر شد و فاکتور داخلی برای حسابداری ایجاد شد.");
     } catch (submitError) {
@@ -408,6 +467,29 @@ export default function ExitSlipCreatePage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSaveDraft = () => {
+    if (!order) return;
+    const payload: ExitSlipDraftState = {
+      scanValues,
+      scannedUnits,
+      notes,
+      savedAt: new Date().toISOString(),
+    };
+    window.localStorage.setItem(
+      getExitSlipDraftStorageKey(order.objectId),
+      JSON.stringify(payload),
+    );
+    setDraftMessage(
+      `پیش‌نویس ثبت مرحله‌ای ذخیره شد (${formatDateTime(payload.savedAt)})`,
+    );
+  };
+
+  const handleClearDraft = () => {
+    if (!order) return;
+    window.localStorage.removeItem(getExitSlipDraftStorageKey(order.objectId));
+    setDraftMessage("پیش‌نویس ثبت مرحله‌ای پاک شد.");
   };
 
   return (
@@ -455,6 +537,11 @@ export default function ExitSlipCreatePage() {
             title={`صدور حواله ${formatFaDigits(order.code || order.id)}`}
             description="برای صدور حواله، کالاهای فیزیکی سفارش را اسکن کنید."
           />
+          {draftMessage ? (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              {draftMessage}
+            </div>
+          ) : null}
           <Card className="p-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
@@ -639,6 +726,22 @@ export default function ExitSlipCreatePage() {
               </Button>
               <Button
                 type="button"
+                variant="outline"
+                onClick={handleSaveDraft}
+                className="gap-2"
+              >
+                ثبت موقت
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleClearDraft}
+                className="gap-2"
+              >
+                پاک کردن پیش‌نویس
+              </Button>
+              <Button
+                type="button"
                 onClick={handleSubmit}
                 disabled={!canSubmit || isSubmitting || Boolean(createdSlip)}
               >
@@ -703,6 +806,10 @@ export default function ExitSlipCreatePage() {
       )}
     </DashboardLayout>
   );
+}
+
+function getExitSlipDraftStorageKey(orderObjectId: string): string {
+  return `asama:warehouse:exit-slip:draft:${orderObjectId}`;
 }
 
 const ScanField = forwardRef<
