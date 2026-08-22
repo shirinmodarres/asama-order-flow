@@ -39,6 +39,7 @@ export default function ExitSlipPdfPage() {
         const result = await getExitSlipPdfData(params.id);
         if (isMounted) {
           setData(result);
+          document.title = `حواله خروج - ${result.customer?.name || "بدون مشتری"}`;
           if (new URLSearchParams(window.location.search).get("print") === "1") {
             window.setTimeout(async () => {
               try {
@@ -148,7 +149,7 @@ export default function ExitSlipPdfPage() {
               key={`summary-${index}`}
               pageBreakAfter={index < summaryPages.length - 1 || hasDetailPages}
             >
-              <div className="space-y-3 text-[10.5px] leading-5.5">
+              <div className="space-y-3 text-[11px] leading-5.5">
                 <HeaderBlock data={data} />
                 <TitleBlock />
                 {index === 0 ? (
@@ -191,7 +192,7 @@ export default function ExitSlipPdfPage() {
               key={`detail-${index}`}
               pageBreakAfter={index < detailPages.length - 1}
             >
-              <div className="space-y-3 text-[10.5px] leading-5.5">
+              <div className="space-y-3 text-[11px] leading-5.5">
                 <HeaderBlock data={data} />
                 <TitleBlock />
                 <DetailTable
@@ -338,7 +339,7 @@ function SummaryTable({
       <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10.5px] font-bold text-[#1F3A5F]">
         خلاصه کالاها
       </h2>
-      <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[9.5px] leading-4">
+      <table className="summary-table items-table w-full table-fixed border-collapse text-right text-[10px] leading-4">
         <thead>
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
             <TableHeader className="w-10">ردیف</TableHeader>
@@ -379,7 +380,7 @@ function DetailTable({
       <h2 className="border-b border-[#94A3B8] px-3 py-1.5 text-[10.5px] font-bold text-[#1F3A5F]">
         جزئیات اقلام
       </h2>
-      <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[9.5px] leading-4">
+      <table className="detail-table items-table w-full table-fixed border-collapse text-right text-[10px] leading-4">
         <thead>
           <tr className="bg-[#EDF3F7] text-[#1F3A5F]">
             <TableHeader className="w-10">ردیف</TableHeader>
@@ -396,13 +397,13 @@ function DetailTable({
               <TableCell>{formatNumber(startIndex + index + 1)}</TableCell>
               <TableCell>{row.productName || "-"}</TableCell>
               <TableCell>{row.productSku ? formatFaDigits(row.productSku) : "-"}</TableCell>
-              <TableCell className="serial-cell whitespace-nowrap text-[9px]">
+              <TableCell className="serial-cell whitespace-nowrap text-[9.5px]">
                 {row.serialNumber ? formatFaDigits(row.serialNumber) : "-"}
               </TableCell>
-              <TableCell className="tracking-cell whitespace-nowrap text-[9px]">
+              <TableCell className="tracking-cell whitespace-nowrap text-[9.5px]">
                 {row.trackingCode ? formatFaDigits(row.trackingCode) : "-"}
               </TableCell>
-              <TableCell className="whitespace-nowrap text-[9px]">
+              <TableCell className="whitespace-nowrap text-[9.5px]">
                 {row.productIdentifier ? formatFaDigits(row.productIdentifier) : "-"}
               </TableCell>
             </tr>

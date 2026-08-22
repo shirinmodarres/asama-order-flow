@@ -27,6 +27,7 @@ export default function SalesQuotationPdfPage() {
         const result = await getSalesQuotationPdfData(params.id);
         if (isMounted) {
           setQuotation(result);
+          document.title = `پیش فاکتور - ${result.customerName || "بدون مشتری"}`;
           if (
             new URLSearchParams(window.location.search).get("print") === "1"
           ) {

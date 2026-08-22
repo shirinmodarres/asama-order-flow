@@ -231,9 +231,14 @@ export default function WarehouseStockTransferExecutePage() {
             title="اسکن کدهای انتقال"
             description={`${transfer.sourceStockTitle || "-"} به ${transfer.destinationStockTitle || "-"}`}
             actions={
-              <Button asChild variant="outline">
-                <Link href="/warehouse/stock-transfers">بازگشت</Link>
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline">
+                  <Link href={`/warehouse/stock-transfers/${transfer?.objectId || params.id}/pdf?print=1`}>خروجی PDF حواله</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/warehouse/stock-transfers">بازگشت</Link>
+                </Button>
+              </div>
             }
           />
 
