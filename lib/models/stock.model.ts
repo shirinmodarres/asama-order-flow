@@ -56,6 +56,7 @@ export type StockTransferStatus =
   | "completed"
   | "approved"
   | "rejected"
+  | "cancelled"
   | string;
 
 export interface StockTransferItem {

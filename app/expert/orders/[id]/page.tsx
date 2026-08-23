@@ -15,6 +15,14 @@ import { PageErrorMessage } from "@/components/shared/page-error-message";
 import { SectionHeader } from "@/components/shared/section-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getErrorMessage } from "@/lib/api/api-error";
 import { getFinancialApprovalStatusLabel } from "@/lib/domain/statuses";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
@@ -36,6 +44,7 @@ export default function ExpertOrderDetailsPage() {
   const [error, setError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [actionError, setActionError] = useState("");
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -121,7 +130,6 @@ export default function ExpertOrderDetailsPage() {
 
   const handleCancelOrder = async () => {
     if (!order || !order.canCancel) return;
-    if (!window.confirm("آیا از لغو این سفارش و آزادسازی موجودی رزروشده مطمئن هستید؟")) return;
 
     setIsSubmitting(true);
     setActionError("");
@@ -131,6 +139,7 @@ export default function ExpertOrderDetailsPage() {
         cancelledByName: getStoredCurrentUser()?.fullName ?? "",
       });
       setOrder(updated);
+      setIsCancelDialogOpen(false);
       setActionMessage("سفارش لغو شد و موجودی رزروشده آزاد شد.");
     } catch (cancelError) {
       setActionError(getErrorMessage(cancelError));
@@ -209,7 +218,7 @@ export default function ExpertOrderDetailsPage() {
                       variant="outline"
                       className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                       disabled={isSubmitting}
-                      onClick={handleCancelOrder}
+                      onClick={() => setIsCancelDialogOpen(true)}
                     >
                       لغو سفارش
                     </Button>
@@ -224,6 +233,35 @@ export default function ExpertOrderDetailsPage() {
               {actionMessage}
             </div>
           ) : null}
+
+          <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+            <DialogContent dir="rtl">
+              <DialogHeader>
+                <DialogTitle>لغو سفارش</DialogTitle>
+                <DialogDescription>
+                  با لغو سفارش، موجودی رزروشده آن آزاد می‌شود. آیا از ادامه مطمئن هستید؟
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCancelDialogOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  انصراف
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleCancelOrder}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "در حال لغو..." : "لغو سفارش"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {actionError ? (
             <PageErrorMessage

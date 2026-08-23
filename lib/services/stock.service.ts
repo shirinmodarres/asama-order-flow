@@ -61,6 +61,26 @@ export async function listStockTransfers(filters?: {
   return listTransfersFromPath("/api/support/stock-transfers", filters);
 }
 
+export async function getSupportStockTransfer(
+  objectId: string,
+): Promise<StockTransferRequest> {
+  const data = await httpClient.get<unknown>(
+    `/api/support/stock-transfers/${objectId}`,
+  );
+  return mapStockTransferRequestDto(data);
+}
+
+export async function cancelStockTransfer(
+  objectId: string,
+  payload: { cancelledByName?: string; reason?: string },
+): Promise<StockTransferRequest> {
+  const data = await httpClient.post<unknown>(
+    `/api/support/stock-transfers/${objectId}/cancel`,
+    payload,
+  );
+  return mapStockTransferRequestDto(data);
+}
+
 export async function listManagerStockTransfers(filters?: {
   status?: string;
 }): Promise<StockTransferRequest[]> {

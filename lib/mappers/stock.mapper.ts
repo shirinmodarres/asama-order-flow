@@ -21,6 +21,7 @@ const TRANSFER_STATUS_LABELS: Record<string, string> = {
   approved: "تأیید شده",
   completed: "تکمیل شده",
   rejected: "رد شده",
+  cancelled: "لغو شده",
 };
 
 export function mapSepidarStockDto(dto: unknown): SepidarStock {
