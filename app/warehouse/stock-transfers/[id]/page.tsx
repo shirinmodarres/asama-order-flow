@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, ScanLine } from "lucide-react";
+import { ArrowRight, FileText, ScanLine } from "lucide-react";
 import { useParams } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -30,8 +30,8 @@ export default function WarehouseStockTransferDetailPage() {
         <Info label="وضعیت" value={<Badge variant={transfer.status === "completed" ? "success" : "neutral"}>{transfer.statusLabel}</Badge>} />
         <Info label="انبار مبدأ" value={transfer.sourceStockTitle || "-"} /><Info label="انبار مقصد" value={transfer.destinationStockTitle || "-"} /><Info label="تعداد کل" value={formatNumber(transfer.quantity)} />
         <Info label="درخواست‌کننده" value={transfer.requestedByName || "-"} /><Info label="زمان درخواست" value={transfer.requestedAt ? formatDateTime(transfer.requestedAt) : "-"} /><Info label="تأییدکننده" value={transfer.approvedByName || "-"} /><Info label="زمان تأیید" value={transfer.approvedAt ? formatDateTime(transfer.approvedAt) : "-"} />
-      </div>{transfer.status === "approved_waiting_warehouse_scan" || transfer.status === "approved_waiting_tracking_codes" ? <Button asChild className="mt-4"><Link href={`/warehouse/stock-transfers/${transfer.objectId}/execute`}><ScanLine className="size-4" />ثبت کدها</Link></Button> : null}</Card>
-      <Card className="overflow-hidden p-0"><div className="border-b border-[#E5E7EB] px-5 py-4"><h2 className="font-bold">اقلام انتقال</h2></div><div className="overflow-x-auto"><table className="w-full text-right text-sm"><thead className="bg-[#F8FAFC]"><tr><th className="px-4 py-3">ردیف</th><th className="px-4 py-3">کالا</th><th className="px-4 py-3">تعداد</th></tr></thead><tbody>{items.map((item,index)=><tr key={`${item.productObjectId}-${index}`} className="border-t border-[#E5E7EB]"><td className="px-4 py-3">{formatNumber(index+1)}</td><td className="px-4 py-3">{item.productName || "-"}</td><td className="px-4 py-3">{formatNumber(item.quantity)}</td></tr>)}</tbody></table></div></Card>
+      </div><div className="mt-4 flex flex-wrap gap-2">{transfer.transferSlipId ? <Button asChild variant="outline"><Link href={`/warehouse/stock-transfers/${transfer.objectId}/pdf`}><FileText className="size-4" />مشاهده حواله انتقال</Link></Button> : null}{transfer.status === "approved_waiting_warehouse_scan" || transfer.status === "approved_waiting_tracking_codes" ? <Button asChild><Link href={`/warehouse/stock-transfers/${transfer.objectId}/execute`}><ScanLine className="size-4" />ثبت کدها</Link></Button> : null}</div></Card>
+      <Card className="overflow-hidden p-0"><div className="border-b border-[#E5E7EB] px-5 py-4"><h2 className="font-bold">اقلام انتقال</h2></div><div className="overflow-x-auto"><table className="w-full border-collapse text-right text-sm"><thead className="bg-[#EEF4F8] text-[#1F3A5F]"><tr><th className="border-b border-[#D8E4F0] px-4 py-3">ردیف</th><th className="border-b border-[#D8E4F0] px-4 py-3">کالا</th><th className="border-b border-[#D8E4F0] px-4 py-3">تعداد</th></tr></thead><tbody>{items.map((item,index)=><tr key={`${item.productObjectId}-${index}`} className="border-t border-[#D8E4F0]"><td className="px-4 py-3">{formatNumber(index+1)}</td><td className="px-4 py-3">{item.productName || "-"}</td><td className="px-4 py-3">{formatNumber(item.quantity)}</td></tr>)}</tbody></table></div></Card>
     </div>}
   </DashboardLayout>;
 }

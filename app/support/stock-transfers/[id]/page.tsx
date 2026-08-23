@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Ban } from "lucide-react";
+import { ArrowRight, Ban, FileText } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { EmptyState } from "@/components/shared/empty-state";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
@@ -11,6 +11,14 @@ import { SectionHeader } from "@/components/shared/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getErrorMessage } from "@/lib/api/api-error";
 import { formatDateTime, formatNumber } from "@/lib/expert/utils";
 import type { StockTransferRequest } from "@/lib/models/stock.model";
@@ -33,6 +41,7 @@ export default function SupportStockTransferDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -55,6 +64,7 @@ export default function SupportStockTransferDetailPage() {
         cancelledByName: getStoredCurrentUser()?.fullName || getStoredCurrentUser()?.username || "پشتیبان",
       });
       setTransfer(updated);
+      setIsCancelDialogOpen(false);
       setMessage("درخواست انتقال لغو شد و موجودی قابل استفاده باقی ماند.");
     } catch (cancelError) {
       setError(getErrorMessage(cancelError));
@@ -88,22 +98,47 @@ export default function SupportStockTransferDetailPage() {
               <Info label="زمان تأیید" value={transfer.approvedAt ? formatDateTime(transfer.approvedAt) : "-"} />
             </div>
             {transfer.note ? <p className="mt-4 rounded-xl bg-[#F8FAFC] px-4 py-3 text-sm leading-7 text-[#334155]">{transfer.note}</p> : null}
-            {canCancel ? (
-              <Button type="button" variant="destructive" className="mt-4" onClick={handleCancel} disabled={submitting}>
-                <Ban className="size-4" />{submitting ? "در حال لغو..." : "لغو درخواست انتقال"}
-              </Button>
-            ) : null}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {transfer.transferSlipId ? (
+                <Button asChild type="button" variant="outline">
+                  <Link href={`/warehouse/stock-transfers/${transfer.objectId}/pdf`}>
+                    <FileText className="size-4" />مشاهده حواله انتقال
+                  </Link>
+                </Button>
+              ) : null}
+              {canCancel ? (
+                <Button type="button" variant="destructive" onClick={() => setIsCancelDialogOpen(true)} disabled={submitting}>
+                  <Ban className="size-4" />لغو درخواست انتقال
+                </Button>
+              ) : null}
+            </div>
           </Card>
           <Card className="overflow-hidden p-0">
             <div className="border-b border-[#E5E7EB] px-5 py-4"><h2 className="font-bold text-[#102034]">اقلام انتقال</h2></div>
             <div className="overflow-x-auto">
-              <table className="w-full text-right text-sm"><thead className="bg-[#F8FAFC]"><tr><Th>ردیف</Th><Th>کالا</Th><Th>تعداد</Th></tr></thead>
-                <tbody>{items.map((item, index) => <tr key={`${item.productObjectId}-${index}`} className="border-t border-[#E5E7EB]"><Td>{formatNumber(index + 1)}</Td><Td>{item.productName || "-"}</Td><Td>{formatNumber(item.quantity)}</Td></tr>)}</tbody>
+              <table className="w-full border-collapse text-right text-sm"><thead className="bg-[#EEF4F8] text-[#1F3A5F]"><tr><Th>ردیف</Th><Th>کالا</Th><Th>تعداد</Th></tr></thead>
+                <tbody>{items.map((item, index) => <tr key={`${item.productObjectId}-${index}`} className="border-t border-[#D8E4F0]"><Td>{formatNumber(index + 1)}</Td><Td>{item.productName || "-"}</Td><Td>{formatNumber(item.quantity)}</Td></tr>)}</tbody>
               </table>
             </div>
           </Card>
         </div>
       )}
+      <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>لغو درخواست انتقال</DialogTitle>
+            <DialogDescription>
+              با لغو این درخواست، claimهای احتمالی واحدها آزاد می‌شود. آیا از لغو مطمئن هستید؟
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsCancelDialogOpen(false)} disabled={submitting}>انصراف</Button>
+            <Button type="button" variant="destructive" onClick={handleCancel} disabled={submitting}>
+              {submitting ? "در حال لغو..." : "تأیید لغو"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
