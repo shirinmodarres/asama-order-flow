@@ -60,6 +60,23 @@ function TransferDocument({ transfer }: { transfer: StockTransferRequest }) {
         scannedUnitIds: transfer.scannedUnitObjectIds,
         scannedUnitObjectIds: transfer.scannedUnitObjectIds,
       }];
+  const detailRows = items.flatMap((item) =>
+    item.units?.length
+      ? item.units.map((unit) => ({
+          item,
+          productIdentifier: unit.productIdentifier,
+          serialNumber: unit.serialNumber,
+          trackingCode: unit.trackingCode,
+          quantity: 1,
+        }))
+      : [{
+          item,
+          productIdentifier: null,
+          serialNumber: null,
+          trackingCode: null,
+          quantity: item.quantity,
+        }],
+  );
   return (
     <div className="space-y-4 text-[11px] leading-6">
       <header className="relative flex min-h-24 items-start justify-between">
@@ -82,8 +99,8 @@ function TransferDocument({ transfer }: { transfer: StockTransferRequest }) {
       <section className="rounded-md border border-[#94A3B8] bg-white/95">
         <h2 className="border-b border-[#94A3B8] px-3 py-1.5 font-bold text-[#1F3A5F]">جزئیات اقلام</h2>
         <table className="items-table w-full table-fixed border-collapse text-right text-[10px] leading-5">
-          <thead className="bg-[#EDF3F7]"><tr><th className="w-12 border p-1">ردیف</th><th className="border p-1">نام کالا</th><th className="w-32 border p-1">کد کالا</th><th className="w-24 border p-1">تعداد</th></tr></thead>
-          <tbody>{items.map((item, index) => <tr key={item.productObjectId || index} className="print-table-row"><td className="border p-1">{formatNumber(index + 1)}</td><td className="border p-1">{item.productName || item.productNameSnapshot || "-"}</td><td className="border p-1">{item.productCode ? formatFaDigits(item.productCode) : "-"}</td><td className="border p-1">{formatNumber(item.quantity)}</td></tr>)}</tbody>
+          <thead className="bg-[#EDF3F7]"><tr><th className="w-10 border p-1">ردیف</th><th className="border p-1">نام کالا</th><th className="w-24 border p-1">کد کالا</th><th className="w-24 border p-1">شناسه کالا</th><th className="w-28 border p-1">سریال</th><th className="w-28 border p-1">کد رهگیری</th><th className="w-14 border p-1">تعداد</th></tr></thead>
+          <tbody>{detailRows.map((row, index) => <tr key={`${row.item.productObjectId}-${row.productIdentifier || row.serialNumber || row.trackingCode || index}`} className="print-table-row"><td className="border p-1">{formatNumber(index + 1)}</td><td className="border p-1">{row.item.productName || row.item.productNameSnapshot || "-"}</td><td className="border p-1">{row.item.productCode ? formatFaDigits(row.item.productCode) : "-"}</td><td className="border p-1">{row.productIdentifier ? formatFaDigits(row.productIdentifier) : "-"}</td><td className="border p-1">{row.serialNumber ? formatFaDigits(row.serialNumber) : "-"}</td><td className="border p-1">{row.trackingCode ? formatFaDigits(row.trackingCode) : "-"}</td><td className="border p-1">{formatNumber(row.quantity)}</td></tr>)}</tbody>
         </table>
       </section>
       <div className="flex items-center justify-between rounded-md border border-[#CBD5E1] bg-white/95 px-3 py-2 font-semibold"><span>تعداد کل اقلام</span><span>{formatNumber(transfer.quantity)}</span></div>
