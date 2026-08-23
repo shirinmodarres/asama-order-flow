@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
@@ -299,6 +300,15 @@ export default function SupportStockTransfersPage() {
       key: "requestedAt",
       header: "تاریخ",
       render: (row) => (row.requestedAt ? formatDateTime(row.requestedAt) : "-"),
+    },
+    {
+      key: "actions",
+      header: "عملیات",
+      render: (row) => (
+        <Button asChild size="sm" variant="outline">
+          <Link href={`/support/stock-transfers/${row.objectId}`}>مشاهده جزئیات</Link>
+        </Button>
+      ),
     },
   ];
 

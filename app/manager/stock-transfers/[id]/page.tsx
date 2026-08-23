@@ -221,5 +221,16 @@ function formatTransferActionError(error: unknown): string {
   if (!(error instanceof ApiError) || !error.details || typeof error.details !== "object") {
     return baseMessage;
   }
+  const details = error.details as {
+    productName?: string | null;
+    productCode?: string | null;
+    productIdentifier?: string | null;
+  };
+  const productParts = [
+    details.productName ? `کالا: ${details.productName}` : "",
+    details.productCode ? `کد کالا: ${details.productCode}` : "",
+    details.productIdentifier ? `شناسه کالا: ${details.productIdentifier}` : "",
+  ].filter(Boolean);
+  if (productParts.length) return `${baseMessage} (${productParts.join("، ")})`;
   return baseMessage;
 }

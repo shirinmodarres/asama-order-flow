@@ -56,6 +56,7 @@ export type StockTransferStatus =
   | "completed"
   | "approved"
   | "rejected"
+  | "cancelled"
   | string;
 
 export interface StockTransferItem {
@@ -67,6 +68,14 @@ export interface StockTransferItem {
   quantity: number;
   scannedUnitIds: string[];
   scannedUnitObjectIds: string[];
+  units?: StockTransferUnit[];
+}
+
+export interface StockTransferUnit {
+  unitObjectId: string;
+  productIdentifier: string | null;
+  serialNumber: string | null;
+  trackingCode: string | null;
 }
 
 export interface StockTransferRequest {

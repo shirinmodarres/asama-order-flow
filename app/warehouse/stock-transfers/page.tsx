@@ -198,18 +198,22 @@ export default function WarehouseStockTransfersPage() {
     {
       key: "actions",
       header: "عملیات",
-      render: (row) =>
-        row.status === "approved_waiting_tracking_codes" ||
-        row.status === "approved_waiting_warehouse_scan" ? (
+      render: (row) => (
+        <div className="flex flex-wrap gap-2">
           <Button asChild size="sm" variant="outline">
-            <Link href={`/warehouse/stock-transfers/${row.objectId}/execute`}>
-              <ScanLine className="size-4" />
-              ثبت کدها
-            </Link>
+            <Link href={`/warehouse/stock-transfers/${row.objectId}`}>جزئیات</Link>
           </Button>
-        ) : (
-          "-"
-        ),
+          {row.status === "approved_waiting_tracking_codes" ||
+          row.status === "approved_waiting_warehouse_scan" ? (
+            <Button asChild size="sm">
+              <Link href={`/warehouse/stock-transfers/${row.objectId}/execute`}>
+                <ScanLine className="size-4" />
+                ثبت کدها
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+      ),
     },
   ];
 

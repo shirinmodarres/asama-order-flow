@@ -21,6 +21,7 @@ const TRANSFER_STATUS_LABELS: Record<string, string> = {
   approved: "تأیید شده",
   completed: "تکمیل شده",
   rejected: "رد شده",
+  cancelled: "لغو شده",
 };
 
 export function mapSepidarStockDto(dto: unknown): SepidarStock {
@@ -164,6 +165,15 @@ export function mapStockTransferRequestDto(dto: unknown): StockTransferRequest {
       scannedUnitObjectIds: toArray(
         item.scannedUnitObjectIds ?? item.scannedUnitIds,
       ).map((id) => toStringValue(id)),
+      units: toArray(item.units).map((unitDto) => {
+        const unit = toRecord(unitDto);
+        return {
+          unitObjectId: toStringValue(unit.unitObjectId ?? unit.objectId),
+          productIdentifier: toNullableString(unit.productIdentifier),
+          serialNumber: toNullableString(unit.serialNumber),
+          trackingCode: toNullableString(unit.trackingCode),
+        };
+      }),
     };
   });
   return {
