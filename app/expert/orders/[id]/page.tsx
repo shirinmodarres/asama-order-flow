@@ -21,6 +21,7 @@ import { formatCurrency, formatDate, formatNumber } from "@/lib/expert/utils";
 import type { Order } from "@/lib/models/order.model";
 import { getStoredCurrentUser } from "@/lib/services/auth.service";
 import {
+  cancelOrder,
   getOrder,
   resolveOrderReview,
   resubmitFinancialOrder,
@@ -118,6 +119,26 @@ export default function ExpertOrderDetailsPage() {
     }
   };
 
+  const handleCancelOrder = async () => {
+    if (!order || !order.canCancel) return;
+    if (!window.confirm("آیا از لغو این سفارش و آزادسازی موجودی رزروشده مطمئن هستید؟")) return;
+
+    setIsSubmitting(true);
+    setActionError("");
+    setActionMessage("");
+    try {
+      const updated = await cancelOrder(order.objectId, {
+        cancelledByName: getStoredCurrentUser()?.fullName ?? "",
+      });
+      setOrder(updated);
+      setActionMessage("سفارش لغو شد و موجودی رزروشده آزاد شد.");
+    } catch (cancelError) {
+      setActionError(getErrorMessage(cancelError));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const columns: DataTableColumn<(typeof detailRows)[number]>[] = [
     {
       key: "name",
@@ -172,13 +193,28 @@ export default function ExpertOrderDetailsPage() {
             title={`سفارش ${formatFaDigits(order.code)}`}
             description="جزئیات وضعیت سفارش، انبار و اقلام ثبت شده"
             actions={
-              order.canEdit ? (
-                <Link
-                  href={`/expert/orders/${order.objectId}/edit`}
-                  className="btn-primary rounded-xl px-4 py-2 text-sm font-medium text-white visited:text-white hover:text-white focus:text-white"
-                >
-                  ویرایش سفارش
-                </Link>
+              order.canEdit || order.canCancel ? (
+                <div className="flex flex-wrap gap-2">
+                  {order.canEdit ? (
+                    <Link
+                      href={`/expert/orders/${order.objectId}/edit`}
+                      className="btn-primary rounded-xl px-4 py-2 text-sm font-medium text-white visited:text-white hover:text-white focus:text-white"
+                    >
+                      ویرایش سفارش
+                    </Link>
+                  ) : null}
+                  {order.canCancel ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                      disabled={isSubmitting}
+                      onClick={handleCancelOrder}
+                    >
+                      لغو سفارش
+                    </Button>
+                  ) : null}
+                </div>
               ) : null
             }
           />

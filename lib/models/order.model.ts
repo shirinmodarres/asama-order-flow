@@ -154,6 +154,7 @@ export interface Order {
   quotationSyncError: string | null;
   sepidarLastError: string | null;
   canEdit: boolean;
+  canCancel?: boolean;
   editBlockedReason: string | null;
   createdAt: string;
   updatedAt: string;

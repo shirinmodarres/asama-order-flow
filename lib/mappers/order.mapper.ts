@@ -402,6 +402,7 @@ export function mapOrderDto(dto: unknown): Order {
     quotationSyncError: toNullableString(record.quotationSyncError),
     sepidarLastError: toNullableString(record.sepidarLastError),
     canEdit: toBooleanValue(record.canEdit),
+    canCancel: toBooleanValue(record.canCancel),
     editBlockedReason: toNullableString(record.editBlockedReason),
     createdAt: toStringValue(record.createdAt),
     updatedAt: toStringValue(record.updatedAt),
