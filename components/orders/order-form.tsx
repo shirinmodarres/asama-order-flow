@@ -593,12 +593,29 @@ export function OrderForm({
             })
           : [];
         if (!isMounted) return;
-        const mergedProducts = mergeProducts(data, initialOrder);
+        const selectedStockProducts = selectedStockObjectId
+          ? data.map((product) => {
+              const stockRows = (product.availableStocks ?? []).filter(
+                (stock) => String(stock.stockObjectId ?? "") === selectedStockObjectId,
+              );
+              const availableForSale = stockRows.reduce(
+                (sum, stock) => sum + Number(stock.availableForSale ?? 0),
+                0,
+              );
+              return {
+                ...product,
+                availableStocks: stockRows,
+                availableForSale,
+                availableSalesQuantity: availableForSale,
+              };
+            })
+          : data;
+        const mergedProducts = mergeProducts(selectedStockProducts, initialOrder);
         setProducts(mergedProducts);
         if (process.env.NODE_ENV === "development") {
           console.debug(
             "[OrderForm] assignment product availability",
-            data.map((product) => ({
+            selectedStockProducts.map((product) => ({
               productObjectId: product.objectId,
               productName: product.name,
               availableQuantity: product.availableForSale,
@@ -938,19 +955,6 @@ export function OrderForm({
     ) {
       setFieldErrors({
         selectedCustomerId: "برای این مشتری تنظیمات فروش تعریف نشده است.",
-      });
-      return;
-    }
-
-    const availableStockOptions = getAllowedStockOptions(selectedAssignment || selectedCustomer);
-    if (
-      assignedCustomersOnly &&
-      !isEditMode &&
-      availableStockOptions.length > 1 &&
-      !selectedStockObjectId
-    ) {
-      setFieldErrors({
-        selectedStockObjectId: "لطفاً یک انبار را انتخاب کنید.",
       });
       return;
     }
@@ -1435,6 +1439,7 @@ export function OrderForm({
                   value={selectedStockObjectId || undefined}
                   onValueChange={(value) => {
                     setSelectedStockObjectId(value);
+                    setItems([createEmptyRow(0)]);
                     setProductsError("");
                     setFieldErrors((current) => ({
                       ...current,
