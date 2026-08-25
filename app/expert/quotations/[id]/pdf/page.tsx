@@ -216,7 +216,7 @@ export default function SalesQuotationPdfPage() {
                         <section className="mr-auto w-full max-w-[260px] overflow-hidden rounded-md border border-[#CBD5E1] bg-white/95 text-[11px]">
                           <Total label="جمع مبلغ اقلام" value={quotation.subtotal} />
                           <Total label="مبلغ تخفیف" value={quotation.discountAmount} />
-                          <Total label="مالیات (۱۰٪)" value={quotation.taxAmount} />
+                          <Total label="ارزش افزوده (۱۰٪)" value={quotation.taxAmount} />
                           <Total label="جمع کل" value={quotation.total} emphasis />
                         </section>
 
