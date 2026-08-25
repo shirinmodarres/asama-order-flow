@@ -103,6 +103,7 @@ export async function listOrderProductsForAssignment(context: {
   customerObjectId: string;
   expertUserId?: string;
   priceListId?: string;
+  stockObjectId?: string;
 }): Promise<Product[]> {
   const params = new URLSearchParams({
     customerObjectId: context.customerObjectId,
@@ -112,6 +113,9 @@ export async function listOrderProductsForAssignment(context: {
   }
   if (context.priceListId) {
     params.set("priceListId", context.priceListId);
+  }
+  if (context.stockObjectId) {
+    params.set("stockObjectId", context.stockObjectId);
   }
   const data = await httpClient.get<unknown>(
     `/api/expert/available-products?${params.toString()}`,

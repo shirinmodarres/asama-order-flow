@@ -59,6 +59,10 @@ export function normalizeOrderEditPayload(
     customerAddressPathRef: numberOrUndefined(editPayload.customerAddressPathRef),
     customerAddressIsMain: editPayload.customerAddressIsMain,
     priceListId: trimOrUndefined(editPayload.priceListId),
+    stockObjectId: trimOrUndefined(editPayload.stockObjectId),
+    selectedStockObjectIds: Array.isArray(editPayload.selectedStockObjectIds)
+      ? editPayload.selectedStockObjectIds.map((value) => String(value).trim()).filter(Boolean)
+      : undefined,
     recipientFirstName: trimOrNull(editPayload.recipientFirstName),
     recipientLastName: trimOrNull(editPayload.recipientLastName),
     recipientNationalId: editPayload.recipientNationalId

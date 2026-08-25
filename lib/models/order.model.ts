@@ -79,6 +79,7 @@ export interface Order {
   warehouseName: string | null;
   warehouseType: string | null;
   stockObjectId: string | null;
+  selectedStockObjectIds?: string[];
   sepidarStockId: number | null;
   stockTitle: string | null;
   selectedStockTitles: string[];
@@ -181,6 +182,8 @@ export interface CreateOrderPayload {
   saleTypeObjectId?: string;
   sepidarSaleTypeId?: number;
   priceListId?: string;
+  stockObjectId?: string;
+  selectedStockObjectIds?: string[];
   recipientFirstName?: string;
   recipientLastName?: string;
   recipientNationalId?: string;

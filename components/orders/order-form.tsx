@@ -188,6 +188,8 @@ export interface OrderFormSubmitPayload {
   salesTypeInternalCode?: number | null;
   salesTypeSepidarCode?: number | null;
   priceListId?: string;
+  stockObjectId?: string;
+  selectedStockObjectIds?: string[];
 }
 
 interface OrderFormProps {
@@ -268,6 +270,9 @@ export function OrderForm({
     initialOrder?.priceListId ??
       initialOrder?.priceList?.objectId ??
       "",
+  );
+  const [selectedStockObjectId, setSelectedStockObjectId] = useState(
+    initialOrder?.stockObjectId || initialOrder?.selectedStockObjectIds?.[0] || "",
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
@@ -406,6 +411,17 @@ export function OrderForm({
         );
         if (!isMounted) return;
         setSelectedAssignment(assignment);
+        const allowedStockIds = getAllowedStockOptions(assignment).map((stock) => stock.objectId);
+        const initialStockId = initialOrder?.stockObjectId || initialOrder?.selectedStockObjectIds?.[0] || "";
+        setSelectedStockObjectId((current) =>
+          current && allowedStockIds.includes(current)
+            ? current
+            : initialStockId && allowedStockIds.includes(initialStockId)
+              ? initialStockId
+              : allowedStockIds.length === 1
+                ? allowedStockIds[0]
+                : "",
+        );
         if (process.env.NODE_ENV === "development") {
           console.debug("[OrderForm] assignment inventory source", {
             customer: assignment,
@@ -573,6 +589,7 @@ export function OrderForm({
               customerObjectId: context.customerObjectId,
               expertUserId: context.expertUserId,
               priceListId: selectedPriceListId,
+              stockObjectId: selectedStockObjectId,
             })
           : [];
         if (!isMounted) return;
@@ -615,6 +632,7 @@ export function OrderForm({
     selectedAssignment,
     selectedCustomerId,
     selectedPriceListId,
+    selectedStockObjectId,
     isEditMode,
     sepidarProductsOnly,
   ]);
@@ -897,6 +915,7 @@ export function OrderForm({
       selectedCustomerId: selectedCustomerId || null,
       selectedPriceListId: selectedPriceListId || null,
       selectedSalesTypeId: selectedSalesTypeId || null,
+      selectedStockObjectId: selectedStockObjectId || null,
       itemCount: normalizedItems.length,
     });
     setError("");
@@ -919,6 +938,19 @@ export function OrderForm({
     ) {
       setFieldErrors({
         selectedCustomerId: "برای این مشتری تنظیمات فروش تعریف نشده است.",
+      });
+      return;
+    }
+
+    const availableStockOptions = getAllowedStockOptions(selectedAssignment || selectedCustomer);
+    if (
+      assignedCustomersOnly &&
+      !isEditMode &&
+      availableStockOptions.length > 1 &&
+      !selectedStockObjectId
+    ) {
+      setFieldErrors({
+        selectedStockObjectId: "لطفاً یک انبار را انتخاب کنید.",
       });
       return;
     }
@@ -1127,6 +1159,7 @@ export function OrderForm({
         mode,
         customerObjectId: selectedCustomerId || null,
         priceListId: selectedPriceListId || selectedCustomer?.priceListId || null,
+        stockObjectId: selectedStockObjectId || null,
         salesTypeInternalCode: resolvedSelectedSalesType?.internalCode ?? null,
         salesTypeSepidarCode: resolvedSelectedSalesType?.sepidarCode ?? null,
         selectedSalesTypeTitle: resolvedSelectedSalesType?.title ?? null,
@@ -1181,6 +1214,8 @@ export function OrderForm({
           initialOrder?.priceListId ||
           initialOrder?.priceList?.objectId ||
           undefined,
+        stockObjectId: selectedStockObjectId || undefined,
+        selectedStockObjectIds: selectedStockObjectId ? [selectedStockObjectId] : undefined,
         notes: notes.trim(),
         ...addressPayload,
         items: normalizedItems.map((item) => ({
@@ -1250,6 +1285,7 @@ export function OrderForm({
               onValueChange={(value) => {
                 setSelectedCustomerId(value);
                 setSelectedPriceListId("");
+                setSelectedStockObjectId("");
                 if (sepidarProductsOnly) {
                   setProducts([]);
                   setProductsError("");
@@ -1391,6 +1427,33 @@ export function OrderForm({
                     : "برای این مشتری تنظیمات فروش تعریف نشده است."}
                 </div>
               )
+            ) : null}
+            {assignedCustomersOnly && mode !== "edit" && getAllowedStockOptions(selectedAssignment || selectedCustomer).length ? (
+              <label className="mt-4 grid gap-2 text-sm font-medium text-[#334155]">
+                <span>انبار سفارش</span>
+                <SearchableSelect
+                  value={selectedStockObjectId || undefined}
+                  onValueChange={(value) => {
+                    setSelectedStockObjectId(value);
+                    setProductsError("");
+                    setFieldErrors((current) => ({
+                      ...current,
+                      selectedStockObjectId: "",
+                    }));
+                  }}
+                  options={getAllowedStockOptions(selectedAssignment || selectedCustomer).map((stock) => ({
+                    value: stock.objectId,
+                    label: stock.title,
+                    description: stock.sepidarStockId ? `شناسه سپیدار: ${stock.sepidarStockId}` : undefined,
+                  }))}
+                  placeholder="انتخاب انبار"
+                  searchPlaceholder="جستجو در انبارها"
+                  emptyMessage="انبار مجازی پیدا نشد"
+                  disabled={isLoadingAssignment}
+                  invalid={Boolean(fieldErrors.selectedStockObjectId)}
+                />
+                <FieldError message={fieldErrors.selectedStockObjectId} />
+              </label>
             ) : null}
             {selectedAddress && !isNajaOrder ? (
               <div className="mt-2 space-y-1 text-[#6B7280]">
@@ -2098,6 +2161,28 @@ function getAllowedStockTitles(customer: Customer): string[] {
     );
   }
   return customer.allowedStockTitles;
+}
+
+function getAllowedStockOptions(customer: Customer | null | undefined): Array<{
+  objectId: string;
+  title: string;
+  sepidarStockId: number | null;
+}> {
+  if (!customer) return [];
+  if (customer.allowedStocks.length) {
+    return customer.allowedStocks.map((stock) => ({
+      objectId: String(stock.objectId),
+      title: [stock.code ? formatFaDigits(stock.code) : null, stock.title]
+        .filter(Boolean)
+        .join(" - "),
+      sepidarStockId: stock.sepidarStockId,
+    }));
+  }
+  return customer.allowedStockObjectIds.map((objectId, index) => ({
+    objectId: String(objectId),
+    title: customer.allowedStockTitles[index] || String(objectId),
+    sepidarStockId: customer.allowedSepidarStockIds[index] ?? null,
+  }));
 }
 
 function createEmptyRow(index: number): DraftItem {
