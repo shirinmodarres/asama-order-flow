@@ -939,6 +939,13 @@ export function OrderForm({
     setFieldErrors({});
     setRowErrors({});
 
+    if (productsError) {
+      setError(productsError === "NO_PRICE_LIST_ASSIGNED"
+        ? "برای این مشتری لیست قیمت فعالی وجود ندارد."
+        : "دریافت کالاهای قابل سفارش انجام نشد. لطفاً دوباره تلاش کنید.");
+      return;
+    }
+
     if (assignedCustomersOnly && !selectedCustomerId) {
       setFieldErrors({
         selectedCustomerId: isNajaOrder
@@ -1717,7 +1724,7 @@ export function OrderForm({
         !productsError &&
         sepidarProductsOnly &&
         selectedCustomerId &&
-        !hasAssignmentInventory(selectedCustomer) ? (
+        !hasAssignmentInventory(selectedAssignment || selectedCustomer) ? (
           <p className="mt-5 rounded-xl border border-[#F3D9A4] bg-[#FFF8E6] p-3 text-sm text-[#8A5A00]">
             برای این مشتری تنظیمات فروش تعریف نشده است.
           </p>
@@ -1894,12 +1901,11 @@ export function OrderForm({
                         sepidarProductsOnly &&
                         !isEditMode &&
                         (!selectedCustomerId ||
-                          !hasAssignmentInventory(selectedCustomer) ||
+                          !hasAssignmentInventory(selectedAssignment || selectedCustomer) ||
                           (requiresPriceListSelection &&
                             !selectedPriceListId) ||
                           isLoadingAssignment ||
-                          isLoadingProducts ||
-                          Boolean(productsError))
+                          isLoadingProducts)
                         || (isEditMode && !canEditItemSelection)
                       }
                       invalid={Boolean(rowErrors[item.rowId]?.productId)}
@@ -2046,12 +2052,11 @@ export function OrderForm({
               isSubmitting ||
               isLoadingProducts ||
               isLoadingCustomers ||
-              Boolean(productsError) ||
               Boolean(customersError) ||
               Boolean(assignmentError) ||
               (assignedCustomersOnly &&
                 selectedCustomerId !== "" &&
-                !hasAssignmentInventory(selectedCustomer)) ||
+                !hasAssignmentInventory(selectedAssignment || selectedCustomer)) ||
               (assignedCustomersOnly && customers.length === 0)
             }
           >
