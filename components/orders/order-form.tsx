@@ -664,9 +664,10 @@ export function OrderForm({
         return;
       }
 
-      const customer = customers.find(
-        (entry) => entry.objectId === selectedCustomerId,
-      );
+      const customer =
+        (assignedCustomersOnly ? selectedAssignment : null) ??
+        customers.find((entry) => entry.objectId === selectedCustomerId) ??
+        null;
       setCustomerName(customer?.fullName ?? "");
       setIsLoadingAddresses(true);
       setError("");
@@ -736,7 +737,7 @@ export function OrderForm({
     return () => {
       isMounted = false;
     };
-  }, [assignedCustomersOnly, customers, selectedCustomerId]);
+  }, [assignedCustomersOnly, customers, selectedAssignment, selectedCustomerId]);
 
   const normalizedItems = useMemo(
     () =>
@@ -786,6 +787,12 @@ export function OrderForm({
   const selectedAddress = addresses.find(
     (address) => getCustomerAddressKey(address) === selectedAddressId,
   );
+  const hasDeliveryRecipientInformation = [
+    recipientFirstName,
+    recipientLastName,
+    recipientNationalId,
+    recipientMobile,
+  ].some((value) => value.trim().length > 0);
   const mergedSalesTypes = useMemo(() => {
     const map = new Map<string, SalesTypeOption>();
     salesTypes.forEach((salesType) => {
@@ -1140,11 +1147,15 @@ export function OrderForm({
           selectedAddressId: selectedAddressId || null,
         });
       }
-      if (!selectedCustomer?.sepidarAddress && !selectedCustomer?.sepidarAddresses?.length) {
+      if (
+        !selectedCustomer?.sepidarAddress &&
+        !selectedCustomer?.sepidarAddresses?.length &&
+        !hasDeliveryRecipientInformation
+      ) {
         setFieldErrors({ selectedAddressId: "آدرس تحویل موجود نیست" });
         return;
       }
-      if (selectedCustomer?.sepidarAddresses?.length > 1 && !resolvedMainAddress) {
+      if ((selectedCustomer?.sepidarAddresses?.length ?? 0) > 1 && !resolvedMainAddress) {
         setFieldErrors({ selectedAddressId: "لطفاً آدرس تحویل را انتخاب کنید." });
         return;
       }
@@ -1153,12 +1164,14 @@ export function OrderForm({
           resolvedMainAddress?.sepidarAddressId ??
           "",
       ).trim();
-      if (!resolvedAddressId) {
+      if (!resolvedAddressId && !hasDeliveryRecipientInformation) {
         setFieldErrors({ selectedAddressId: "آدرس تحویل موجود نیست" });
         return;
       }
-      setSelectedAddressId(resolvedAddressId);
-      effectiveSelectedAddress = resolvedMainAddress;
+      if (resolvedAddressId) {
+        setSelectedAddressId(resolvedAddressId);
+        effectiveSelectedAddress = resolvedMainAddress;
+      }
     }
 
     try {
@@ -1482,7 +1495,11 @@ export function OrderForm({
                   {selectedAddress.Address || formatDeliveryAddress(selectedAddress)}
                 </p>
               </div>
-            ) : !isNajaOrder && !isLoadingAddresses && !selectedAddress ? (
+            ) :
+            !isNajaOrder &&
+            !isLoadingAddresses &&
+            !selectedAddress &&
+            !hasDeliveryRecipientInformation ? (
               <div className="mt-3 rounded-xl border border-[#F3D9A4] bg-[#FFF8E6] p-3 text-[#8A5A00]">
                 آدرس تحویل موجود نیست
               </div>
