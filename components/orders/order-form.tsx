@@ -2048,17 +2048,7 @@ export function OrderForm({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              isLoadingProducts ||
-              isLoadingCustomers ||
-              Boolean(customersError) ||
-              Boolean(assignmentError) ||
-              (assignedCustomersOnly &&
-                selectedCustomerId !== "" &&
-                !hasAssignmentInventory(selectedAssignment || selectedCustomer)) ||
-              (assignedCustomersOnly && customers.length === 0)
-            }
+            disabled={isSubmitting || isLoadingProducts}
           >
             {isSubmitting ? "در حال ذخیره..." : submitLabel}
             <ChevronLeft className="size-4" />
