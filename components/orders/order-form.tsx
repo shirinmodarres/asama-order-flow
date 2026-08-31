@@ -188,6 +188,8 @@ export interface OrderFormSubmitPayload {
   salesTypeInternalCode?: number | null;
   salesTypeSepidarCode?: number | null;
   priceListId?: string;
+  stockObjectId?: string;
+  selectedStockObjectIds?: string[];
 }
 
 interface OrderFormProps {
@@ -268,6 +270,9 @@ export function OrderForm({
     initialOrder?.priceListId ??
       initialOrder?.priceList?.objectId ??
       "",
+  );
+  const [selectedStockObjectId, setSelectedStockObjectId] = useState(
+    initialOrder?.stockObjectId || initialOrder?.selectedStockObjectIds?.[0] || "",
   );
   const [salesTypes, setSalesTypes] = useState<SalesTypeOption[]>([]);
   const [selectedSalesTypeId, setSelectedSalesTypeId] = useState(
@@ -406,6 +411,17 @@ export function OrderForm({
         );
         if (!isMounted) return;
         setSelectedAssignment(assignment);
+        const allowedStockIds = getAllowedStockOptions(assignment).map((stock) => stock.objectId);
+        const initialStockId = initialOrder?.stockObjectId || initialOrder?.selectedStockObjectIds?.[0] || "";
+        setSelectedStockObjectId((current) =>
+          current && allowedStockIds.includes(current)
+            ? current
+            : initialStockId && allowedStockIds.includes(initialStockId)
+              ? initialStockId
+              : allowedStockIds.length === 1
+                ? allowedStockIds[0]
+                : "",
+        );
         if (process.env.NODE_ENV === "development") {
           console.debug("[OrderForm] assignment inventory source", {
             customer: assignment,
@@ -573,15 +589,33 @@ export function OrderForm({
               customerObjectId: context.customerObjectId,
               expertUserId: context.expertUserId,
               priceListId: selectedPriceListId,
+              stockObjectId: selectedStockObjectId,
             })
           : [];
         if (!isMounted) return;
-        const mergedProducts = mergeProducts(data, initialOrder);
+        const selectedStockProducts = selectedStockObjectId
+          ? data.map((product) => {
+              const stockRows = (product.availableStocks ?? []).filter(
+                (stock) => String(stock.stockObjectId ?? "") === selectedStockObjectId,
+              );
+              const availableForSale = stockRows.reduce(
+                (sum, stock) => sum + Number(stock.availableForSale ?? 0),
+                0,
+              );
+              return {
+                ...product,
+                availableStocks: stockRows,
+                availableForSale,
+                availableSalesQuantity: availableForSale,
+              };
+            })
+          : data;
+        const mergedProducts = mergeProducts(selectedStockProducts, initialOrder);
         setProducts(mergedProducts);
         if (process.env.NODE_ENV === "development") {
           console.debug(
             "[OrderForm] assignment product availability",
-            data.map((product) => ({
+            selectedStockProducts.map((product) => ({
               productObjectId: product.objectId,
               productName: product.name,
               availableQuantity: product.availableForSale,
@@ -615,6 +649,7 @@ export function OrderForm({
     selectedAssignment,
     selectedCustomerId,
     selectedPriceListId,
+    selectedStockObjectId,
     isEditMode,
     sepidarProductsOnly,
   ]);
@@ -629,9 +664,10 @@ export function OrderForm({
         return;
       }
 
-      const customer = customers.find(
-        (entry) => entry.objectId === selectedCustomerId,
-      );
+      const customer =
+        (assignedCustomersOnly ? selectedAssignment : null) ??
+        customers.find((entry) => entry.objectId === selectedCustomerId) ??
+        null;
       setCustomerName(customer?.fullName ?? "");
       setIsLoadingAddresses(true);
       setError("");
@@ -701,7 +737,7 @@ export function OrderForm({
     return () => {
       isMounted = false;
     };
-  }, [assignedCustomersOnly, customers, selectedCustomerId]);
+  }, [assignedCustomersOnly, customers, selectedAssignment, selectedCustomerId]);
 
   const normalizedItems = useMemo(
     () =>
@@ -751,6 +787,12 @@ export function OrderForm({
   const selectedAddress = addresses.find(
     (address) => getCustomerAddressKey(address) === selectedAddressId,
   );
+  const hasDeliveryRecipientInformation = [
+    recipientFirstName,
+    recipientLastName,
+    recipientNationalId,
+    recipientMobile,
+  ].some((value) => value.trim().length > 0);
   const mergedSalesTypes = useMemo(() => {
     const map = new Map<string, SalesTypeOption>();
     salesTypes.forEach((salesType) => {
@@ -897,11 +939,19 @@ export function OrderForm({
       selectedCustomerId: selectedCustomerId || null,
       selectedPriceListId: selectedPriceListId || null,
       selectedSalesTypeId: selectedSalesTypeId || null,
+      selectedStockObjectId: selectedStockObjectId || null,
       itemCount: normalizedItems.length,
     });
     setError("");
     setFieldErrors({});
     setRowErrors({});
+
+    if (productsError) {
+      setError(productsError === "NO_PRICE_LIST_ASSIGNED"
+        ? "برای این مشتری لیست قیمت فعالی وجود ندارد."
+        : "دریافت کالاهای قابل سفارش انجام نشد. لطفاً دوباره تلاش کنید.");
+      return;
+    }
 
     if (assignedCustomersOnly && !selectedCustomerId) {
       setFieldErrors({
@@ -1097,11 +1147,15 @@ export function OrderForm({
           selectedAddressId: selectedAddressId || null,
         });
       }
-      if (!selectedCustomer?.sepidarAddress && !selectedCustomer?.sepidarAddresses?.length) {
+      if (
+        !selectedCustomer?.sepidarAddress &&
+        !selectedCustomer?.sepidarAddresses?.length &&
+        !hasDeliveryRecipientInformation
+      ) {
         setFieldErrors({ selectedAddressId: "آدرس تحویل موجود نیست" });
         return;
       }
-      if (selectedCustomer?.sepidarAddresses?.length > 1 && !resolvedMainAddress) {
+      if ((selectedCustomer?.sepidarAddresses?.length ?? 0) > 1 && !resolvedMainAddress) {
         setFieldErrors({ selectedAddressId: "لطفاً آدرس تحویل را انتخاب کنید." });
         return;
       }
@@ -1110,12 +1164,14 @@ export function OrderForm({
           resolvedMainAddress?.sepidarAddressId ??
           "",
       ).trim();
-      if (!resolvedAddressId) {
+      if (!resolvedAddressId && !hasDeliveryRecipientInformation) {
         setFieldErrors({ selectedAddressId: "آدرس تحویل موجود نیست" });
         return;
       }
-      setSelectedAddressId(resolvedAddressId);
-      effectiveSelectedAddress = resolvedMainAddress;
+      if (resolvedAddressId) {
+        setSelectedAddressId(resolvedAddressId);
+        effectiveSelectedAddress = resolvedMainAddress;
+      }
     }
 
     try {
@@ -1127,6 +1183,7 @@ export function OrderForm({
         mode,
         customerObjectId: selectedCustomerId || null,
         priceListId: selectedPriceListId || selectedCustomer?.priceListId || null,
+        stockObjectId: selectedStockObjectId || null,
         salesTypeInternalCode: resolvedSelectedSalesType?.internalCode ?? null,
         salesTypeSepidarCode: resolvedSelectedSalesType?.sepidarCode ?? null,
         selectedSalesTypeTitle: resolvedSelectedSalesType?.title ?? null,
@@ -1181,6 +1238,8 @@ export function OrderForm({
           initialOrder?.priceListId ||
           initialOrder?.priceList?.objectId ||
           undefined,
+        stockObjectId: selectedStockObjectId || undefined,
+        selectedStockObjectIds: selectedStockObjectId ? [selectedStockObjectId] : undefined,
         notes: notes.trim(),
         ...addressPayload,
         items: normalizedItems.map((item) => ({
@@ -1250,6 +1309,7 @@ export function OrderForm({
               onValueChange={(value) => {
                 setSelectedCustomerId(value);
                 setSelectedPriceListId("");
+                setSelectedStockObjectId("");
                 if (sepidarProductsOnly) {
                   setProducts([]);
                   setProductsError("");
@@ -1392,6 +1452,34 @@ export function OrderForm({
                 </div>
               )
             ) : null}
+            {assignedCustomersOnly && mode !== "edit" && getAllowedStockOptions(selectedAssignment || selectedCustomer).length ? (
+              <label className="mt-4 grid gap-2 text-sm font-medium text-[#334155]">
+                <span>انبار سفارش</span>
+                <SearchableSelect
+                  value={selectedStockObjectId || undefined}
+                  onValueChange={(value) => {
+                    setSelectedStockObjectId(value);
+                    setItems([createEmptyRow(0)]);
+                    setProductsError("");
+                    setFieldErrors((current) => ({
+                      ...current,
+                      selectedStockObjectId: "",
+                    }));
+                  }}
+                  options={getAllowedStockOptions(selectedAssignment || selectedCustomer).map((stock) => ({
+                    value: stock.objectId,
+                    label: stock.title,
+                    description: stock.sepidarStockId ? `شناسه سپیدار: ${stock.sepidarStockId}` : undefined,
+                  }))}
+                  placeholder="انتخاب انبار"
+                  searchPlaceholder="جستجو در انبارها"
+                  emptyMessage="انبار مجازی پیدا نشد"
+                  disabled={isLoadingAssignment}
+                  invalid={Boolean(fieldErrors.selectedStockObjectId)}
+                />
+                <FieldError message={fieldErrors.selectedStockObjectId} />
+              </label>
+            ) : null}
             {selectedAddress && !isNajaOrder ? (
               <div className="mt-2 space-y-1 text-[#6B7280]">
                 <p>
@@ -1407,7 +1495,11 @@ export function OrderForm({
                   {selectedAddress.Address || formatDeliveryAddress(selectedAddress)}
                 </p>
               </div>
-            ) : !isNajaOrder && !isLoadingAddresses && !selectedAddress ? (
+            ) :
+            !isNajaOrder &&
+            !isLoadingAddresses &&
+            !selectedAddress &&
+            !hasDeliveryRecipientInformation ? (
               <div className="mt-3 rounded-xl border border-[#F3D9A4] bg-[#FFF8E6] p-3 text-[#8A5A00]">
                 آدرس تحویل موجود نیست
               </div>
@@ -1649,7 +1741,7 @@ export function OrderForm({
         !productsError &&
         sepidarProductsOnly &&
         selectedCustomerId &&
-        !hasAssignmentInventory(selectedCustomer) ? (
+        !hasAssignmentInventory(selectedAssignment || selectedCustomer) ? (
           <p className="mt-5 rounded-xl border border-[#F3D9A4] bg-[#FFF8E6] p-3 text-sm text-[#8A5A00]">
             برای این مشتری تنظیمات فروش تعریف نشده است.
           </p>
@@ -1826,12 +1918,11 @@ export function OrderForm({
                         sepidarProductsOnly &&
                         !isEditMode &&
                         (!selectedCustomerId ||
-                          !hasAssignmentInventory(selectedCustomer) ||
+                          !hasAssignmentInventory(selectedAssignment || selectedCustomer) ||
                           (requiresPriceListSelection &&
                             !selectedPriceListId) ||
                           isLoadingAssignment ||
-                          isLoadingProducts ||
-                          Boolean(productsError))
+                          isLoadingProducts)
                         || (isEditMode && !canEditItemSelection)
                       }
                       invalid={Boolean(rowErrors[item.rowId]?.productId)}
@@ -1974,18 +2065,7 @@ export function OrderForm({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              isLoadingProducts ||
-              isLoadingCustomers ||
-              Boolean(productsError) ||
-              Boolean(customersError) ||
-              Boolean(assignmentError) ||
-              (assignedCustomersOnly &&
-                selectedCustomerId !== "" &&
-                !hasAssignmentInventory(selectedCustomer)) ||
-              (assignedCustomersOnly && customers.length === 0)
-            }
+            disabled={isSubmitting || isLoadingProducts}
           >
             {isSubmitting ? "در حال ذخیره..." : submitLabel}
             <ChevronLeft className="size-4" />
@@ -2098,6 +2178,28 @@ function getAllowedStockTitles(customer: Customer): string[] {
     );
   }
   return customer.allowedStockTitles;
+}
+
+function getAllowedStockOptions(customer: Customer | null | undefined): Array<{
+  objectId: string;
+  title: string;
+  sepidarStockId: number | null;
+}> {
+  if (!customer) return [];
+  if (customer.allowedStocks.length) {
+    return customer.allowedStocks.map((stock) => ({
+      objectId: String(stock.objectId),
+      title: [stock.code ? formatFaDigits(stock.code) : null, stock.title]
+        .filter(Boolean)
+        .join(" - "),
+      sepidarStockId: stock.sepidarStockId,
+    }));
+  }
+  return customer.allowedStockObjectIds.map((objectId, index) => ({
+    objectId: String(objectId),
+    title: customer.allowedStockTitles[index] || String(objectId),
+    sepidarStockId: customer.allowedSepidarStockIds[index] ?? null,
+  }));
 }
 
 function createEmptyRow(index: number): DraftItem {
