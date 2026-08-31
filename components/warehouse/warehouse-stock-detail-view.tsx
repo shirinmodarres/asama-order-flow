@@ -80,6 +80,7 @@ export function WarehouseStockDetailView({
     if (!term) return detail?.groups ?? [];
     return (detail?.groups ?? []).filter((group) => {
       const haystack = [
+        group.productObjectId,
         group.productName,
         group.sepidarCode,
         String(group.sepidarItemId ?? ""),
