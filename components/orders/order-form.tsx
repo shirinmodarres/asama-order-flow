@@ -1837,7 +1837,7 @@ export function OrderForm({
                   product: inventoryProduct,
                   mode,
                   oldQuantityByProductId,
-                }) - Number(item.quantity || 0)
+                })
               : 0;
 
             return (
