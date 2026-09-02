@@ -33,14 +33,16 @@ import {
   type UpdateSepidarSettingsPayload,
 } from "@/lib/services/sepidar.service";
 import {
+  getPriceNoteItemsSyncStatus,
   listPricingReferences,
   listSepidarPricingLists,
   syncPriceNoteItems,
+  type PriceNoteItemsSyncJob,
 } from "@/lib/services/pricing.service";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
 type SyncKey = "items" | "customers" | "sale-types" | "prices" | "stocks";
-type PriceNoteItemsSyncResult = Awaited<ReturnType<typeof syncPriceNoteItems>> & {
+type PriceNoteItemsSyncResult = NonNullable<PriceNoteItemsSyncJob["result"]> & {
   syncedAt: string;
 };
 
@@ -192,8 +194,16 @@ export default function SupportSepidarSettingsPage() {
       const result = await syncPriceNoteItems(
         saleTypeRef === null ? undefined : { saleTypeRef },
       );
+      let job = await getPriceNoteItemsSyncStatus(result.jobId);
+      while (job.status === "running") {
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        job = await getPriceNoteItemsSyncStatus(result.jobId);
+      }
+      if (job.status === "failed" || !job.result) {
+        throw new Error(job.error?.message || "همگام‌سازی آیتم‌های لیست قیمت ناموفق بود.");
+      }
       const syncedAt = new Date().toISOString();
-      setLastPriceNoteItemsSync({ ...result, syncedAt });
+      setLastPriceNoteItemsSync({ ...job.result, syncedAt });
       const [summaryData] = await Promise.all([
         getSepidarSyncSummary(),
         listSepidarPricingLists(),

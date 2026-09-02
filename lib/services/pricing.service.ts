@@ -37,6 +37,19 @@ export async function listPricingBrands(): Promise<PricingBrand[]> {
 export async function syncPriceNoteItems(payload?: {
   saleTypeRef?: number | null;
 }): Promise<{
+  jobId: string;
+  status: "running";
+  startedAt: string;
+}> {
+  return httpClient.post("/api/pricing/sync-price-note-items", payload ?? {});
+}
+
+export type PriceNoteItemsSyncJob = {
+  jobId: string;
+  status: "running" | "completed" | "failed";
+  startedAt: string;
+  finishedAt: string | null;
+  result: {
   saleTypeRef: number | null;
   totalFromSepidar: number;
   filteredCount: number;
@@ -45,8 +58,14 @@ export async function syncPriceNoteItems(payload?: {
   updatedCount: number;
   skippedCount?: number;
   failedCount: number;
-}> {
-  return httpClient.post("/api/pricing/sync-price-note-items", payload ?? {});
+  } | null;
+  error: { code: string; message: string } | null;
+};
+
+export async function getPriceNoteItemsSyncStatus(
+  jobId: string,
+): Promise<PriceNoteItemsSyncJob> {
+  return httpClient.get(`/api/pricing/sync-price-note-items/status/${jobId}`);
 }
 
 export async function listPricingReferences(): Promise<PricingReference[]> {
