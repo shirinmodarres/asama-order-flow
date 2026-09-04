@@ -286,7 +286,7 @@ export default function InternalInvoiceDetailPage() {
             <div className="mr-auto grid max-w-xl gap-3 sm:grid-cols-2">
               <Total label="مبلغ ناخالص" value={invoice.grossAmount} />
               <Total label="تخفیف" value={invoice.discount} />
-              <Total label="مالیات" value={invoice.tax} />
+              <Total label="ارزش افزوده" value={invoice.tax} />
               <Total label="عوارض" value={invoice.duty} />
               <Total label="اضافات" value={invoice.addition} />
               <Total label="مبلغ خالص" value={invoice.netAmount} emphasis />

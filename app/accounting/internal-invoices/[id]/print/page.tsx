@@ -249,7 +249,7 @@ function InvoiceDocument({
         <section className="mr-auto w-full max-w-[420px] overflow-hidden rounded-xl border border-[#D7DEE6] bg-white/95 text-sm">
           <Total label="مبلغ ناخالص" value={invoice.grossAmount} />
           <Total label="تخفیف" value={invoice.discount} />
-          <Total label="مالیات" value={invoice.tax} />
+          <Total label="ارزش افزوده" value={invoice.tax} />
           <Total label="عوارض" value={invoice.duty} />
           <Total label="اضافات" value={invoice.addition} />
           <Total label="مبلغ نهایی" value={invoice.netAmount} emphasis />

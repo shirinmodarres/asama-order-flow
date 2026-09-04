@@ -596,7 +596,7 @@ export function QuotationForm({
             />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-[#334155]">
-            <span>درصد مالیات</span>
+            <span>درصد ارزش افزوده</span>
             <Input
               type="text"
               inputMode="numeric"
@@ -704,8 +704,8 @@ export function QuotationForm({
             <SummaryRow label="جمع مبلغ اقلام" value={formatCurrency(subtotal)} />
             <SummaryRow label="درصد تخفیف کل" value={`${formatNumber(discountPercentage)}%`} />
             <SummaryRow label="مبلغ تخفیف" value={formatCurrency(discountAmount)} />
-            <SummaryRow label="مبلغ مشمول مالیات" value={formatCurrency(taxableAmount)} />
-            <SummaryRow label="مالیات ۱۰٪" value={formatCurrency(taxAmount)} />
+            <SummaryRow label="مبلغ مشمول ارزش افزوده" value={formatCurrency(taxableAmount)} />
+            <SummaryRow label="ارزش افزوده ۱۰٪" value={formatCurrency(taxAmount)} />
             <SummaryRow label="جمع کل" value={formatCurrency(total)} />
           </dl>
         </Card>

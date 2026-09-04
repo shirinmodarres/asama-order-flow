@@ -161,8 +161,8 @@ export default function ExpertQuotationDetailPage() {
                   <InfoRow label="جمع مبلغ اقلام" value={formatCurrency(quotation.subtotal)} />
                   <InfoRow label="درصد تخفیف کل" value={`${formatNumber(quotation.discountPercentage)}%`} />
                   <InfoRow label="مبلغ تخفیف" value={formatCurrency(quotation.discountAmount)} />
-                  <InfoRow label="مبلغ مشمول مالیات" value={formatCurrency(Math.max(0, quotation.subtotal - quotation.discountAmount))} />
-                  <InfoRow label="مالیات ۱۰٪" value={formatCurrency(quotation.taxAmount)} />
+                  <InfoRow label="مبلغ مشمول ارزش افزوده" value={formatCurrency(Math.max(0, quotation.subtotal - quotation.discountAmount))} />
+                  <InfoRow label="ارزش افزوده ۱۰٪" value={formatCurrency(quotation.taxAmount)} />
                   <InfoRow label="جمع کل" value={formatCurrency(quotation.total)} />
                 </dl>
               </Card>

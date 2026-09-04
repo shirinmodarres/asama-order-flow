@@ -39,6 +39,17 @@ interface ExpectedRow {
   remainingQuantity: number;
 }
 
+interface ExitSlipDraftState {
+  scanValues: {
+    productIdentifier: string;
+    serialNumber: string;
+    trackingCode: string;
+  };
+  scannedUnits: WarehouseItemUnit[];
+  notes: string;
+  savedAt: string;
+}
+
 export default function ExitSlipCreatePage() {
   const params = useParams<{ id: string }>();
   const productIdentifierRef = useRef<HTMLInputElement | null>(null);
@@ -59,6 +70,7 @@ export default function ExitSlipCreatePage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
+  const [draftMessage, setDraftMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -81,6 +93,52 @@ export default function ExitSlipCreatePage() {
       isMounted = false;
     };
   }, [params.id]);
+
+  useEffect(() => {
+    if (!order) return;
+    try {
+      const raw = window.localStorage.getItem(getExitSlipDraftStorageKey(order.objectId));
+      if (!raw) return;
+      const draft = JSON.parse(raw) as Partial<ExitSlipDraftState>;
+      if (Array.isArray(draft.scannedUnits)) {
+        setScannedUnits(
+          draft.scannedUnits.filter(
+            (unit): unit is WarehouseItemUnit =>
+              Boolean(unit && unit.objectId && unit.productObjectId),
+          ),
+        );
+      }
+      if (typeof draft.notes === "string") setNotes(draft.notes);
+      if (draft.scanValues) {
+        setScanValues({
+          productIdentifier: draft.scanValues.productIdentifier || "",
+          serialNumber: draft.scanValues.serialNumber || "",
+          trackingCode: draft.scanValues.trackingCode || "",
+        });
+      }
+      if (draft.savedAt) {
+        setDraftMessage(
+          `پیش‌نویس ثبت مرحله‌ای بازیابی شد (${formatDateTime(draft.savedAt)})`,
+        );
+      }
+    } catch {
+      // اگر پیش‌نویس خراب باشد، بی‌سروصدا نادیده‌اش می‌گیریم.
+    }
+  }, [order]);
+
+  useEffect(() => {
+    if (!order) return;
+    const payload: ExitSlipDraftState = {
+      scanValues,
+      scannedUnits,
+      notes,
+      savedAt: new Date().toISOString(),
+    };
+    window.localStorage.setItem(
+      getExitSlipDraftStorageKey(order.objectId),
+      JSON.stringify(payload),
+    );
+  }, [notes, order, scanValues, scannedUnits]);
 
   useEffect(() => {
     if (!isLoading) serialNumberRef.current?.focus();
@@ -115,12 +173,40 @@ export default function ExitSlipCreatePage() {
     () => expectedRows.reduce((sum, row) => sum + row.item.quantity, 0),
     [expectedRows],
   );
+  const totalScannedCount = useMemo(
+    () => expectedRows.reduce((sum, row) => sum + row.scannedQuantity, 0),
+    [expectedRows],
+  );
+  const remainingItemCount = Math.max(totalItemCount - totalScannedCount, 0);
+  const isFullyScanned = totalItemCount > 0 && totalScannedCount === totalItemCount;
   const lastUpdatedAt = order?.updatedAt  || null;
+  const submitIssues = useMemo(() => {
+    const issues: string[] = [];
+    expectedRows.forEach((row) => {
+      if (row.scannedQuantity < row.item.quantity) {
+        issues.push(
+          `${row.item.productName || row.item.productSku}: ${formatNumber(
+            row.item.quantity - row.scannedQuantity,
+          )} مورد باقی مانده`,
+        );
+      }
+    });
+
+    if (scannedUnits.length !== totalItemCount) {
+      issues.push("تعداد کل کالاهای اسکن‌شده هنوز با سفارش برابر نشده است.");
+    }
+
+    if (!isFullyScanned) {
+      issues.push("ثبت مرحله‌ای هنوز کامل نشده است.");
+    }
+
+    return issues;
+  }, [expectedRows, isFullyScanned, scannedUnits.length, totalItemCount]);
 
   const canSubmit =
     scannedUnits.length > 0 &&
     expectedRows.length > 0 &&
-    expectedRows.every((row) => row.scannedQuantity === row.item.quantity) &&
+    isFullyScanned &&
     scannedUnits.every((unit) =>
       expectedRows.some((row) => unitMatchesOrderItem(unit, row.item)),
     ) &&
@@ -358,7 +444,9 @@ export default function ExitSlipCreatePage() {
       .filter(Boolean);
 
     if (!canSubmit || unitObjectIds.length !== scannedUnits.length) {
-      setError("تعداد کالاهای ثبت‌شده با سفارش برابر نیست.");
+      setError(
+        submitIssues[0] || "ثبت مرحله‌ای هنوز کامل نشده است؛ لطفاً اول همه کالاها را تکمیل کنید.",
+      );
       return;
     }
 
@@ -371,6 +459,7 @@ export default function ExitSlipCreatePage() {
         notes: notes.trim() || undefined,
         unitObjectIds,
       });
+      window.localStorage.removeItem(getExitSlipDraftStorageKey(order.objectId));
       setCreatedSlip(slip);
       setMessage("حواله خروج صادر شد و فاکتور داخلی برای حسابداری ایجاد شد.");
     } catch (submitError) {
@@ -378,6 +467,29 @@ export default function ExitSlipCreatePage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSaveDraft = () => {
+    if (!order) return;
+    const payload: ExitSlipDraftState = {
+      scanValues,
+      scannedUnits,
+      notes,
+      savedAt: new Date().toISOString(),
+    };
+    window.localStorage.setItem(
+      getExitSlipDraftStorageKey(order.objectId),
+      JSON.stringify(payload),
+    );
+    setDraftMessage(
+      `پیش‌نویس ثبت مرحله‌ای ذخیره شد (${formatDateTime(payload.savedAt)})`,
+    );
+  };
+
+  const handleClearDraft = () => {
+    if (!order) return;
+    window.localStorage.removeItem(getExitSlipDraftStorageKey(order.objectId));
+    setDraftMessage("پیش‌نویس ثبت مرحله‌ای پاک شد.");
   };
 
   return (
@@ -425,6 +537,11 @@ export default function ExitSlipCreatePage() {
             title={`صدور حواله ${formatFaDigits(order.code || order.id)}`}
             description="برای صدور حواله، کالاهای فیزیکی سفارش را اسکن کنید."
           />
+          {draftMessage ? (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              {draftMessage}
+            </div>
+          ) : null}
           <Card className="p-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
@@ -438,6 +555,20 @@ export default function ExitSlipCreatePage() {
               <div className="rounded-xl border border-[#E5E7EB] bg-[#FBFCFD] px-4 py-3 text-sm font-semibold text-[#1F3A5F]">
                 {formatNumber(totalItemCount)}
               </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <InfoItem
+                label="اسکن‌شده"
+                value={formatNumber(totalScannedCount)}
+              />
+              <InfoItem
+                label="باقی‌مانده"
+                value={formatNumber(remainingItemCount)}
+              />
+              <InfoItem
+                label="وضعیت ثبت"
+                value={isFullyScanned ? 'کامل شد' : 'در حال تکمیل'}
+              />
             </div>
           </Card>
           {message ? (
@@ -595,6 +726,22 @@ export default function ExitSlipCreatePage() {
               </Button>
               <Button
                 type="button"
+                variant="outline"
+                onClick={handleSaveDraft}
+                className="gap-2"
+              >
+                ثبت موقت
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleClearDraft}
+                className="gap-2"
+              >
+                پاک کردن پیش‌نویس
+              </Button>
+              <Button
+                type="button"
                 onClick={handleSubmit}
                 disabled={!canSubmit || isSubmitting || Boolean(createdSlip)}
               >
@@ -602,9 +749,14 @@ export default function ExitSlipCreatePage() {
               </Button>
             </div>
             {!canSubmit ? (
-              <p className="mt-3 text-xs leading-6 text-[#8A5A00]">
-                تعداد کالاهای ثبت‌شده کمتر از سفارش است.
-              </p>
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-800">
+                <p className="font-semibold">ثبت مرحله‌ای هنوز کامل نشده است.</p>
+                <ul className="mt-2 list-inside list-disc space-y-1">
+                  {submitIssues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
           </Card>
 
@@ -654,6 +806,10 @@ export default function ExitSlipCreatePage() {
       )}
     </DashboardLayout>
   );
+}
+
+function getExitSlipDraftStorageKey(orderObjectId: string): string {
+  return `asama:warehouse:exit-slip:draft:${orderObjectId}`;
 }
 
 const ScanField = forwardRef<
