@@ -149,10 +149,41 @@ function KpiGrid({ title, kpis }: { title: string; kpis: WarehouseStockKpis }) {
 }
 
 function ProductSummaryCard({ product, unitsPage, isOpen, isLoadingUnits, onToggle, onPageChange }: { product: WarehouseStockProductSummary; unitsPage?: WarehouseStockProductUnitsPage; isOpen: boolean; isLoadingUnits: boolean; onToggle: () => void; onPageChange: (page: number) => void }) {
-  return <Card className="overflow-hidden"><button type="button" onClick={onToggle} className="flex w-full flex-col gap-4 p-5 text-right transition-colors hover:bg-[#F8FBFD] lg:flex-row lg:items-center lg:justify-between"><div className="min-w-0"><p className="font-semibold text-[#102034]">{product.productName || "-"}</p><p className="mt-1 text-sm text-[#64748B]">کد کالا: {formatFaDigits(product.productCode || "-")}</p></div><div className="grid grid-cols-2 gap-2 text-xs text-[#64748B] sm:grid-cols-4"><Metric label="واقعی" value={product.realQuantity} /><Metric label="رزرو" value={product.reservedQuantity} /><Metric label="قابل فروش" value={product.availableForSale} /><Metric label="خارج شده" value={product.exitedQuantity} /></div>{isOpen ? <ChevronUp className="size-5 shrink-0" /> : <ChevronDown className="size-5 shrink-0" />}</button>{isOpen ? <UnitTable unitsPage={unitsPage} isLoading={isLoadingUnits} onPageChange={onPageChange} /> : null}</Card>;
+  return (
+    <Card className={`overflow-hidden border-[#DDE6F0] shadow-sm transition-shadow hover:shadow-md ${isOpen ? "border-[#9DB8D5]" : ""}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="flex w-full flex-col gap-4 p-4 text-right transition-colors hover:bg-[#F8FBFD] sm:p-5 lg:flex-row lg:items-center"
+      >
+        <div className="min-w-0 flex-1 lg:pl-3">
+          <p className="truncate text-base font-bold text-[#102034] sm:text-lg">{product.productName || "-"}</p>
+          <p className="mt-1 text-sm text-[#64748B]">کد کالا: {formatFaDigits(product.productCode || "-")}</p>
+        </div>
+        <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4 lg:w-[560px]">
+          <Metric label="واقعی" value={product.realQuantity} />
+          <Metric label="رزرو" value={product.reservedQuantity} />
+          <Metric label="قابل فروش" value={product.availableForSale} />
+          <Metric label="خارج شده" value={product.exitedQuantity} />
+        </div>
+        <span className="flex size-9 shrink-0 items-center justify-center self-start rounded-full border border-[#DDE6F0] bg-white text-[#24466B] lg:self-auto" aria-hidden="true">
+          {isOpen ? <ChevronUp className="size-5" /> : <ChevronDown className="size-5" />}
+        </span>
+      </button>
+      {isOpen ? <UnitTable unitsPage={unitsPage} isLoading={isLoadingUnits} onPageChange={onPageChange} /> : null}
+    </Card>
+  );
 }
 
-function Metric({ label, value }: { label: string; value: number }) { return <span className="rounded-lg bg-[#F3F6FA] px-3 py-2"><span className="block text-[11px]">{label}</span><strong className="mt-1 block text-sm text-[#102034]">{formatNumber(value)}</strong></span>; }
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="flex min-h-[68px] min-w-0 flex-col justify-center rounded-xl border border-[#E7EDF4] bg-[#F7F9FC] px-3 py-2.5 text-center sm:px-4">
+      <span className="truncate text-xs font-medium text-[#718096]">{label}</span>
+      <strong className="mt-1 text-lg font-bold leading-tight text-[#102034]">{formatNumber(value)}</strong>
+    </span>
+  );
+}
 
 function UnitTable({ unitsPage, isLoading, onPageChange }: { unitsPage?: WarehouseStockProductUnitsPage; isLoading: boolean; onPageChange: (page: number) => void }) {
   if (isLoading && !unitsPage) return <div className="border-t border-[#EEF2F6] p-5"><LoadingState title="در حال دریافت واحدها" /></div>;
