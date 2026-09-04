@@ -83,6 +83,26 @@ export function WarehouseStocksView({ role, basePath }: WarehouseStocksViewProps
       render: (row) => formatNumber(row.totalUnitCount),
     },
     {
+      key: "realQuantity",
+      header: "موجودی واقعی",
+      render: (row) => formatNumber(row.realQuantity),
+    },
+    {
+      key: "reservedQuantity",
+      header: "رزرو شده",
+      render: (row) => formatNumber(row.reservedQuantity),
+    },
+    {
+      key: "availableForSale",
+      header: "قابل فروش",
+      render: (row) => formatNumber(row.availableForSale),
+    },
+    {
+      key: "exitedQuantity",
+      header: "خارج شده",
+      render: (row) => formatNumber(row.exitedQuantity),
+    },
+    {
       key: "sync",
       header: "آخرین همگام‌سازی",
       render: (row) =>

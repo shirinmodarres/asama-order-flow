@@ -114,7 +114,52 @@ export interface WarehouseStockUnitSummary {
   isActive: boolean;
   totalProductCount: number;
   totalUnitCount: number;
+  realQuantity: number;
+  reservedQuantity: number;
+  availableForSale: number;
+  exitedQuantity: number;
   lastSepidarSyncAt: string | null;
+}
+
+export interface WarehouseStockKpis {
+  realQuantity: number;
+  reservedQuantity: number;
+  availableForSale: number;
+  exitedQuantity: number;
+}
+
+export interface WarehouseStockBrand {
+  brandObjectId: string | null;
+  brandName: string;
+  productCount: number;
+  realQuantity: number;
+  reservedQuantity: number;
+  availableForSale: number;
+  exitedQuantity: number;
+}
+
+export interface WarehouseStockProductSummary {
+  productObjectId: string;
+  productCode: string;
+  productName: string;
+  brandObjectId: string | null;
+  brandName: string;
+  realQuantity: number;
+  reservedQuantity: number;
+  availableForSale: number;
+  exitedQuantity: number;
+}
+
+export interface WarehouseStockProductUnitsPage {
+  stockObjectId: string;
+  productObjectId: string;
+  units: WarehouseStockProductUnit[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface WarehouseStockProductUnit {
@@ -125,6 +170,7 @@ export interface WarehouseStockProductUnit {
   productIdentifier: string;
   status: string;
   statusLabel: string;
+  quantity: number;
   inboundReceiptId: string | null;
   inboundReceiptCode: string | null;
   createdAt: string | null;
@@ -149,7 +195,7 @@ export interface WarehouseStockUnitDetail {
     code: string | null;
     title: string;
   };
-  groups: WarehouseStockProductGroup[];
+  kpis: WarehouseStockKpis;
 }
 
 export interface ExitSlipItemUnit {

@@ -37,6 +37,10 @@ import type {
   WarehouseItemUnit,
   WarehouseStockUnitDetail,
   WarehouseStockUnitSummary,
+  WarehouseStockBrand,
+  WarehouseStockKpis,
+  WarehouseStockProductSummary,
+  WarehouseStockProductUnitsPage,
 } from "@/lib/models/warehouse.model";
 import { normalizeDigits, normalizePhone } from "@/lib/utils/number-format";
 
@@ -94,36 +98,100 @@ export async function getWarehouseStockUnitDetail(
       code: toNullableString(stockRecord.code),
       title: toStringValue(stockRecord.title),
     },
-    groups: toArray(record.groups).map((groupDto) => {
-      const group = toRecord(groupDto);
+    kpis: mapWarehouseStockKpis(record.kpis),
+  };
+}
+
+function mapWarehouseStockKpis(dto: unknown): WarehouseStockKpis {
+  const record = toRecord(dto);
+  return {
+    realQuantity: toNumberValue(record.realQuantity),
+    reservedQuantity: toNumberValue(record.reservedQuantity),
+    availableForSale: toNumberValue(record.availableForSale),
+    exitedQuantity: toNumberValue(record.exitedQuantity),
+  };
+}
+
+export async function listWarehouseStockBrands(stockObjectId: string): Promise<WarehouseStockBrand[]> {
+  const data = await httpClient.get<unknown>(`/api/warehouse/stocks/${stockObjectId}/brands`);
+  return toArray(toRecord(data).brands).map((dto) => {
+    const record = toRecord(dto);
+    return {
+      brandObjectId: toNullableString(record.brandObjectId),
+      brandName: toStringValue(record.brandName),
+      productCount: toNumberValue(record.productCount),
+      realQuantity: toNumberValue(record.realQuantity),
+      reservedQuantity: toNumberValue(record.reservedQuantity),
+      availableForSale: toNumberValue(record.availableForSale),
+      exitedQuantity: toNumberValue(record.exitedQuantity),
+    };
+  });
+}
+
+export async function listWarehouseStockBrandProducts(
+  stockObjectId: string,
+  brandObjectId: string,
+): Promise<{ products: WarehouseStockProductSummary[]; kpis: WarehouseStockKpis }> {
+  const data = await httpClient.get<unknown>(
+    `/api/warehouse/stocks/${stockObjectId}/brands/${encodeURIComponent(brandObjectId)}/products`,
+  );
+  const record = toRecord(data);
+  return {
+    products: toArray(record.products).map((dto) => {
+      const product = toRecord(dto);
       return {
-        productObjectId: toStringValue(group.productObjectId),
-        sepidarItemId:
-          group.sepidarItemId === undefined || group.sepidarItemId === null
-            ? null
-            : toNumberValue(group.sepidarItemId),
-        sepidarCode: toStringValue(group.sepidarCode),
-        productName: toStringValue(group.productName),
-        inStockUnitCount: toNumberValue(group.inStockUnitCount),
-        realQuantity: toNumberValue(group.realQuantity),
-        reservedQuantity: toNumberValue(group.reservedQuantity),
-        units: toArray(group.units).map((unitDto) => {
-          const unit = toRecord(unitDto);
-          return {
-            objectId: toStringValue(unit.objectId),
-            id: toStringValue(unit.id) || toStringValue(unit.objectId),
-            trackingCode: toStringValue(unit.trackingCode),
-            serialNumber: toStringValue(unit.serialNumber),
-            productIdentifier: toStringValue(unit.productIdentifier),
-            status: toStringValue(unit.status),
-            statusLabel: toStringValue(unit.statusLabel),
-            inboundReceiptId: toNullableString(unit.inboundReceiptId),
-            inboundReceiptCode: toNullableString(unit.inboundReceiptCode),
-            createdAt: toNullableString(unit.createdAt),
-          };
-        }),
+        productObjectId: toStringValue(product.productObjectId),
+        productCode: toStringValue(product.productCode),
+        productName: toStringValue(product.productName),
+        brandObjectId: toNullableString(product.brandObjectId),
+        brandName: toStringValue(product.brandName),
+        realQuantity: toNumberValue(product.realQuantity),
+        reservedQuantity: toNumberValue(product.reservedQuantity),
+        availableForSale: toNumberValue(product.availableForSale),
+        exitedQuantity: toNumberValue(product.exitedQuantity),
       };
     }),
+    kpis: mapWarehouseStockKpis(record.kpis),
+  };
+}
+
+export async function listWarehouseStockProductUnits(
+  stockObjectId: string,
+  productObjectId: string,
+  page = 1,
+  pageSize = 25,
+): Promise<WarehouseStockProductUnitsPage> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  const data = await httpClient.get<unknown>(
+    `/api/warehouse/stocks/${stockObjectId}/products/${productObjectId}/units?${params.toString()}`,
+  );
+  const record = toRecord(data);
+  const pagination = toRecord(record.pagination);
+  return {
+    stockObjectId: toStringValue(record.stockObjectId),
+    productObjectId: toStringValue(record.productObjectId),
+    units: toArray(record.units).map((dto) => {
+      const unit = toRecord(dto);
+      return {
+        objectId: toStringValue(unit.objectId),
+        id: toStringValue(unit.id) || toStringValue(unit.objectId),
+        trackingCode: toStringValue(unit.trackingCode),
+        serialNumber: toStringValue(unit.serialNumber),
+        productIdentifier: toStringValue(unit.productIdentifier),
+        quantity: toNumberValue(unit.quantity),
+        status: toStringValue(unit.status),
+        statusLabel: toStringValue(unit.statusLabel),
+        inboundReceiptId: toNullableString(unit.inboundReceiptId),
+        inboundReceiptCode: toNullableString(unit.inboundReceiptCode),
+        createdAt: toNullableString(unit.createdAt),
+      };
+    }),
+    pagination: {
+      page: toNumberValue(pagination.page),
+      pageSize: toNumberValue(pagination.pageSize),
+      total: toNumberValue(pagination.total),
+      totalPages: toNumberValue(pagination.totalPages),
+    },
   };
 }
 
@@ -141,6 +209,10 @@ function mapWarehouseStockUnitSummary(dto: unknown): WarehouseStockUnitSummary {
     isActive: Boolean(record.isActive),
     totalProductCount: toNumberValue(record.totalProductCount),
     totalUnitCount: toNumberValue(record.totalUnitCount),
+    realQuantity: toNumberValue(record.realQuantity),
+    reservedQuantity: toNumberValue(record.reservedQuantity),
+    availableForSale: toNumberValue(record.availableForSale),
+    exitedQuantity: toNumberValue(record.exitedQuantity),
     lastSepidarSyncAt: toNullableString(record.lastSepidarSyncAt),
   };
 }
