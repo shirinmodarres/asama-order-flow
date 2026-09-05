@@ -66,6 +66,7 @@ export default function ExpertProductsPage() {
         const data = await listOrderProductsForAssignment({
           customerObjectId: selectedCustomerId,
           expertUserId: getStoredCurrentUser()?.objectId,
+          includeUnavailable: true,
         });
         if (isMounted) setProducts(data);
       } catch (loadError) {

@@ -3,7 +3,7 @@ import {
   mapExpertPriceListAssignmentDto,
   mapList,
   mapPriceListDto,
-  mapPriceListItemDto,
+  mapPriceListItemsPageDto,
   mapPricingBrandDto,
   mapPricingReferenceItemsResultDto,
   mapPricingReferenceDto,
@@ -12,7 +12,7 @@ import {
 import type {
   ExpertPriceListAssignment,
   PriceList,
-  PriceListItem,
+  PriceListItemsPage,
   PricingBrand,
   PricingReference,
   PricingReferenceItemsResult,
@@ -152,11 +152,16 @@ export async function getGeneratedPriceList(objectId: string): Promise<PriceList
 
 export async function listGeneratedPriceListItems(
   objectId: string,
-): Promise<PriceListItem[]> {
+  params: { limit?: number; skip?: number; search?: string } = {},
+): Promise<PriceListItemsPage> {
+  const query = new URLSearchParams();
+  if (params.limit) query.set("limit", String(params.limit));
+  if (params.skip) query.set("skip", String(params.skip));
+  if (params.search) query.set("search", params.search);
   const data = await httpClient.get<unknown>(
-    `/api/pricing/generated-price-lists/${objectId}/items?limit=10000`,
+    `/api/pricing/generated-price-lists/${objectId}/items?${query.toString()}`,
   );
-  return mapList(data, mapPriceListItemDto);
+  return mapPriceListItemsPageDto(data);
 }
 
 export async function listExpertPriceAssignments(): Promise<ExpertPriceListAssignment[]> {

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import type { DataTableColumn } from "@/components/shared/data-table";
 import { DataTable } from "@/components/shared/data-table";
@@ -15,11 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getErrorMessage } from "@/lib/api/api-error";
 import type { PriceList, PriceListItem } from "@/lib/models/pricing.model";
+import type { PriceListItemsPagination } from "@/lib/models/pricing.model";
 import {
   getGeneratedPriceList,
   listGeneratedPriceListItems,
 } from "@/lib/services/pricing.service";
-import { formatCurrency } from "@/lib/expert/utils";
+import { formatCurrency, formatNumber } from "@/lib/expert/utils";
 import { formatFaDigits } from "@/lib/utils/number-format";
 
 export default function GeneratedPriceListDetailPage({
@@ -30,20 +31,35 @@ export default function GeneratedPriceListDetailPage({
   const { id } = use(params);
   const [priceList, setPriceList] = useState<PriceList | null>(null);
   const [items, setItems] = useState<PriceListItem[]>([]);
+  const [pagination, setPagination] = useState<PriceListItemsPagination>({
+    total: 0,
+    limit: 50,
+    skip: 0,
+    page: 1,
+    totalPages: 0,
+    hasNext: false,
+    hasPrevious: false,
+  });
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!id) return;
     let mounted = true;
-    Promise.all([
-      getGeneratedPriceList(id),
-      listGeneratedPriceListItems(id),
-    ])
-      .then(([list, itemRows]) => {
+    Promise.resolve()
+      .then(() => {
+        if (mounted) setIsLoading(true);
+        return Promise.all([
+          getGeneratedPriceList(id),
+          listGeneratedPriceListItems(id, { limit: 50, skip: (page - 1) * 50 }),
+        ]);
+      })
+      .then(([list, itemPage]) => {
         if (!mounted) return;
         setPriceList(list);
-        setItems(itemRows);
+        setItems(itemPage.items);
+        setPagination(itemPage.pagination);
       })
       .catch((err) => {
         if (mounted) setError(getErrorMessage(err));
@@ -54,7 +70,7 @@ export default function GeneratedPriceListDetailPage({
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [id, page]);
 
   const columns: DataTableColumn<PriceListItem>[] = [
     { key: "code", header: "کد کالا", render: (row) => row.productCode ? formatFaDigits(row.productCode) : "-" },
@@ -132,7 +148,38 @@ export default function GeneratedPriceListDetailPage({
             </div>
           </Card>
           {items.length ? (
-            <DataTable columns={columns} rows={items} rowKey={(row) => row.objectId} />
+            <>
+              <DataTable columns={columns} rows={items} rowKey={(row) => row.objectId} />
+              {pagination.totalPages > 1 ? (
+                <Card className="mt-4 flex flex-wrap items-center justify-between gap-3 p-3">
+                  <span className="text-sm text-[#64748B]">
+                    صفحه {formatNumber(pagination.page)} از {formatNumber(pagination.totalPages)}، مجموع {formatNumber(pagination.total)} آیتم
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      disabled={!pagination.hasPrevious || isLoading}
+                      onClick={() => setPage((current) => Math.max(1, current - 1))}
+                      aria-label="صفحه قبلی"
+                    >
+                      <ChevronRight className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      disabled={!pagination.hasNext || isLoading}
+                      onClick={() => setPage((current) => current + 1)}
+                      aria-label="صفحه بعدی"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                  </div>
+                </Card>
+              ) : null}
+            </>
           ) : (
             <EmptyState title="آیتمی در این لیست نیست" description="لیست انتخاب‌شده بدون آیتم تولید شده یا آیتم‌های مرجع کالا ندارند." />
           )}

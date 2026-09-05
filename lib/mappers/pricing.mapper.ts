@@ -11,6 +11,7 @@ import type {
   PricingBrand,
   PriceList,
   PriceListItem,
+  PriceListItemsPage,
   PricingReferenceItem,
   PricingReferenceItemsResult,
   PricingReference,
@@ -166,6 +167,23 @@ export function mapPriceListItemDto(dto: unknown): PriceListItem {
       record.finalPrice === undefined || record.finalPrice === null
         ? null
         : toNumberValue(record.finalPrice),
+  };
+}
+
+export function mapPriceListItemsPageDto(dto: unknown): PriceListItemsPage {
+  const record = toRecord(dto);
+  const pagination = toRecord(record.pagination);
+  return {
+    items: mapList(record.items, mapPriceListItemDto),
+    pagination: {
+      total: toNumberValue(pagination.total),
+      limit: toNumberValue(pagination.limit) || 50,
+      skip: toNumberValue(pagination.skip),
+      page: toNumberValue(pagination.page) || 1,
+      totalPages: toNumberValue(pagination.totalPages),
+      hasNext: pagination.hasNext === true,
+      hasPrevious: pagination.hasPrevious === true,
+    },
   };
 }
 

@@ -93,6 +93,21 @@ export interface PriceListItem {
   finalPrice: number | null;
 }
 
+export interface PriceListItemsPagination {
+  total: number;
+  limit: number;
+  skip: number;
+  page: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface PriceListItemsPage {
+  items: PriceListItem[];
+  pagination: PriceListItemsPagination;
+}
+
 export interface ExpertPriceListAssignment {
   objectId: string;
   id: string;
