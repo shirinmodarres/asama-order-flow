@@ -57,6 +57,9 @@ export async function getSepidarStockInventory(
 
 export async function listStockTransfers(filters?: {
   status?: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
 }): Promise<StockTransferRequest[]> {
   return listTransfersFromPath("/api/support/stock-transfers", filters);
 }
@@ -81,8 +84,22 @@ export async function cancelStockTransfer(
   return mapStockTransferRequestDto(data);
 }
 
+export async function cancelManagerStockTransfer(
+  objectId: string,
+  payload: { cancelledByName?: string; reason?: string },
+): Promise<StockTransferRequest> {
+  const data = await httpClient.post<unknown>(
+    `/api/manager/stock-transfers/${objectId}/cancel`,
+    payload,
+  );
+  return mapStockTransferRequestDto(data);
+}
+
 export async function listManagerStockTransfers(filters?: {
   status?: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
 }): Promise<StockTransferRequest[]> {
   return listTransfersFromPath("/api/manager/stock-transfers", filters);
 }
@@ -98,19 +115,36 @@ export async function getManagerStockTransfer(
 
 export async function listWarehouseStockTransfers(filters?: {
   status?: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
 }): Promise<StockTransferRequest[]> {
   return listTransfersFromPath("/api/warehouse/stock-transfers", filters);
 }
 
 async function listTransfersFromPath(
   path: string,
-  filters?: { status?: string },
+  filters?: { status?: string; page?: number; pageSize?: number; search?: string },
 ): Promise<StockTransferRequest[]> {
   const params = new URLSearchParams();
   if (filters?.status) params.set("status", filters.status);
+  if (filters?.page) params.set("page", String(filters.page));
+  if (filters?.pageSize) params.set("pageSize", String(filters.pageSize));
+  if (filters?.search) params.set("search", filters.search);
   const suffix = params.toString() ? `?${params.toString()}` : "";
   const data = await httpClient.get<unknown>(`${path}${suffix}`);
   return mapStockTransferRequestListDto(data);
+}
+
+export async function updateStockTransfer(
+  objectId: string,
+  payload: CreateStockTransferPayload,
+): Promise<StockTransferRequest> {
+  const data = await httpClient.patch<unknown>(
+    `/api/support/stock-transfers/${objectId}`,
+    payload,
+  );
+  return mapStockTransferRequestDto(data);
 }
 
 export async function createStockTransfer(

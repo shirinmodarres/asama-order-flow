@@ -181,25 +181,16 @@ export default function ManagerStockTransfersPage() {
               جزئیات
             </Link>
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => runAction(row, "approve")}
-            disabled={Boolean(submittingId)}
-          >
-            <CheckCircle2 className="size-4" />
-            تأیید
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => runAction(row, "reject")}
-            disabled={Boolean(submittingId)}
-          >
-            <XCircle className="size-4" />
-            رد
-          </Button>
+          {row.status === "pending_manager_approval" ? (
+            <>
+              <Button type="button" size="sm" onClick={() => runAction(row, "approve")} disabled={Boolean(submittingId)}>
+                <CheckCircle2 className="size-4" /> تأیید
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => runAction(row, "reject")} disabled={Boolean(submittingId)}>
+                <XCircle className="size-4" /> رد
+              </Button>
+            </>
+          ) : null}
         </div>
       ),
     },

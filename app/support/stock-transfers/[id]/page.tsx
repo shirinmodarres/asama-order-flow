@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Ban, FileText } from "lucide-react";
+import { ArrowRight, Ban, FileText, Pencil } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { EmptyState } from "@/components/shared/empty-state";
 import { InlineErrorMessage } from "@/components/shared/inline-error-message";
@@ -27,11 +27,7 @@ import { cancelStockTransfer, getSupportStockTransfer } from "@/lib/services/sto
 import { useParams } from "next/navigation";
 
 const cancellableStatuses = new Set([
-  "pending",
   "pending_manager_approval",
-  "approved_waiting_warehouse_scan",
-  "approved_waiting_tracking_codes",
-  "approved",
 ]);
 
 export default function SupportStockTransferDetailPage() {
@@ -109,6 +105,11 @@ export default function SupportStockTransferDetailPage() {
               {canCancel ? (
                 <Button type="button" variant="destructive" onClick={() => setIsCancelDialogOpen(true)} disabled={submitting}>
                   <Ban className="size-4" />لغو درخواست انتقال
+                </Button>
+              ) : null}
+              {transfer.status === "pending_manager_approval" ? (
+                <Button asChild type="button" variant="outline">
+                  <Link href={`/support/stock-transfers/${transfer.objectId}/edit`}><Pencil className="size-4" />ویرایش انتقال</Link>
                 </Button>
               ) : null}
             </div>

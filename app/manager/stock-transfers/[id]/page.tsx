@@ -17,6 +17,7 @@ import type { StockTransferRequest } from "@/lib/models/stock.model";
 import { getStoredCurrentUser } from "@/lib/services/auth.service";
 import {
   approveStockTransfer,
+  cancelManagerStockTransfer,
   getManagerStockTransfer,
   rejectStockTransfer,
 } from "@/lib/services/stock.service";
@@ -26,7 +27,7 @@ export default function ManagerStockTransferDetailPage() {
   const router = useRouter();
   const [transfer, setTransfer] = useState<StockTransferRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [submitting, setSubmitting] = useState<"approve" | "reject" | "">("");
+  const [submitting, setSubmitting] = useState<"approve" | "reject" | "cancel" | "">("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -56,6 +57,22 @@ export default function ManagerStockTransferDetailPage() {
     getStoredCurrentUser()?.fullName ||
     getStoredCurrentUser()?.username ||
     "مدیر فروش";
+
+  const handleCancel = async () => {
+    if (!transfer || transfer.status !== "approved_waiting_warehouse_scan") return;
+    if (!window.confirm("این انتقال و رزرو موجودی آن لغو شود؟")) return;
+    setSubmitting("cancel");
+    setError("");
+    try {
+      const updated = await cancelManagerStockTransfer(transfer.objectId, { cancelledByName: actorName });
+      setTransfer(updated);
+      setMessage("انتقال لغو شد و رزرو موجودی آزاد شد.");
+    } catch (actionError) {
+      setError(getErrorMessage(actionError));
+    } finally {
+      setSubmitting("");
+    }
+  };
 
   const itemRows = useMemo(() => transfer?.items ?? [], [transfer]);
 
@@ -147,7 +164,7 @@ export default function ManagerStockTransferDetailPage() {
                 {transfer.note}
               </p>
             ) : null}
-            <div className="mt-4 flex flex-wrap gap-2">
+            {transfer.status === "pending_manager_approval" ? <div className="mt-4 flex flex-wrap gap-2">
               <Button
                 type="button"
                 onClick={() => handleAction("approve")}
@@ -165,7 +182,13 @@ export default function ManagerStockTransferDetailPage() {
                 <XCircle className="size-4" />
                 رد
               </Button>
-            </div>
+            </div> : transfer.status === "approved_waiting_warehouse_scan" ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={handleCancel} disabled={Boolean(submitting)}>
+                  <XCircle className="size-4" /> لغو و آزادسازی رزرو
+                </Button>
+              </div>
+            ) : null}
           </Card>
 
           <Card className="overflow-hidden p-0">
